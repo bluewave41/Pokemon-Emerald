@@ -1,6 +1,6 @@
 import { Direction } from "../interfaces/Direction";
-import { Canvas } from "./Canvas";
 import { Entity } from "./Entity";
+import { Game } from "./Game";
 import SpriteBank from "./SpriteBank";
 
 export class Player extends Entity {
@@ -20,11 +20,23 @@ export class Player extends Entity {
   init() {
     this.sprites = SpriteBank.getSpriteBank("player");
   }
-  tick(canvas: Canvas) {
-    canvas.drawSprite(
+  tick(game: Game) {
+    if (game.isKeyPressed("ArrowUp")) {
+      this.y--;
+    }
+    if (game.isKeyPressed("ArrowDown")) {
+      this.y++;
+    }
+    if (game.isKeyPressed("ArrowLeft")) {
+      this.x--;
+    }
+    if (game.isKeyPressed("ArrowRight")) {
+      this.x++;
+    }
+    game.canvas.drawSprite(
       this.sprites[this.direction],
-      this.x * canvas.tileSize,
-      this.y * canvas.tileSize
+      this.x * game.canvas.tileSize,
+      this.y * game.canvas.tileSize
     );
   }
 }

@@ -3,6 +3,7 @@ import { BufferedReader } from "../lib/BufferedReader";
 import { Canvas } from "./Canvas";
 import SpriteBank from "./SpriteBank";
 import { Player } from "./Player";
+import GLOBALS from "./globals";
 
 export class GameMap {
   area: string;
@@ -53,7 +54,11 @@ export class GameMap {
     return new GameMap(area, width, height, tiles, backgroundTile);
   }
   drawMap(canvas: Canvas, player: Player) {
-    canvas.context.translate(-player.x, -player.y * 15);
+    const { tileSize } = canvas;
+    canvas.context.translate(
+      -player.x * tileSize + (GLOBALS.viewPortWidth * tileSize) / 2,
+      -player.y * tileSize + (GLOBALS.viewPortHeight * tileSize) / 2
+    );
     // draw background
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {

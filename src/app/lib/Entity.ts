@@ -1,4 +1,4 @@
-import { Canvas } from "./Canvas";
+import { Game } from "./Game";
 
 export class Entity {
   x: number;
@@ -10,5 +10,5 @@ export class Entity {
     this.y = y;
   }
   init() {}
-  tick(canvas: Canvas) {}
+  tick(game: Game) {}
 }

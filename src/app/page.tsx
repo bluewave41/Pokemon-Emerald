@@ -51,8 +51,16 @@ export default function Home() {
     };
   }, [draw, ready]);
 
+  const onKeyDown = (e) => {
+    gameRef.current?.onKeyDown(e.code);
+  };
+
+  const onKeyUp = (e) => {
+    gameRef.current?.onKeyUp(e.code);
+  };
+
   return (
-    <div>
+    <div onKeyDown={onKeyDown} onKeyUp={onKeyUp} tabIndex={-1}>
       <canvas ref={canvasRef} />
     </div>
   );

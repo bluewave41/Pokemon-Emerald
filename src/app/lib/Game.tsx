@@ -3,6 +3,7 @@ import { fetchPack } from "../promises/fetchPack";
 import { Canvas } from "./Canvas";
 import { Entity } from "./Entity";
 import { GameMap } from "./GameMap";
+import { KeyHandler } from "./KeyHandler";
 import { Player } from "./Player";
 import SpriteBank from "./SpriteBank";
 
@@ -12,6 +13,7 @@ export class Game {
   entities: Entity[] = [];
   initialized: boolean = false;
   canvas: Canvas;
+  keyHandler: KeyHandler = new KeyHandler();
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
@@ -24,7 +26,7 @@ export class Game {
     await SpriteBank.loadPack("player", await fetchPack("player"));
 
     // create player after sprites exist
-    this.player = new Player(8, 8, "down");
+    this.player = new Player(0, 0, "down");
 
     this.initialized = true;
   }
@@ -40,9 +42,18 @@ export class Game {
     }
     this.canvas.reset();
     this.map.drawMap(this.canvas, this.player);
-    this.player.tick(this.canvas);
+    this.player.tick(this);
     for (const entity of this.entities) {
-      entity.tick(this.canvas);
+      entity.tick(this);
     }
+  }
+  onKeyDown(key: string) {
+    this.keyHandler.keyDown(key);
+  }
+  onKeyUp(key: string) {
+    this.keyHandler.keyUp(key);
+  }
+  isKeyPressed(key: string) {
+    return this.keyHandler.getKeyStatus(key);
   }
 }
