@@ -56,8 +56,8 @@ export class GameMap {
   drawMap(canvas: Canvas, player: Player) {
     const { tileSize } = canvas;
     canvas.context.translate(
-      -player.x * tileSize + (GLOBALS.viewPortWidth * tileSize) / 2,
-      -player.y * tileSize + (GLOBALS.viewPortHeight * tileSize) / 2
+      -player.subX + (GLOBALS.viewPortWidth * tileSize) / 2,
+      -player.subY + (GLOBALS.viewPortHeight * tileSize) / 2
     );
     // draw background
     for (let y = 0; y < this.height; y++) {
@@ -76,5 +76,8 @@ export class GameMap {
         canvas.drawTile(SpriteBank.getTile(this.area, tile.id), x, y);
       }
     }
+  }
+  getTile(x: number, y: number) {
+    return this.tiles[x][y];
   }
 }

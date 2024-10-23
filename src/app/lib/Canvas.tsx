@@ -8,7 +8,6 @@ interface CanvasOptions {
 export class Canvas {
   context: CanvasRenderingContext2D;
   tileSize: number;
-  scale: number;
 
   constructor(canvas: HTMLCanvasElement) {
     const context = canvas.getContext("2d");
@@ -16,8 +15,7 @@ export class Canvas {
       throw Error("Couldn't create context for canvas.");
     }
     this.context = context;
-    this.scale = 2;
-    this.tileSize = GLOBALS.tileSize * this.scale;
+    this.tileSize = GLOBALS.tileSize;
   }
   reset() {
     this.context.resetTransform();
