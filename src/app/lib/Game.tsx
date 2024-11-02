@@ -14,6 +14,7 @@ export class Game {
   initialized: boolean = false;
   canvas: Canvas;
   keyHandler: KeyHandler = new KeyHandler();
+  frameTime: number = 0;
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
@@ -26,11 +27,12 @@ export class Game {
     await SpriteBank.loadPack("player", await fetchPack("player"));
 
     // create player after sprites exist
-    this.player = new Player(0, 0, "down");
+    this.player = new Player(3, 3, "down");
 
     this.initialized = true;
   }
-  tick() {
+  tick(deltaTime: number) {
+    this.frameTime = deltaTime;
     if (!this.player) {
       throw new Error("Player is null!");
     }
@@ -55,5 +57,8 @@ export class Game {
   }
   isKeyPressed(key: string) {
     return this.keyHandler.getKeyStatus(key);
+  }
+  getTile(x: number, y: number) {
+    return this.map?.getTile(y, x);
   }
 }

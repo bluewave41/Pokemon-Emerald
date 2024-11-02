@@ -11,11 +11,11 @@ export default function Home() {
   const [ready, setReady] = useState(false);
   const gameRef = useRef<Game>(null);
 
-  const draw = useCallback(() => {
+  const draw = useCallback((deltaTime: number) => {
     if (!gameCanvas.current) {
       return;
     }
-    gameRef.current?.tick();
+    gameRef.current?.tick(deltaTime);
   }, []);
 
   useEffect(() => {
@@ -39,12 +39,12 @@ export default function Home() {
     if (!ready) {
       return;
     }
-    let animationFrameId: number;
-    const render = () => {
-      draw();
+    let animationFrameId: number = 0;
+    const render = (deltaTime: number) => {
+      draw(deltaTime);
       animationFrameId = window.requestAnimationFrame(render);
     };
-    render();
+    render(animationFrameId);
 
     return () => {
       window.cancelAnimationFrame(animationFrameId);

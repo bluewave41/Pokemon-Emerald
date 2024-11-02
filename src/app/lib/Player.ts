@@ -13,6 +13,7 @@ export class Player extends Entity {
   isMoving: boolean;
   walkFrame: 1 | 2 = 1;
   activeSprite: string;
+  speed: number = 70;
 
   constructor(x: number, y: number, direction: Direction) {
     super(x, y);
@@ -26,8 +27,18 @@ export class Player extends Entity {
   init() {
     this.sprites = SpriteBank.getSpriteBank("player");
   }
-  move(newX: number, newY: number, direction: Direction) {
+  setDirection(direction: Direction) {
+    this.direction = direction;
+    this.activeSprite = direction;
+  }
+  move(newX: number, newY: number, direction: Direction, game: Game) {
+    const newTile = game.getTile(newX, newY);
+    if (newTile?.getPermissions().impassable) {
+      this.setDirection(direction);
+      return;
+    }
     this.isMoving = true;
+    this.lastFrameTime = game.frameTime;
     // set pixel position in world
     this.subX = this.x * GLOBALS.tileSize;
     this.subY = this.y * GLOBALS.tileSize;
@@ -43,51 +54,61 @@ export class Player extends Entity {
     this.activeSprite = this.direction + this.walkFrame;
   }
   tick(game: Game) {
-    if (this.isMoving) {
-      if (this.subX > this.endX) {
-        this.subX -= 1;
-        if (this.subX < this.endX + GLOBALS.tileSize / 2) {
-          this.activeSprite = "left";
-        }
-      } else if (this.subX < this.endX) {
-        this.subX += 1;
+    if (this.isMoving && this.lastFrameTime) {
+      const deltaTime = (game.frameTime - this.lastFrameTime) / 1000;
+      this.lastFrameTime = game.frameTime;
+
+      const distance = Math.round(this.speed * deltaTime);
+
+      if (this.subX < this.endX) {
         if (this.subX > this.endX - GLOBALS.tileSize / 2) {
           this.activeSprite = "right";
         }
-      } else if (this.subY > this.endY) {
-        this.subY -= 1;
-        if (this.subY < this.endY + GLOBALS.tileSize / 2) {
-          this.activeSprite = "up";
+        this.subX = Math.min(this.subX + distance, this.endX);
+      } else if (this.subX > this.endX) {
+        if (this.subX < this.endX + GLOBALS.tileSize / 2) {
+          this.activeSprite = "left";
         }
-      } else if (this.subY < this.endY) {
-        this.subY += 1;
+        this.subX = Math.max(this.subX - distance, this.endX);
+      }
+
+      if (this.subY < this.endY) {
         if (this.subY > this.endY - GLOBALS.tileSize / 2) {
           this.activeSprite = "down";
         }
+        this.subY = Math.min(this.subY + distance, this.endY);
+      } else if (this.subY > this.endY) {
+        if (this.subY < this.endY + GLOBALS.tileSize / 2) {
+          this.activeSprite = "up";
+        }
+        this.subY = Math.max(this.subY - distance, this.endY);
       }
+
       if (this.subX === this.endX && this.subY === this.endY) {
         this.isMoving = false;
         this.walkFrame = this.walkFrame === 1 ? 2 : 1;
       }
     } else {
       if (game.isKeyPressed("ArrowUp") && !this.isMoving) {
-        this.move(this.x, this.y - 1, "up");
+        this.move(this.x, this.y - 1, "up", game);
       }
       if (game.isKeyPressed("ArrowDown") && !this.isMoving) {
-        this.move(this.x, this.y + 1, "down");
+        this.move(this.x, this.y + 1, "down", game);
       }
       if (game.isKeyPressed("ArrowLeft") && !this.isMoving) {
-        this.move(this.x - 1, this.y, "left");
+        this.move(this.x - 1, this.y, "left", game);
       }
       if (game.isKeyPressed("ArrowRight") && !this.isMoving) {
-        this.move(this.x + 1, this.y, "right");
+        this.move(this.x + 1, this.y, "right", game);
       }
     }
+
+    const drawOffset = Number.isInteger(parseInt(this.activeSprite.slice(-1)));
 
     game.canvas.drawSprite(
       this.sprites[this.activeSprite],
       this.subX,
-      this.subY
+      this.subY + (drawOffset ? 1 : 0)
     );
   }
 }

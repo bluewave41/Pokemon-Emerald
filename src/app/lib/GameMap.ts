@@ -41,10 +41,7 @@ export class GameMap {
     for (let y = 0; y < height; y++) {
       const row: Tile[] = [];
       for (let x = 0; x < width; x++) {
-        row.push({
-          id: reader.readByte(),
-          permissions: reader.readByte(),
-        });
+        row.push(new Tile(reader.readByte(), reader.readByte()));
       }
       tiles.push(row);
     }
