@@ -71,3 +71,8 @@ html {
   background-color: black;
   color: white;
 }
+
+@font-face {
+  font-family: "pp";
+  src: url("/fonts/pokemon-emerald.ttf");
+}
