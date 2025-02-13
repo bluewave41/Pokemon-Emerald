@@ -1,10 +1,8 @@
 export class BufferedWriter {
-	#buffer: Buffer = Buffer.alloc(25000); // TODO: make dynamic
+	#buffer: Buffer = Buffer.alloc(100000); // TODO: make dynamic
 	#index: number = 0;
 
-	constructor(buffer: Buffer) {
-		this.#buffer = buffer;
-	}
+	constructor() {}
 	writeByte(b: number) {
 		this.#buffer.writeUInt8(b, this.#index++);
 	}
@@ -21,5 +19,8 @@ export class BufferedWriter {
 		for (let i = 0; i < str.length; i++) {
 			this.writeByte(str.charCodeAt(i));
 		}
+	}
+	getUsed() {
+		return this.#buffer.subarray(0, this.#index);
 	}
 }
