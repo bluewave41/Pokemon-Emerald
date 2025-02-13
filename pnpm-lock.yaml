@@ -8,6 +8,9 @@ onlyBuiltDependencies:
   - esbuild
 
 dependencies:
+  buffer:
+    specifier: ^6.0.3
+    version: 6.0.3
   jimp:
     specifier: ^1.6.0
     version: 1.6.0

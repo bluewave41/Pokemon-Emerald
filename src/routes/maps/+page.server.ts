@@ -43,7 +43,7 @@ export const actions = {
 			const row = [];
 			for (let x = 0; x < width; x += 16) {
 				const tile = image.clone().crop({ x, y, w: 16, h: 16 });
-				const base64 = await tile.getBase64('image/bmp');
+				const base64 = await tile.getBase64('image/png');
 				if (!images.includes(base64)) {
 					images.push(base64);
 				}
@@ -69,6 +69,6 @@ export const actions = {
 			}
 		}
 
-		await fs.writeFile(`./static/maps/${simplifiedName}.map`, buffer.getUsed());
+		await fs.writeFile(`./static/maps/${simplifiedName}.map`, buffer.getUsed(), 'binary');
 	}
 };

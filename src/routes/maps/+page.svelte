@@ -4,8 +4,6 @@
 	let form: HTMLFormElement;
 
 	let { data } = $props();
-
-	console.log(data);
 </script>
 
 <h1>Maps</h1>
