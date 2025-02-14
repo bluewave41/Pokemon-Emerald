@@ -23,7 +23,7 @@ export class GameMap {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				const tile = this.map[y][x];
-				canvas.drawImage(SpriteBank.getSprite(this.name, this.area, tile.id), x, y);
+				canvas.drawTile(SpriteBank.getSprite(this.name, this.area, tile.id), x, y);
 			}
 		}
 	}
@@ -50,6 +50,9 @@ export class GameMap {
 		}
 
 		return new GameMap(name, width, height, images, map);
+	}
+	getTile(x: number, y: number) {
+		return this.map[y][x];
 	}
 	toJSON() {
 		return {
