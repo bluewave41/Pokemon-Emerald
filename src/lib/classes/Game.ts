@@ -10,6 +10,7 @@ export class Game {
 	canvas: Canvas;
 	topCanvas: Canvas;
 	player: Player;
+	viewport = { width: 15, height: 11 };
 	static tileSize: number = 16;
 	static zoom: number = 2;
 
@@ -18,10 +19,10 @@ export class Game {
 		this.canvas = new Canvas(canvas);
 		this.topCanvas = new Canvas(topCanvas);
 		this.player = new Player(10, 10, 'down');
-		this.canvas.canvas.width = this.map.width * Game.getAdjustedTileSize();
-		this.canvas.canvas.height = this.map.height * Game.getAdjustedTileSize();
-		this.topCanvas.canvas.width = this.map.width * Game.getAdjustedTileSize();
-		this.topCanvas.canvas.height = this.map.height * Game.getAdjustedTileSize();
+		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
+		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
+		this.topCanvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
+		this.topCanvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 	}
 	async init() {
 		const playerBank = (await axios.get('./sprites?bank=player')).data;
@@ -31,6 +32,10 @@ export class Game {
 	tick() {
 		this.canvas.reset();
 		this.topCanvas.reset();
+		this.canvas.translate(
+			-(this.player.x - this.viewport.width / 2),
+			-(this.player.y - this.viewport.height / 2)
+		);
 		this.map.tick(this.canvas);
 		this.player.tick(this);
 	}

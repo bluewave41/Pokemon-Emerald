@@ -19,12 +19,16 @@ export class Player extends Entity {
 	updateDirection() {
 		if (KeyHandler.getKeyState('ArrowUp').down) {
 			this.direction = 'up';
+			this.y--;
 		} else if (KeyHandler.getKeyState('ArrowDown').down) {
 			this.direction = 'down';
+			this.y++;
 		} else if (KeyHandler.getKeyState('ArrowLeft').down) {
 			this.direction = 'left';
+			this.x--;
 		} else if (KeyHandler.getKeyState('ArrowRight').down) {
 			this.direction = 'right';
+			this.x++;
 		}
 	}
 }
