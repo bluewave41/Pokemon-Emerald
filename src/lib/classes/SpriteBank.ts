@@ -1,8 +1,14 @@
+import { BufferHelper } from '$lib/BufferHelper';
+import type { BankNames } from '$lib/interfaces/BankNames';
 import type { MapNames } from '$lib/interfaces/MapNames';
+import type { SpriteFile } from '$lib/interfaces/SpriteFile';
 
 class InternalSpriteBank {
 	maps: Record<MapNames, Record<string, Record<number, HTMLImageElement>>> = {
 		littleroot: {}
+	};
+	sprites: Record<BankNames, Record<string, HTMLImageElement>> = {
+		player: {}
 	};
 
 	constructor() {}
@@ -25,8 +31,27 @@ class InternalSpriteBank {
 			)
 		);
 	}
-	getSprite(map: MapNames, area: string, tile: number) {
+	async readBank(bank: BankNames, images: SpriteFile[]) {
+		await Promise.all(
+			images.map(
+				(imageData) =>
+					new Promise<void>((resolve) => {
+						const image = new Image();
+
+						image.onload = () => {
+							this.sprites[bank][imageData.name] = image;
+							resolve();
+						};
+						image.src = imageData.data;
+					})
+			)
+		);
+	}
+	getTile(map: MapNames, area: string, tile: number) {
 		return this.maps[map][area][tile];
+	}
+	getSprite(bank: BankNames, sprite: string) {
+		return this.sprites[bank][sprite];
 	}
 }
 

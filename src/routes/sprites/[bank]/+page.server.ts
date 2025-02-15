@@ -5,7 +5,7 @@ import { zfd } from 'zod-form-data';
 import { fail } from '@sveltejs/kit';
 import { BufferHelper } from '$lib/BufferHelper';
 import { removeExtension } from '$lib/utils/removeExtension';
-import { z } from 'zod';
+import type { SpriteFile } from '$lib/interfaces/SpriteFile';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const reader = new BufferHelper(
@@ -63,19 +63,43 @@ export const actions = {
 			path.join(path.resolve('./static/sprites'), path.basename(bank) + '.bank')
 		);
 
-		const reader = new BufferHelper(bankFile);
-		const imageCount = reader.readByte();
-		reader.seek(0);
-		// update image count
-		reader.writeByte(imageCount + files.length);
-		reader.seek(reader.length);
-		reader.expand(expandLength);
-
-		for (const image of files) {
-			reader.writeString(image.name);
-			reader.writeString(image.bytes);
+		const buffer = new BufferHelper(bankFile);
+		const imageCount = buffer.readByte();
+		const images: SpriteFile[] = [];
+		for (let i = 0; i < imageCount; i++) {
+			images.push({
+				name: buffer.readString(),
+				data: buffer.readString()
+			});
 		}
 
-		await fs.writeFile(`./static/sprites/${bank}.bank`, reader.getUsed(), 'binary');
+		const errors = [];
+
+		// make sure there aren't any duplicates
+		for (const image of files) {
+			const isImageAlreadyDefined = images.find(
+				(definedImage) => definedImage.name === removeExtension(image.name)
+			);
+			if (isImageAlreadyDefined) {
+				errors.push(`${image.name} is already defined.`);
+			}
+		}
+
+		if (errors.length) {
+			return fail(409, { errors });
+		}
+
+		buffer.seek(0);
+		// update image count
+		buffer.writeByte(imageCount + files.length);
+		buffer.seek(buffer.length);
+		buffer.expand(expandLength);
+
+		for (const image of files) {
+			buffer.writeString(image.name);
+			buffer.writeString(image.bytes);
+		}
+
+		await fs.writeFile(`./static/sprites/${bank}.bank`, buffer.getUsed(), 'binary');
 	}
 };

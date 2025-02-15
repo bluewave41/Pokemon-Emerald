@@ -2,14 +2,14 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 
-	let form: HTMLFormElement;
-	let { data } = $props();
+	let formRef: HTMLFormElement;
+	let { data, form } = $props();
 </script>
 
 <h1>{page.params.bank}</h1>
 
-<form method="POST" action="?/add" bind:this={form} enctype="multipart/form-data" use:enhance>
-	<input type="file" name="files" multiple onchange={() => form.submit()} />
+<form method="POST" action="?/add" bind:this={formRef} enctype="multipart/form-data" use:enhance>
+	<input type="file" name="files" multiple onchange={() => formRef.submit()} />
 	<input type="text" name="bank" hidden value={page.params.bank} />
 </form>
 
@@ -21,6 +21,14 @@
 		</div>
 	{/each}
 </div>
+
+{#if form?.errors}
+	<ul class="error">
+		{#each form?.errors as error}
+			<li>{error}</li>
+		{/each}
+	</ul>
+{/if}
 
 <style>
 	.container {
@@ -36,5 +44,8 @@
 		width: 3rem;
 		height: 3rem;
 		font-size: 12px;
+	}
+	.error {
+		color: var(--error);
 	}
 </style>

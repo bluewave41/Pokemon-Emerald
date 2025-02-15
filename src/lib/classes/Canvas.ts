@@ -30,6 +30,10 @@ export class Canvas {
 		const rect = new AdjustedRect(x, y);
 		this.context.fillRect(rect.x, rect.y, rect.width, rect.height);
 	}
+	drawImage(image: HTMLImageElement, x: number, y: number) {
+		const rect = new AdjustedRect(x, y);
+		this.context.drawImage(image, rect.x, rect.y, rect.width, rect.height);
+	}
 	get width() {
 		return this.canvas.width;
 	}

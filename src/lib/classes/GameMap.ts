@@ -1,4 +1,4 @@
-import { BufferedReader } from '$lib/BufferedReader';
+import { BufferHelper } from '$lib/BufferHelper';
 import type { MapNames } from '$lib/interfaces/MapNames';
 import type { Canvas } from './Canvas';
 import SpriteBank from './SpriteBank';
@@ -23,12 +23,12 @@ export class GameMap {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				const tile = this.tiles[y][x];
-				canvas.drawTile(SpriteBank.getSprite(this.name, this.area, tile.id), x, y);
+				canvas.drawTile(SpriteBank.getTile(this.name, this.area, tile.id), x, y);
 			}
 		}
 	}
 	static readMap(mapBuffer: Buffer) {
-		const buffer = new BufferedReader(mapBuffer);
+		const buffer = new BufferHelper(mapBuffer);
 
 		buffer.readByte(); // version
 		const name = buffer.readString() as MapNames;

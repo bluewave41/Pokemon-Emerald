@@ -1,4 +1,5 @@
 <script>
+	import Game from '$lib/icons/game.svelte';
 	import Image from '$lib/icons/image.svelte';
 	import Map from '$lib/icons/map.svelte';
 
@@ -17,6 +18,11 @@
 			label: 'Sprites',
 			Icon: Image,
 			href: '/sprites'
+		},
+		{
+			label: 'Game',
+			Icon: Game,
+			href: '/game'
 		}
 	];
 </script>
