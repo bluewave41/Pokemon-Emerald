@@ -41,6 +41,7 @@
 	"dependencies": {
 		"buffer": "^6.0.3",
 		"jimp": "^1.6.0",
+		"zod": "^3.24.2",
 		"zod-form-data": "^2.0.5"
 	}
 }

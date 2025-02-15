@@ -12,6 +12,11 @@
 			label: 'Images',
 			Icon: Image,
 			href: '/images'
+		},
+		{
+			label: 'Sprites',
+			Icon: Image,
+			href: '/sprites'
 		}
 	];
 </script>

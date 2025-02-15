@@ -1,10 +1,10 @@
 import { fail } from '@sveltejs/kit';
 import { zfd } from 'zod-form-data';
 import { Jimp } from 'jimp';
-import { BufferedWriter } from '$lib/BufferedWriter.js';
 import { promises as fs } from 'fs';
 import type { PageServerLoad } from './$types.js';
 import { removeExtension } from '$lib/utils/removeExtension.js';
+import { BufferHelper } from '$lib/BufferHelper.js';
 
 export const load: PageServerLoad = async () => {
 	const maps = (await fs.readdir('./static/maps')).map(removeExtension);
@@ -52,7 +52,7 @@ export const actions = {
 			map.push(row);
 		}
 
-		const buffer = new BufferedWriter();
+		const buffer = new BufferHelper(Buffer.alloc(30000));
 		buffer.writeByte(1);
 		buffer.writeString(simplifiedName);
 		buffer.writeByte(width / 16);

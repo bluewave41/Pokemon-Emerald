@@ -10,19 +10,19 @@ export class GameMap {
 	width: number;
 	height: number;
 	images: string[];
-	map: Tile[][];
+	tiles: Tile[][];
 
-	constructor(name: MapNames, width: number, height: number, images: string[], map: Tile[][]) {
+	constructor(name: MapNames, width: number, height: number, images: string[], tiles: Tile[][]) {
 		this.name = name;
 		this.width = width;
 		this.height = height;
 		this.images = images;
-		this.map = map;
+		this.tiles = tiles;
 	}
 	tick(canvas: Canvas) {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
-				const tile = this.map[y][x];
+				const tile = this.tiles[y][x];
 				canvas.drawTile(SpriteBank.getSprite(this.name, this.area, tile.id), x, y);
 			}
 		}
@@ -52,7 +52,7 @@ export class GameMap {
 		return new GameMap(name, width, height, images, map);
 	}
 	getTile(x: number, y: number) {
-		return this.map[y][x];
+		return this.tiles[y][x];
 	}
 	toJSON() {
 		return {
@@ -60,7 +60,7 @@ export class GameMap {
 			width: this.width,
 			height: this.height,
 			images: this.images,
-			map: this.map
+			tiles: this.tiles
 		};
 	}
 }

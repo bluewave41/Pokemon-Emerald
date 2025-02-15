@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { Game } from '$lib/classes/Game.js';
 
@@ -7,6 +8,7 @@
 	let topCanvasRef: HTMLCanvasElement;
 	let game: Game;
 	let selectedColor = $state(0);
+	let mouseDown = $state(false);
 
 	const colorTable: Record<number, string> = {
 		0: 'blue',
@@ -19,6 +21,7 @@
 
 		if (canvasRef) {
 			game = new Game(data.map, canvasRef, topCanvasRef);
+
 			await game.init();
 
 			const render = () => {
@@ -42,11 +45,40 @@
 	$effect(() => {
 		init();
 	});
+
+	const getMousePosition = (e: MouseEvent) => {
+		var rect = game.canvas.canvas.getBoundingClientRect();
+
+		return {
+			x: Math.floor((e.clientX - rect.left) / Game.getAdjustedTileSize()),
+			y: Math.floor((e.clientY - rect.top) / Game.getAdjustedTileSize())
+		};
+	};
+
+	const onMouseMove = (e: MouseEvent) => {
+		const { x, y } = getMousePosition(e);
+		if (mouseDown) {
+			const tile = game.map.getTile(x, y);
+			tile.permissions = selectedColor;
+		}
+	};
+
+	const onMouseDown = (e: MouseEvent) => {
+		mouseDown = true;
+		const { x, y } = getMousePosition(e);
+		const tile = game.map.getTile(x, y);
+		tile.permissions = selectedColor;
+	};
 </script>
 
 <h1>{page.params.map}</h1>
 
-<div class="container">
+<div
+	class="container"
+	onmousemove={onMouseMove}
+	onmousedown={onMouseDown}
+	onmouseup={() => (mouseDown = false)}
+>
 	<canvas bind:this={canvasRef}></canvas>
 	<canvas class="topCanvas" bind:this={topCanvasRef}></canvas>
 </div>
@@ -59,8 +91,19 @@
 	{/each}
 </div>
 
+<form
+	method="POST"
+	action="?/save"
+	use:enhance={({ formData }) => formData.append('map', JSON.stringify(game.map.toJSON()))}
+>
+	<button>Save</button>
+</form>
+
 <style>
 	.container {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 		position: relative;
 	}
 	.buttons {
