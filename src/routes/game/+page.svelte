@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Game } from '$lib/classes/Game.js';
+	import KeyHandler from '$lib/classes/KeyHandler.js';
 
 	let { data } = $props();
 	let canvasRef: HTMLCanvasElement;
@@ -27,11 +28,19 @@
 	$effect(() => {
 		init();
 	});
+
+	const onKeyDown = (e: KeyboardEvent) => {
+		KeyHandler.keyDown(e.key);
+	};
+
+	const onKeyUp = (e: KeyboardEvent) => {
+		KeyHandler.keyUp(e.key);
+	};
 </script>
 
 <h1>{page.params.map}</h1>
 
-<div class="container">
+<div class="container" onkeydown={onKeyDown} onkeyup={onKeyUp} tabIndex={1}>
 	<canvas bind:this={canvasRef}></canvas>
 	<canvas class="topCanvas" bind:this={topCanvasRef}></canvas>
 </div>
