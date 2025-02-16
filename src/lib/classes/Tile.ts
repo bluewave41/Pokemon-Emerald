@@ -6,4 +6,7 @@ export class Tile {
 		this.id = id;
 		this.permissions = permissions;
 	}
+	isPassable() {
+		return this.permissions !== 1;
+	}
 }

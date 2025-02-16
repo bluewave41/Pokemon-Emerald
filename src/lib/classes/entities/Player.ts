@@ -25,7 +25,7 @@ export class Player extends Entity {
 	}
 	tick(game: Game, currentFrameTime: number) {
 		if (!this.moving) {
-			this.updateDirection();
+			this.updateDirection(game);
 		}
 		this.move(game.lastFrameTime, currentFrameTime);
 		const walkSprite =
@@ -37,32 +37,53 @@ export class Player extends Entity {
 			Math.round(this.subPosition.y + (this.counter < 20 ? 1 : 0))
 		);
 	}
-	updateDirection() {
-		if (KeyHandler.getKeyState('ArrowUp').down) {
-			this.moving = true;
-			this.direction = 'up';
-			this.position.y--;
-			this.targetPosition.y -= Game.getAdjustedTileSize();
-			this.counter = 0;
-		} else if (KeyHandler.getKeyState('ArrowDown').down) {
-			this.moving = true;
-			this.direction = 'down';
-			this.position.y++;
-			this.targetPosition.y += Game.getAdjustedTileSize();
-			this.counter = 0;
-		} else if (KeyHandler.getKeyState('ArrowLeft').down) {
-			this.moving = true;
-			this.direction = 'left';
-			this.position.x--;
-			this.targetPosition.x -= Game.getAdjustedTileSize();
-			this.counter = 0;
-		} else if (KeyHandler.getKeyState('ArrowRight').down) {
-			this.moving = true;
-			this.direction = 'right';
-			this.position.x++;
-			this.targetPosition.x += Game.getAdjustedTileSize();
-			this.counter = 0;
+	updateDirection(game: Game) {
+		const moveTable = {
+			up: {
+				x: this.position.x,
+				y: this.position.y - 1,
+				targetX: this.targetPosition.x,
+				targetY: this.targetPosition.y - Game.getAdjustedTileSize()
+			},
+			down: {
+				x: this.position.x,
+				y: this.position.y + 1,
+				targetX: this.targetPosition.x,
+				targetY: this.targetPosition.y + Game.getAdjustedTileSize()
+			},
+			left: {
+				x: this.position.x - 1,
+				y: this.position.y,
+				targetX: this.targetPosition.x - Game.getAdjustedTileSize(),
+				targetY: this.targetPosition.y
+			},
+			right: {
+				x: this.position.x + 1,
+				y: this.position.y,
+				targetX: this.targetPosition.x + Game.getAdjustedTileSize(),
+				targetY: this.targetPosition.y
+			}
+		};
+
+		const direction = KeyHandler.getMainDirection();
+		if (direction !== null) {
+			const tableEntry = moveTable[direction];
+			const newTile = game.map.getTile(tableEntry.x, tableEntry.y);
+			if (newTile.isPassable()) {
+				this.moving = true;
+				this.position = { x: tableEntry.x, y: tableEntry.y };
+				this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
+				this.counter = 0;
+			}
+			// we should always turn to face the direction
+			this.direction = direction;
 		}
+
+		// where are we going?
+		// can we go there?
+		// if not update our direction
+		// make sure it still takes same amount of frames
+		// turn direction to face
 	}
 	move(lastFrameTime: number, currentFrameTime: number) {
 		if (!this.moving) {

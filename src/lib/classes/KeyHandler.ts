@@ -1,3 +1,5 @@
+import type { Direction } from '$lib/interfaces/Direction';
+
 export type HandledKeys = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
 
 interface KeyState {
@@ -22,6 +24,19 @@ export class InternalKeyHandler {
 		if (this.canHandleKey(key)) {
 			this.#keys[key].down = false;
 		}
+	}
+	getMainDirection(): Direction | null {
+		// up and right are prioritized
+		if (this.#keys.ArrowUp.down) {
+			return 'up';
+		} else if (this.#keys.ArrowRight.down) {
+			return 'right';
+		} else if (this.#keys.ArrowDown.down) {
+			return 'down';
+		} else if (this.#keys.ArrowLeft.down) {
+			return 'left';
+		}
+		return null;
 	}
 	canHandleKey(key: string): key is HandledKeys {
 		return key in this.#keys;
