@@ -4,20 +4,22 @@ export type HandledKeys = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
 
 interface KeyState {
 	down: boolean;
+	holdCount: number;
 }
 
 export class InternalKeyHandler {
 	#keys: Record<HandledKeys, KeyState> = {
-		ArrowUp: { down: false },
-		ArrowDown: { down: false },
-		ArrowLeft: { down: false },
-		ArrowRight: { down: false }
+		ArrowUp: { down: false, holdCount: 0 },
+		ArrowDown: { down: false, holdCount: 0 },
+		ArrowLeft: { down: false, holdCount: 0 },
+		ArrowRight: { down: false, holdCount: 0 }
 	};
 
 	constructor() {}
 	keyDown(key: string) {
-		if (this.canHandleKey(key)) {
+		if (this.canHandleKey(key) && !this.#keys[key].down) {
 			this.#keys[key].down = true;
+			this.#keys[key].holdCount = 0;
 		}
 	}
 	keyUp(key: string) {
@@ -25,16 +27,24 @@ export class InternalKeyHandler {
 			this.#keys[key].down = false;
 		}
 	}
-	getMainDirection(): Direction | null {
+	tick() {
+		for (const key in this.#keys) {
+			const typedKey = key as HandledKeys;
+			if (this.#keys[typedKey].down) {
+				this.#keys[typedKey].holdCount++;
+			}
+		}
+	}
+	getPrioritizedKey(): HandledKeys | null {
 		// up and right are prioritized
 		if (this.#keys.ArrowUp.down) {
-			return 'up';
+			return 'ArrowUp';
 		} else if (this.#keys.ArrowRight.down) {
-			return 'right';
+			return 'ArrowRight';
 		} else if (this.#keys.ArrowDown.down) {
-			return 'down';
+			return 'ArrowDown';
 		} else if (this.#keys.ArrowLeft.down) {
-			return 'left';
+			return 'ArrowLeft';
 		}
 		return null;
 	}

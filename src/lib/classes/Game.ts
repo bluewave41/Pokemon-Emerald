@@ -4,6 +4,7 @@ import { Player } from './entities/Player';
 import { GameMap } from './GameMap';
 import SpriteBank from './SpriteBank';
 import { Buffer } from 'buffer';
+import KeyHandler from './KeyHandler';
 
 export class Game {
 	map: GameMap;
@@ -39,7 +40,7 @@ export class Game {
 		);
 		this.map.tick(this.canvas);
 		this.player.tick(this, currentFrameTime);
-
+		KeyHandler.tick();
 		this.lastFrameTime = currentFrameTime;
 	}
 	static getAdjustedTileSize() {

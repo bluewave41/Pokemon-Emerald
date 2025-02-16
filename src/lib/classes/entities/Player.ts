@@ -39,51 +39,50 @@ export class Player extends Entity {
 	}
 	updateDirection(game: Game) {
 		const moveTable = {
-			up: {
+			ArrowUp: {
 				x: this.position.x,
 				y: this.position.y - 1,
 				targetX: this.targetPosition.x,
-				targetY: this.targetPosition.y - Game.getAdjustedTileSize()
+				targetY: this.targetPosition.y - Game.getAdjustedTileSize(),
+				direction: 'up'
 			},
-			down: {
+			ArrowDown: {
 				x: this.position.x,
 				y: this.position.y + 1,
 				targetX: this.targetPosition.x,
-				targetY: this.targetPosition.y + Game.getAdjustedTileSize()
+				targetY: this.targetPosition.y + Game.getAdjustedTileSize(),
+				direction: 'down'
 			},
-			left: {
+			ArrowLeft: {
 				x: this.position.x - 1,
 				y: this.position.y,
 				targetX: this.targetPosition.x - Game.getAdjustedTileSize(),
-				targetY: this.targetPosition.y
+				targetY: this.targetPosition.y,
+				direction: 'left'
 			},
-			right: {
+			ArrowRight: {
 				x: this.position.x + 1,
 				y: this.position.y,
 				targetX: this.targetPosition.x + Game.getAdjustedTileSize(),
-				targetY: this.targetPosition.y
+				targetY: this.targetPosition.y,
+				direction: 'right'
 			}
 		};
 
-		const direction = KeyHandler.getMainDirection();
+		const direction = KeyHandler.getPrioritizedKey();
 		if (direction !== null) {
 			const tableEntry = moveTable[direction];
 			const newTile = game.map.getTile(tableEntry.x, tableEntry.y);
-			if (newTile.isPassable()) {
+			const keyState = KeyHandler.getKeyState(direction);
+			if (keyState.holdCount > 5 && newTile.isPassable()) {
 				this.moving = true;
 				this.position = { x: tableEntry.x, y: tableEntry.y };
 				this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
 				this.counter = 0;
 			}
 			// we should always turn to face the direction
-			this.direction = direction;
+			this.direction = tableEntry.direction as Direction;
 		}
-
-		// where are we going?
-		// can we go there?
-		// if not update our direction
-		// make sure it still takes same amount of frames
-		// turn direction to face
 	}
 	move(lastFrameTime: number, currentFrameTime: number) {
 		if (!this.moving) {
