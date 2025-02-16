@@ -12,6 +12,7 @@ export class Player extends Entity {
 	moving: boolean = false;
 	speed: number = Game.getAdjustedTileSize() * 2;
 	walkFrame: number = 1;
+	counter: number = 0;
 
 	constructor(x: number, y: number, direction: Direction) {
 		super(x, y);
@@ -27,12 +28,13 @@ export class Player extends Entity {
 			this.updateDirection();
 		}
 		this.move(game.lastFrameTime, currentFrameTime);
-		const walkSprite = this.moving ? this.direction + this.walkFrame : this.direction;
+		const walkSprite =
+			this.moving && this.counter < 20 ? this.direction + this.walkFrame : this.direction;
 		const sprite = SpriteBank.getSprite('player', walkSprite);
 		game.canvas.drawAbsoluteImage(
 			sprite,
 			Math.round(this.subPosition.x),
-			Math.round(this.subPosition.y)
+			Math.round(this.subPosition.y + (this.counter < 20 ? 1 : 0))
 		);
 	}
 	updateDirection() {
@@ -41,27 +43,33 @@ export class Player extends Entity {
 			this.direction = 'up';
 			this.position.y--;
 			this.targetPosition.y -= Game.getAdjustedTileSize();
+			this.counter = 0;
 		} else if (KeyHandler.getKeyState('ArrowDown').down) {
 			this.moving = true;
 			this.direction = 'down';
 			this.position.y++;
 			this.targetPosition.y += Game.getAdjustedTileSize();
+			this.counter = 0;
 		} else if (KeyHandler.getKeyState('ArrowLeft').down) {
 			this.moving = true;
 			this.direction = 'left';
 			this.position.x--;
 			this.targetPosition.x -= Game.getAdjustedTileSize();
+			this.counter = 0;
 		} else if (KeyHandler.getKeyState('ArrowRight').down) {
 			this.moving = true;
 			this.direction = 'right';
 			this.position.x++;
 			this.targetPosition.x += Game.getAdjustedTileSize();
+			this.counter = 0;
 		}
 	}
 	move(lastFrameTime: number, currentFrameTime: number) {
 		if (!this.moving) {
 			return;
 		}
+
+		this.counter++;
 
 		const deltaTime = (currentFrameTime - lastFrameTime) / 1000; // in seconds
 
@@ -85,6 +93,7 @@ export class Player extends Entity {
 			this.subPosition.y === this.targetPosition.y
 		) {
 			this.moving = false;
+			this.walkFrame = this.walkFrame === 1 ? 2 : 1;
 		}
 	}
 }
