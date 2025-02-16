@@ -11,6 +11,7 @@ export class Player extends Entity {
 	direction: Direction;
 	moving: boolean = false;
 	speed: number = Game.getAdjustedTileSize() * 2;
+	walkFrame: number = 1;
 
 	constructor(x: number, y: number, direction: Direction) {
 		super(x, y);
@@ -26,7 +27,8 @@ export class Player extends Entity {
 			this.updateDirection();
 		}
 		this.move(game.lastFrameTime, currentFrameTime);
-		const sprite = SpriteBank.getSprite('player', this.direction);
+		const walkSprite = this.moving ? this.direction + this.walkFrame : this.direction;
+		const sprite = SpriteBank.getSprite('player', walkSprite);
 		game.canvas.drawAbsoluteImage(
 			sprite,
 			Math.round(this.subPosition.x),
