@@ -1,4 +1,5 @@
 import { AdjustedRect } from './AdjustedRect';
+import { Game } from './Game';
 
 interface DrawOptions {
 	color?: string;
@@ -34,6 +35,9 @@ export class Canvas {
 	drawImage(image: HTMLImageElement, x: number, y: number) {
 		const rect = new AdjustedRect(x, y);
 		this.context.drawImage(image, rect.x, rect.y, rect.width, rect.height);
+	}
+	drawAbsoluteImage(image: HTMLImageElement, x: number, y: number) {
+		this.context.drawImage(image, x, y, Game.getAdjustedTileSize(), Game.getAdjustedTileSize());
 	}
 	translate(x: number, y: number) {
 		const rect = new AdjustedRect(x, y);

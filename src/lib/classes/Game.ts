@@ -13,6 +13,7 @@ export class Game {
 	viewport = { width: 15, height: 11 };
 	static tileSize: number = 16;
 	static zoom: number = 2;
+	lastFrameTime: number = 0;
 
 	constructor(mapBuffer: string, canvas: HTMLCanvasElement, topCanvas: HTMLCanvasElement) {
 		this.map = GameMap.readMap(Buffer.from(mapBuffer, 'base64'));
@@ -29,15 +30,17 @@ export class Game {
 		await SpriteBank.readMap(this.map.name, this.map.area, this.map.images);
 		await SpriteBank.readBank('player', playerBank);
 	}
-	tick() {
+	tick(currentFrameTime: number) {
 		this.canvas.reset();
 		this.topCanvas.reset();
 		this.canvas.translate(
-			-(this.player.x - this.viewport.width / 2),
-			-(this.player.y - this.viewport.height / 2)
+			-(this.player.subPosition.x / Game.getAdjustedTileSize() - this.viewport.width / 2),
+			-(this.player.subPosition.y / Game.getAdjustedTileSize() - this.viewport.height / 2)
 		);
 		this.map.tick(this.canvas);
-		this.player.tick(this);
+		this.player.tick(this, currentFrameTime);
+
+		this.lastFrameTime = currentFrameTime;
 	}
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;

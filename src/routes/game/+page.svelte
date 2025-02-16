@@ -9,19 +9,16 @@
 	let game: Game;
 
 	async function init() {
-		let animId = 0;
-
 		if (canvasRef) {
 			game = new Game(data.map, canvasRef, topCanvasRef);
 
 			await game.init();
 
-			const render = () => {
-				animId++;
-				game.tick();
+			const render = (frameTime: number) => {
+				game.tick(frameTime);
 				window.requestAnimationFrame(render);
 			};
-			render();
+			render(0);
 		}
 	}
 
