@@ -57,6 +57,7 @@ export const actions = {
 		buffer.writeString(simplifiedName);
 		buffer.writeByte(width / 16);
 		buffer.writeByte(height / 16);
+		buffer.writeByte(0);
 		buffer.writeShort(images.length);
 		for (const image of images) {
 			buffer.writeString(image);

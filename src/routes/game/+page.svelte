@@ -5,12 +5,11 @@
 
 	let { data } = $props();
 	let canvasRef: HTMLCanvasElement;
-	let topCanvasRef: HTMLCanvasElement;
 	let game: Game;
 
 	async function init() {
 		if (canvasRef) {
-			game = new Game(data.map, canvasRef, topCanvasRef);
+			game = new Game(data.map, canvasRef);
 
 			await game.init();
 
@@ -39,7 +38,6 @@
 
 <div class="container" onkeydown={onKeyDown} onkeyup={onKeyUp} tabIndex={1}>
 	<canvas bind:this={canvasRef}></canvas>
-	<canvas class="topCanvas" bind:this={topCanvasRef}></canvas>
 </div>
 
 <style>
@@ -48,9 +46,5 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		position: relative;
-	}
-	.topCanvas {
-		position: absolute;
-		top: 0;
 	}
 </style>

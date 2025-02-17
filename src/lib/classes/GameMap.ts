@@ -28,10 +28,20 @@ export class GameMap {
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
 	}
+	drawBaseLayer(canvas: Canvas) {
+		for (let y = 0; y < this.height; y++) {
+			for (let x = 0; x < this.width; x++) {
+				canvas.drawTile(SpriteBank.getTile(this.name, this.area, this.backgroundTile), x, y);
+			}
+		}
+	}
 	tick(canvas: Canvas) {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				const tile = this.tiles[y][x];
+				if (tile.id === this.backgroundTile) {
+					continue;
+				}
 				canvas.drawTile(SpriteBank.getTile(this.name, this.area, tile.id), x, y);
 			}
 		}
