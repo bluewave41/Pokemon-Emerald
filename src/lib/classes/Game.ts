@@ -10,7 +10,7 @@ export class Game {
 	map: GameMap;
 	canvas: Canvas;
 	player: Player;
-	viewport = { width: 15, height: 11 };
+	viewport = { width: 15, height: 11, pos: { x: 0, y: 0 } };
 	static tileSize: number = 16;
 	static zoom: number = 2;
 	lastFrameTime: number = 0;
@@ -29,10 +29,13 @@ export class Game {
 	}
 	tick(currentFrameTime: number) {
 		this.canvas.reset();
-		this.canvas.translate(
-			-(this.player.subPosition.x / Game.getAdjustedTileSize() - this.viewport.width / 2),
-			-(this.player.subPosition.y / Game.getAdjustedTileSize() - this.viewport.height / 2)
-		);
+
+		this.viewport.pos = {
+			x: -(this.player.subPosition.x / Game.getAdjustedTileSize() - this.viewport.width / 2),
+			y: -(this.player.subPosition.y / Game.getAdjustedTileSize() - this.viewport.height / 2)
+		};
+
+		this.canvas.translate(this.viewport.pos.x, this.viewport.pos.y);
 
 		// draw base layer
 		this.map.drawBaseLayer(this.canvas);
@@ -43,6 +46,10 @@ export class Game {
 		KeyHandler.tick();
 
 		this.lastFrameTime = currentFrameTime;
+
+		this.canvas.translate(-this.viewport.pos.x, -this.viewport.pos.y);
+
+		this.canvas.showMessageBox();
 	}
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;

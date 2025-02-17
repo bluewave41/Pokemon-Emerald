@@ -21,6 +21,13 @@ export class Canvas {
 		this.context.resetTransform();
 		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
+	drawText(text: string, x: number, y: number) {
+		this.context.font = '16pt "pokemon"';
+		this.context.fillStyle = 'black';
+		const metrics = this.context.measureText(text);
+		const fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+		this.context.fillText(text, x, y + fontHeight);
+	}
 	drawTile(image: HTMLImageElement, x: number, y: number) {
 		const rect = new AdjustedRect(x, y);
 		this.context.drawImage(image, rect.x, rect.y, rect.width, rect.height);
@@ -42,6 +49,20 @@ export class Canvas {
 	translate(x: number, y: number) {
 		const rect = new AdjustedRect(x, y);
 		this.context.translate(rect.x, rect.y);
+	}
+	showMessageBox() {
+		const gap = 5;
+		const size = 60;
+		const rectOffset = 2;
+		this.context.fillStyle = 'black';
+		this.context.fillRect(
+			gap - rectOffset,
+			this.canvas.height - size - gap - rectOffset,
+			this.canvas.width - gap * 2 + rectOffset * 2,
+			size + rectOffset * 2
+		);
+		this.context.fillStyle = 'white';
+		this.context.fillRect(gap, this.canvas.height - gap - size, this.canvas.width - gap * 2, size);
 	}
 	get width() {
 		return this.canvas.width;

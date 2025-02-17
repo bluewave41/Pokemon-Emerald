@@ -103,3 +103,8 @@ html,
 body {
 	height: 100%;
 }
+
+@font-face {
+	font-family: 'pokemon';
+	src: url('/pokemon-emerald.ttf') format('truetype');
+}

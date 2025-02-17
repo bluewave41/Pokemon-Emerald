@@ -74,7 +74,7 @@ export class Player extends Entity {
 			const tableEntry = moveTable[direction];
 			const newTile = game.map.getTile(tableEntry.x, tableEntry.y);
 			const keyState = KeyHandler.getKeyState(direction);
-			if (keyState.holdCount > 5 && newTile.isPassable()) {
+			if (keyState.holdCount > 8 && newTile.isPassable()) {
 				this.moving = true;
 				this.position = { x: tableEntry.x, y: tableEntry.y };
 				this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
