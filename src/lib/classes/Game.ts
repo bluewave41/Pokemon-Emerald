@@ -21,14 +21,13 @@ export class Game {
 		this.canvas = new Canvas(canvas);
 		this.topCanvas = new Canvas(topCanvas);
 		this.player = new Player(10, 10, 'down');
-		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 		this.topCanvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.topCanvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 	}
 	async init() {
-		const playerBank = (await axios.get('./sprites?bank=player')).data;
 		await SpriteBank.readMap(this.map.name, this.map.area, this.map.images);
+		const playerBank = (await axios.get('sprites?bank=player')).data;
 		await SpriteBank.readBank('player', playerBank);
 	}
 	tick(currentFrameTime: number) {
@@ -38,9 +37,11 @@ export class Game {
 			-(this.player.subPosition.x / Game.getAdjustedTileSize() - this.viewport.width / 2),
 			-(this.player.subPosition.y / Game.getAdjustedTileSize() - this.viewport.height / 2)
 		);
+
 		this.map.tick(this.canvas);
 		this.player.tick(this, currentFrameTime);
 		KeyHandler.tick();
+
 		this.lastFrameTime = currentFrameTime;
 	}
 	static getAdjustedTileSize() {

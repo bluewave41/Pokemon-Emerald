@@ -36,6 +36,7 @@ export const actions = {
 		buffer.writeString(map.name);
 		buffer.writeByte(map.width);
 		buffer.writeByte(map.height);
+		buffer.writeByte(map.backgroundTile.id);
 		buffer.writeShort(map.images.length);
 		for (const image of map.images) {
 			buffer.writeString(image);

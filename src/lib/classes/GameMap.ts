@@ -11,13 +11,22 @@ export class GameMap {
 	height: number;
 	images: string[];
 	tiles: Tile[][];
+	backgroundTile: number = -1;
 
-	constructor(name: MapNames, width: number, height: number, images: string[], tiles: Tile[][]) {
+	constructor(
+		name: MapNames,
+		width: number,
+		height: number,
+		images: string[],
+		tiles: Tile[][],
+		backgroundTile: number
+	) {
 		this.name = name;
 		this.width = width;
 		this.height = height;
 		this.images = images;
 		this.tiles = tiles;
+		this.backgroundTile = backgroundTile;
 	}
 	tick(canvas: Canvas) {
 		for (let y = 0; y < this.height; y++) {
@@ -34,6 +43,7 @@ export class GameMap {
 		const name = buffer.readString() as MapNames;
 		const width = buffer.readByte();
 		const height = buffer.readByte();
+		const backgroundTile = buffer.readByte();
 		const imageCount = buffer.readShort();
 		const images = [];
 		for (let i = 0; i < imageCount; i++) {
@@ -49,7 +59,7 @@ export class GameMap {
 			map.push(row);
 		}
 
-		return new GameMap(name, width, height, images, map);
+		return new GameMap(name, width, height, images, map, backgroundTile);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];

@@ -2,13 +2,22 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { Game } from '$lib/classes/Game.js';
+	import { GameEditor } from '$lib/classes/GameEditor.js';
+	import SpriteBank from '$lib/classes/SpriteBank.js';
 
 	let { data } = $props();
 	let canvasRef: HTMLCanvasElement;
 	let topCanvasRef: HTMLCanvasElement;
-	let game: Game;
+	let game: GameEditor;
 	let selectedColor = $state(0);
-	let mouseDown = $state(false);
+	let mouse = $state({
+		down: false,
+		selectingBackground: false
+	});
+	let backgroundTile: { id: number | null; data: string | null } = $state({
+		id: null,
+		data: null
+	});
 
 	const colorTable: Record<number, string> = {
 		0: 'blue',
@@ -20,9 +29,13 @@
 		let animId = 0;
 
 		if (canvasRef) {
-			game = new Game(data.map, canvasRef, topCanvasRef);
-
+			game = new GameEditor(data.map, canvasRef, topCanvasRef);
 			await game.init();
+
+			backgroundTile = {
+				id: game.map.backgroundTile,
+				data: SpriteBank.getTile(game.map.name, game.map.area, game.map.backgroundTile).src
+			};
 
 			const render = () => {
 				animId++;
@@ -57,15 +70,24 @@
 
 	const onMouseMove = (e: MouseEvent) => {
 		const { x, y } = getMousePosition(e);
-		if (mouseDown) {
+		if (mouse.down) {
 			const tile = game.map.getTile(x, y);
 			tile.permissions = selectedColor;
 		}
 	};
 
 	const onMouseDown = (e: MouseEvent) => {
-		mouseDown = true;
 		const { x, y } = getMousePosition(e);
+
+		if (mouse.selectingBackground) {
+			const tile = game.map.getTile(x, y);
+			backgroundTile = {
+				id: tile.id,
+				data: SpriteBank.getTile(game.map.name, game.map.area, tile.id).src
+			};
+			return;
+		}
+		mouse.down = true;
 		const tile = game.map.getTile(x, y);
 		tile.permissions = selectedColor;
 	};
@@ -77,7 +99,7 @@
 	class="container"
 	onmousemove={onMouseMove}
 	onmousedown={onMouseDown}
-	onmouseup={() => (mouseDown = false)}
+	onmouseup={() => (mouse.down = false)}
 >
 	<canvas bind:this={canvasRef}></canvas>
 	<canvas class="topCanvas" bind:this={topCanvasRef}></canvas>
@@ -89,12 +111,14 @@
 			onclick={() => (selectedColor = parseInt(key))}>{key}</button
 		>
 	{/each}
+	<img class="image" src={backgroundTile.data} onclick={() => (mouse.selectingBackground = true)} />
 </div>
 
 <form
 	method="POST"
 	action="?/save"
-	use:enhance={({ formData }) => formData.append('map', JSON.stringify(game.map.toJSON()))}
+	use:enhance={({ formData }) =>
+		formData.append('map', JSON.stringify({ ...game.map.toJSON(), backgroundTile }))}
 >
 	<button>Save</button>
 </form>
@@ -138,5 +162,14 @@
 	}
 	.selected {
 		outline: 1px solid yellow;
+	}
+	.image {
+		width: 1rem;
+		height: 1rem;
+		outline: 1px solid blue;
+
+		&:hover {
+			cursor: pointer;
+		}
 	}
 </style>
