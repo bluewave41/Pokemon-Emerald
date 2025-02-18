@@ -1,9 +1,21 @@
 <script>
 	import Game from '$lib/icons/game.svelte';
 	import Image from '$lib/icons/image.svelte';
+	import Login from '$lib/icons/login.svelte';
+	import Logout from '$lib/icons/logout.svelte';
 	import Map from '$lib/icons/map.svelte';
 
 	const links = [
+		{
+			label: 'Login',
+			Icon: Login,
+			href: '/account/login'
+		},
+		{
+			label: 'Logout',
+			Icon: Logout,
+			href: '/account/logout'
+		},
 		{
 			label: 'Maps',
 			Icon: Map,

@@ -14,6 +14,7 @@ export class Game {
 	static tileSize: number = 16;
 	static zoom: number = 2;
 	lastFrameTime: number = 0;
+	activeTextBox: string | null = null;
 
 	constructor(mapBuffer: string, canvas: HTMLCanvasElement) {
 		this.map = GameMap.readMap(Buffer.from(mapBuffer, 'base64'));
@@ -49,7 +50,14 @@ export class Game {
 
 		this.canvas.translate(-this.viewport.pos.x, -this.viewport.pos.y);
 
-		this.canvas.showMessageBox();
+		if (KeyHandler.getActiveKeyState('Enter').active) {
+			this.activeTextBox = 'Hello!';
+		} else {
+			this.activeTextBox = null;
+		}
+		if (this.activeTextBox !== null) {
+			this.canvas.showMessageBox();
+		}
 	}
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;
