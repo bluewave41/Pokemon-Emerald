@@ -50,11 +50,6 @@ export class Game {
 
 		this.canvas.translate(-this.viewport.pos.x, -this.viewport.pos.y);
 
-		if (KeyHandler.getActiveKeyState('Enter').active) {
-			this.activeTextBox = 'Hello!';
-		} else {
-			this.activeTextBox = null;
-		}
 		if (this.activeTextBox !== null) {
 			this.canvas.showMessageBox();
 		}

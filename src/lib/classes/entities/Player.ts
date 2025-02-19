@@ -1,5 +1,7 @@
 import type { Direction } from '$lib/interfaces/Direction';
+import type { TileType } from '$lib/interfaces/TileType';
 import { Game } from '../Game';
+import type { GameMap } from '../GameMap';
 import KeyHandler from '../KeyHandler';
 import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
@@ -36,6 +38,11 @@ export class Player extends Entity {
 			Math.round(this.subPosition.x),
 			Math.round(this.subPosition.y + (this.counter < 20 ? 1 : 0))
 		);
+
+		if (KeyHandler.getActiveKeyState('z').down) {
+			const tile = this.getFacingTile(game.map);
+			tile.activate(game);
+		}
 	}
 	updateDirection(game: Game) {
 		const moveTable = {
@@ -82,6 +89,20 @@ export class Player extends Entity {
 			}
 			// we should always turn to face the direction
 			this.direction = tableEntry.direction as Direction;
+		}
+	}
+	getFacingTile(map: GameMap) {
+		const pos = this.position;
+		if (this.direction === 'left') {
+			return map.getTile(pos.x - 1, pos.y);
+		} else if (this.direction === 'right') {
+			return map.getTile(pos.x + 1, pos.y);
+		} else if (this.direction === 'up') {
+			return map.getTile(pos.x, pos.y - 1);
+		} else if (this.direction === 'down') {
+			return map.getTile(pos.x, pos.y + 1);
+		} else {
+			throw new Error('Invalid player direction.');
 		}
 	}
 	move(lastFrameTime: number, currentFrameTime: number) {

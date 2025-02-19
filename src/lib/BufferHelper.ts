@@ -58,6 +58,9 @@ export class BufferHelper {
 	getBuffer() {
 		return this.#buffer;
 	}
+	hasMore() {
+		return this.#index < this.#buffer.length;
+	}
 	get length() {
 		return this.#buffer.length;
 	}

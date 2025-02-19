@@ -1,8 +1,12 @@
 import { BufferHelper } from '$lib/BufferHelper';
+import type { MapEvent } from '$lib/interfaces/Events';
 import type { MapNames } from '$lib/interfaces/MapNames';
+import type { TileType } from '$lib/interfaces/TileType';
+import { EventMap } from '$lib/utils/EventMap';
 import type { Canvas } from './Canvas';
 import SpriteBank from './SpriteBank';
-import { Tile } from './Tile';
+import { SignTile } from './tiles/SignTile';
+import { Tile } from './tiles/Tile';
 
 export class GameMap {
 	name: MapNames;
@@ -10,16 +14,18 @@ export class GameMap {
 	width: number;
 	height: number;
 	images: string[];
-	tiles: Tile[][];
+	tiles: TileType[][];
 	backgroundTile: number = -1;
+	events: MapEvent[] = [];
 
 	constructor(
 		name: MapNames,
 		width: number,
 		height: number,
 		images: string[],
-		tiles: Tile[][],
-		backgroundTile: number
+		tiles: TileType[][],
+		backgroundTile: number,
+		events: MapEvent[]
 	) {
 		this.name = name;
 		this.width = width;
@@ -27,6 +33,7 @@ export class GameMap {
 		this.images = images;
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
+		this.events = events;
 	}
 	drawBaseLayer(canvas: Canvas) {
 		for (let y = 0; y < this.height; y++) {
@@ -60,16 +67,34 @@ export class GameMap {
 			images.push(buffer.readString());
 		}
 
-		const map: Tile[][] = [];
+		const map: TileType[][] = [];
 		for (let y = 0; y < height; y++) {
 			const row = [];
 			for (let x = 0; x < width; x++) {
-				row.push(new Tile(buffer.readByte(), buffer.readByte()));
+				row.push(new Tile(x, y, buffer.readByte(), buffer.readByte()));
 			}
 			map.push(row);
 		}
 
-		return new GameMap(name, width, height, images, map, backgroundTile);
+		const events: MapEvent[] = [];
+		while (buffer.hasMore()) {
+			const eventId = buffer.readByte();
+			const event = EventMap[eventId];
+			if (!event) {
+				throw new Error('Unhandled event!');
+			}
+			events.push(event.read(buffer));
+		}
+
+		for (const event of events) {
+			const { x, y } = event.position;
+			const tile = map[y][x];
+			if (event.type === 'sign') {
+				map[y][x] = new SignTile(tile, event.text);
+			}
+		}
+
+		return new GameMap(name, width, height, images, map, backgroundTile, events);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];

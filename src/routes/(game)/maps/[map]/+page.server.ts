@@ -5,6 +5,7 @@ import { zfd } from 'zod-form-data';
 import { fail } from '@sveltejs/kit';
 import { BufferHelper } from '$lib/BufferHelper';
 import { Jimp, rgbaToInt } from 'jimp';
+import { EventMap } from '$lib/utils/EventMap';
 
 const removeImageBackground = async (background: string, top: string) => {
 	if (background === top) {
@@ -71,6 +72,12 @@ export const actions = {
 				buffer.writeByte(map.tiles[y][x].id);
 				buffer.writeByte(map.tiles[y][x].permissions);
 			}
+		}
+
+		// write events
+		for (const event of map.events) {
+			const e = EventMap[event.id];
+			e?.write(buffer, event);
 		}
 
 		await fs.writeFile(`./static/maps/${map.name}.map`, buffer.getUsed(), 'binary');
