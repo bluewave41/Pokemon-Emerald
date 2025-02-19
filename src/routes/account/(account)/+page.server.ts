@@ -64,7 +64,6 @@ export const actions = {
 		});
 
 		if (user) {
-			console.log('iser!');
 			return fail(409, { error: 'Username already exists.' });
 		}
 

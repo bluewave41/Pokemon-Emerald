@@ -50,19 +50,21 @@ export class Canvas {
 		const rect = new AdjustedRect(x, y);
 		this.context.translate(rect.x, rect.y);
 	}
-	showMessageBox() {
+	showMessageBox(text: string) {
 		const gap = 5;
 		const size = 60;
 		const rectOffset = 2;
+
+		const x = gap - rectOffset;
+		const y = this.canvas.height - size - gap - rectOffset;
+		const length = this.canvas.width - gap * 2 + rectOffset * 2;
+		const height = size + rectOffset * 2;
+
 		this.context.fillStyle = 'black';
-		this.context.fillRect(
-			gap - rectOffset,
-			this.canvas.height - size - gap - rectOffset,
-			this.canvas.width - gap * 2 + rectOffset * 2,
-			size + rectOffset * 2
-		);
+		this.context.fillRect(x, y, length, height);
 		this.context.fillStyle = 'white';
 		this.context.fillRect(gap, this.canvas.height - gap - size, this.canvas.width - gap * 2, size);
+		this.drawText(text, x + gap, y);
 	}
 	get width() {
 		return this.canvas.width;

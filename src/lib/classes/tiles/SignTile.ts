@@ -11,7 +11,6 @@ export class SignTile extends Tile {
 		this.text = text;
 	}
 	activate(game: Game) {
-		console.log(this.text);
 		game.activeTextBox = this.text;
 	}
 }

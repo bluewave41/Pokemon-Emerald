@@ -26,10 +26,7 @@ export class Player extends Entity {
 		this.direction = direction;
 	}
 	tick(game: Game, currentFrameTime: number) {
-		if (!this.moving) {
-			this.updateDirection(game);
-		}
-		this.move(game.lastFrameTime, currentFrameTime);
+		// we should always draw the Player
 		const walkSprite =
 			this.moving && this.counter < 20 ? this.direction + this.walkFrame : this.direction;
 		const sprite = SpriteBank.getSprite('player', walkSprite);
@@ -38,6 +35,17 @@ export class Player extends Entity {
 			Math.round(this.subPosition.x),
 			Math.round(this.subPosition.y + (this.counter < 20 ? 1 : 0))
 		);
+
+		// but don't let them move if a textbox or something is active...
+		if (!game.canPlayerMove) {
+			return;
+		}
+
+		if (!this.moving) {
+			this.updateDirection(game);
+		}
+
+		this.move(game.lastFrameTime, currentFrameTime);
 
 		if (KeyHandler.getActiveKeyState('z').down) {
 			const tile = this.getFacingTile(game.map);
