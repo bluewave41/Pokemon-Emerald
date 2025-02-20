@@ -1,5 +1,5 @@
 import { Canvas } from './Canvas';
-import { GameMap } from './GameMap';
+import { GameMap } from './maps/GameMap';
 import SpriteBank from './SpriteBank';
 import { Buffer } from 'buffer';
 

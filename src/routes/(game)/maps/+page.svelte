@@ -18,7 +18,9 @@
 
 		<div>
 			{#each data.maps as map}
-				- <a class="map" href={`/maps/${map}`}>{map}</a>
+				<div>
+					- <a class="map" href={`/maps/${map}`}>{map}</a>
+				</div>
 			{/each}
 		</div>
 	</div>

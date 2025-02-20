@@ -3,10 +3,10 @@ import type { MapEvent } from '$lib/interfaces/Events';
 import type { MapNames } from '$lib/interfaces/MapNames';
 import type { TileType } from '$lib/interfaces/TileType';
 import { EventMap } from '$lib/utils/EventMap';
-import type { Canvas } from './Canvas';
-import SpriteBank from './SpriteBank';
-import { SignTile } from './tiles/SignTile';
-import { Tile } from './tiles/Tile';
+import type { Canvas } from '../Canvas';
+import SpriteBank from '../SpriteBank';
+import { SignTile } from '../tiles/SignTile';
+import { Tile } from '../tiles/Tile';
 
 export class GameMap {
 	name: MapNames;

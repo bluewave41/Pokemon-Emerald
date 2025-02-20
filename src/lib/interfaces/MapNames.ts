@@ -1,1 +1,1 @@
-export type MapNames = 'littleroot';
+export type MapNames = 'littleroot' | 'route101';

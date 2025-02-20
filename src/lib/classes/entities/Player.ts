@@ -1,7 +1,6 @@
 import type { Direction } from '$lib/interfaces/Direction';
-import type { TileType } from '$lib/interfaces/TileType';
 import { Game } from '../Game';
-import type { GameMap } from '../GameMap';
+import type { GameMap } from '../maps/GameMap';
 import KeyHandler from '../KeyHandler';
 import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
@@ -48,7 +47,7 @@ export class Player extends Entity {
 		this.move(game.lastFrameTime, currentFrameTime);
 
 		if (KeyHandler.getActiveKeyState('z').down) {
-			const tile = this.getFacingTile(game.map);
+			const tile = this.getFacingTile(game.mapHandler.active);
 			tile.activate(game);
 		}
 	}
@@ -87,7 +86,7 @@ export class Player extends Entity {
 		const direction = KeyHandler.getPrioritizedKey();
 		if (direction !== null) {
 			const tableEntry = moveTable[direction];
-			const newTile = game.map.getTile(tableEntry.x, tableEntry.y);
+			const newTile = game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
 			const keyState = KeyHandler.getKeyState(direction);
 			if (keyState.holdCount > 8 && newTile.isPassable()) {
 				this.moving = true;

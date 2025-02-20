@@ -1,11 +1,11 @@
-import { BufferHelper } from '$lib/BufferHelper';
 import type { BankNames } from '$lib/interfaces/BankNames';
 import type { MapNames } from '$lib/interfaces/MapNames';
 import type { SpriteFile } from '$lib/interfaces/SpriteFile';
 
 class InternalSpriteBank {
 	maps: Record<MapNames, Record<string, Record<number, HTMLImageElement>>> = {
-		littleroot: {}
+		littleroot: {},
+		route101: {}
 	};
 	sprites: Record<BankNames, Record<string, HTMLImageElement>> = {
 		player: {}

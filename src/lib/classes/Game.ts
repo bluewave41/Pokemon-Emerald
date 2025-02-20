@@ -1,13 +1,14 @@
 import axios from 'axios';
 import { Canvas } from './Canvas';
 import { Player } from './entities/Player';
-import { GameMap } from './GameMap';
+import { GameMap } from './maps/GameMap';
 import SpriteBank from './SpriteBank';
 import { Buffer } from 'buffer';
 import KeyHandler from './KeyHandler';
+import { MapHandler } from './maps/MapHandler';
 
 export class Game {
-	map: GameMap;
+	mapHandler: MapHandler;
 	canvas: Canvas;
 	player: Player;
 	viewport = { width: 15, height: 11, pos: { x: 0, y: 0 } };
@@ -18,14 +19,18 @@ export class Game {
 	canPlayerMove: boolean = true;
 
 	constructor(mapBuffer: string, canvas: HTMLCanvasElement) {
-		this.map = GameMap.readMap(Buffer.from(mapBuffer, 'base64'));
+		this.mapHandler = new MapHandler(GameMap.readMap(Buffer.from(mapBuffer, 'base64')));
 		this.canvas = new Canvas(canvas);
 		this.player = new Player(10, 10, 'down');
 		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 	}
 	async init() {
-		await SpriteBank.readMap(this.map.name, this.map.area, this.map.images);
+		await SpriteBank.readMap(
+			this.mapHandler.active.name,
+			this.mapHandler.active.area,
+			this.mapHandler.active.images
+		);
 		const playerBank = (await axios.get('sprites?bank=player')).data;
 		await SpriteBank.readBank('player', playerBank);
 	}
@@ -40,11 +45,11 @@ export class Game {
 		this.canvas.translate(this.viewport.pos.x, this.viewport.pos.y);
 
 		// draw base layer
-		this.map.drawBaseLayer(this.canvas);
+		this.mapHandler.active.drawBaseLayer(this.canvas);
 		// draw player on top
 		this.player.tick(this, currentFrameTime);
 		// draw map elements so the player hides behind the,
-		this.map.tick(this.canvas);
+		this.mapHandler.active.tick(this.canvas);
 		KeyHandler.tick();
 
 		this.lastFrameTime = currentFrameTime;
