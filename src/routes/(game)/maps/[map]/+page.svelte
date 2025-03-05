@@ -123,10 +123,10 @@
 						if (!options.activeTile) {
 							break;
 						}
-						game.map.getTile(x, y).tileId = options.activeTile;
+						game.map.getTile(x, y).id = options.activeTile;
 						break;
 					case 2:
-						options.activeTile = game.map.getTile(x, y).tileId;
+						options.activeTile = game.map.getTile(x, y).id;
 						break;
 				}
 				break;

@@ -84,7 +84,7 @@ export const actions = {
 			}
 		});
 
-		const tiles = await prisma.mapTiles.findMany({
+		/*const tiles = await prisma.mapTiles.findMany({
 			select: {
 				tile: {
 					select: {
@@ -95,58 +95,26 @@ export const actions = {
 			where: {
 				mapId: updated.id
 			}
-		});
-
-		console.log(tiles);
+		});*/
 
 		// now we need to remove the background tile from each tile
 
-		console.log('TILES', map.tiles.flat());
-
-		await prisma.mapTiles.updateMany({
-			data: map.tiles
-				.flat()
-				.map((tile) => ({
-					x: tile.x,
-					y: tile.y,
-					tileId: tile.id,
-					permissions: tile.permissions
-				}))
-				.slice(0, 1),
-			where: {
-				mapId: updated.id
-			}
-		});
-
-		/*const map = JSON.parse(result.data.map);
-
-		const buffer = new BufferHelper(Buffer.alloc(30000));
-		buffer.writeByte(1);
-		buffer.writeString(map.name);
-		buffer.writeByte(map.width);
-		buffer.writeByte(map.height);
-		buffer.writeByte(map.backgroundTile.id);
-		buffer.writeShort(map.images.length);
-
-		// now lets remove the background for every image where it matches the background tile
-
-		//for (const image of map.images) {
-		//	buffer.writeString(await removeImageBackground(map.backgroundTile.data, image));
-		//}
-
-		for (let y = 0; y < map.tiles.length; y++) {
-			for (let x = 0; x < map.tiles[0].length; x++) {
-				buffer.writeByte(map.tiles[y][x].id);
-				buffer.writeByte(map.tiles[y][x].permissions);
-			}
-		}
-
-		// write events
-		for (const event of map.events) {
-			const e = EventMap[event.id];
-			e?.write(buffer, event);
-		}
-
-		await fs.writeFile(`./static/maps/${map.name}.map`, buffer.getUsed(), 'binary');*/
+		await prisma.$transaction(
+			map.tiles.flat().map((tile) =>
+				prisma.mapTiles.update({
+					where: {
+						mapId_x_y: {
+							x: tile.x,
+							y: tile.y,
+							mapId: updated.id
+						}
+					},
+					data: {
+						tileId: tile.id,
+						permissions: tile.permissions
+					}
+				})
+			)
+		);
 	}
 };

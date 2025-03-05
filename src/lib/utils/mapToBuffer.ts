@@ -6,7 +6,8 @@ export const mapToBuffer = async (name: MapNames) => {
 	const map = await prisma.maps.findFirst({
 		include: {
 			MapTile: {
-				include: { tile: true }
+				include: { tile: true },
+				orderBy: { id: 'asc' }
 			}
 		},
 		where: {
@@ -19,7 +20,6 @@ export const mapToBuffer = async (name: MapNames) => {
 	}
 
 	const uniqueTiles = await prisma.mapTiles.findMany({
-		where: { mapId: map.id },
 		distinct: ['tileId'],
 		select: {
 			tileId: true,
@@ -28,7 +28,9 @@ export const mapToBuffer = async (name: MapNames) => {
 					data: true
 				}
 			}
-		}
+		},
+		orderBy: { id: 'asc' },
+		where: { mapId: map.id }
 	});
 
 	const buffer = new BufferHelper(Buffer.alloc(30000));

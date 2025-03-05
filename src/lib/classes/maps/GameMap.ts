@@ -119,9 +119,12 @@ export class GameMap {
 	toJSON() {
 		return {
 			name: this.name,
+			area: this.area,
 			width: this.width,
 			height: this.height,
-			tiles: this.tiles
+			tiles: this.tiles,
+			images: this.images,
+			backgroundTile: this.backgroundTile
 		};
 	}
 }

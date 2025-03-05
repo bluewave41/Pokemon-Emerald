@@ -19,7 +19,6 @@ export class MapHandler {
 		const connections = Connections[this.active.name];
 		if (connections.up) {
 			const response = await axios.get(`/maps?name=${connections.up}`);
-			console.log(response);
 			if (response.status === 200) {
 				this.up = GameMap.readMap(Buffer.from(response.data, 'base64'));
 				await SpriteBank.readMap(this.up.name, this.up.area, this.up.images);
