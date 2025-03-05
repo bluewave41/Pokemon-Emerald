@@ -23,7 +23,7 @@ class InternalSpriteBank {
 						const image = new Image();
 
 						image.onload = () => {
-							this.maps[map][area][index] = image;
+							this.maps[map][area][index + 1] = image;
 							resolve();
 						};
 						image.src = src;

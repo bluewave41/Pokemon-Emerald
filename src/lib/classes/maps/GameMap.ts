@@ -1,12 +1,31 @@
 import { BufferHelper } from '$lib/BufferHelper';
 import type { MapEvent } from '$lib/interfaces/Events';
-import type { MapNames } from '$lib/interfaces/MapNames';
+import { mapNamesSchema, type MapNames } from '$lib/interfaces/MapNames';
 import type { TileType } from '$lib/interfaces/TileType';
-import { EventMap } from '$lib/utils/EventMap';
+import { z } from 'zod';
 import type { Canvas } from '../Canvas';
 import SpriteBank from '../SpriteBank';
-import { SignTile } from '../tiles/SignTile';
-import { Tile } from '../tiles/Tile';
+import { Tile, tileSchema } from '../tiles/Tile';
+
+export const gameMapSchema = z.object({
+	name: mapNamesSchema,
+	area: z.string(),
+	width: z.number(),
+	height: z.number(),
+	images: z.string().array(),
+	tiles: tileSchema.array().array(),
+	backgroundTile: z.number()
+});
+
+export interface GameMapType {
+	name: MapNames;
+	area: string;
+	width: number;
+	height: number;
+	images: string[];
+	tiles: TileType[][];
+	backgroundTile: number;
+}
 
 export class GameMap {
 	name: MapNames;
@@ -46,9 +65,6 @@ export class GameMap {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				const tile = this.tiles[y][x];
-				if (tile.id === this.backgroundTile) {
-					continue;
-				}
 				canvas.drawTile(SpriteBank.getTile(this.name, this.area, tile.id), x, y);
 			}
 		}
@@ -63,6 +79,7 @@ export class GameMap {
 		const backgroundTile = buffer.readByte();
 		const imageCount = buffer.readShort();
 		const images = [];
+
 		for (let i = 0; i < imageCount; i++) {
 			images.push(buffer.readString());
 		}
@@ -76,7 +93,7 @@ export class GameMap {
 			map.push(row);
 		}
 
-		const events: MapEvent[] = [];
+		/*const events: MapEvent[] = [];
 		while (buffer.hasMore()) {
 			const eventId = buffer.readByte();
 			const event = EventMap[eventId];
@@ -92,9 +109,9 @@ export class GameMap {
 			if (event.type === 'sign') {
 				map[y][x] = new SignTile(tile, event.text);
 			}
-		}
+		}*/
 
-		return new GameMap(name, width, height, images, map, backgroundTile, events);
+		return new GameMap(name, width, height, images, map, backgroundTile, []);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];
@@ -104,7 +121,6 @@ export class GameMap {
 			name: this.name,
 			width: this.width,
 			height: this.height,
-			images: this.images,
 			tiles: this.tiles
 		};
 	}

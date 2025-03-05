@@ -11,11 +11,17 @@ export class Player extends Entity {
 	subPosition: Position;
 	direction: Direction;
 	moving: boolean = false;
-	speed: number = Game.getAdjustedTileSize() * 2;
+	speed: number = Game.getAdjustedTileSize() * 3;
 	walkFrame: number = 1;
 	counter: number = 0;
+	signalMapChange: (direction: Direction) => void;
 
-	constructor(x: number, y: number, direction: Direction) {
+	constructor(
+		x: number,
+		y: number,
+		direction: Direction,
+		signalMapChange: (direction: Direction) => void
+	) {
 		super(x, y);
 		this.targetPosition = new Position(
 			x * Game.getAdjustedTileSize(),
@@ -23,16 +29,17 @@ export class Player extends Entity {
 		);
 		this.subPosition = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 		this.direction = direction;
+		this.signalMapChange = signalMapChange;
 	}
 	tick(game: Game, currentFrameTime: number) {
 		// we should always draw the Player
 		const walkSprite =
-			this.moving && this.counter < 20 ? this.direction + this.walkFrame : this.direction;
+			this.moving && this.counter < 10 ? this.direction + this.walkFrame : this.direction;
 		const sprite = SpriteBank.getSprite('player', walkSprite);
 		game.canvas.drawAbsoluteImage(
 			sprite,
-			Math.round(this.subPosition.x),
-			Math.round(this.subPosition.y + (this.counter < 20 ? 1 : 0))
+			Math.round(this.subPosition.x) + 3,
+			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) - 7
 		);
 
 		// but don't let them move if a textbox or something is active...
@@ -86,16 +93,40 @@ export class Player extends Entity {
 		const direction = KeyHandler.getPrioritizedKey();
 		if (direction !== null) {
 			const tableEntry = moveTable[direction];
-			const newTile = game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
-			const keyState = KeyHandler.getKeyState(direction);
-			if (keyState.holdCount > 8 && newTile.isPassable()) {
+			if (this.isNewTileOutsideMap(game, tableEntry.x, tableEntry.y)) {
+				//this.signalMapChange(this.getOutsideMapDirection(game, tableEntry.x, tableEntry.y));
 				this.moving = true;
-				this.position = { x: tableEntry.x, y: tableEntry.y };
+				this.position = { x: tableEntry.x, y: game.mapHandler.active.height };
 				this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
+				console.log('here', this.position, this.targetPosition);
 				this.counter = 0;
+			} else {
+				const newTile = game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
+				const keyState = KeyHandler.getKeyState(direction);
+				if (keyState.holdCount > 8 && newTile.isPassable()) {
+					this.moving = true;
+					this.position = { x: tableEntry.x, y: tableEntry.y };
+					this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
+					console.log(this.position, this.targetPosition);
+					this.counter = 0;
+				}
+				// we should always turn to face the direction
+				this.direction = tableEntry.direction as Direction;
 			}
-			// we should always turn to face the direction
-			this.direction = tableEntry.direction as Direction;
+		}
+	}
+	isNewTileOutsideMap(game: Game, x: number, y: number) {
+		return x < 0 || y < 0 || x > game.mapHandler.active.width || y > game.mapHandler.active.height;
+	}
+	getOutsideMapDirection(game: Game, x: number, y: number) {
+		if (x < 0) {
+			return 'left';
+		} else if (y < 0) {
+			return 'up';
+		} else if (x > game.mapHandler.active.width) {
+			return 'right';
+		} else if (y > game.mapHandler.active.height) {
+			return 'down';
 		}
 	}
 	getFacingTile(map: GameMap) {
@@ -128,9 +159,7 @@ export class Player extends Entity {
 			this.subPosition.x = Math.round(Math.min(this.subPosition.x + moveX, this.targetPosition.x));
 		} else if (this.direction === 'left') {
 			this.subPosition.x = Math.round(Math.max(this.subPosition.x - moveX, this.targetPosition.x));
-		}
-
-		if (this.direction === 'down') {
+		} else if (this.direction === 'down') {
 			this.subPosition.y = Math.round(Math.min(this.subPosition.y + moveY, this.targetPosition.y));
 		} else if (this.direction === 'up') {
 			this.subPosition.y = Math.round(Math.max(this.subPosition.y - moveY, this.targetPosition.y));

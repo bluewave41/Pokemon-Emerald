@@ -1,13 +1,12 @@
 import { fail } from '@sveltejs/kit';
 import { zfd } from 'zod-form-data';
 import { Jimp } from 'jimp';
-import { promises as fs } from 'fs';
 import type { PageServerLoad } from './$types.js';
 import { removeExtension } from '$lib/utils/removeExtension.js';
-import { BufferHelper } from '$lib/BufferHelper.js';
+import prisma from '$lib/prisma.js';
 
 export const load: PageServerLoad = async () => {
-	const maps = (await fs.readdir('./static/maps')).map(removeExtension);
+	const maps = (await prisma.maps.findMany()).map((map) => map.name);
 
 	return {
 		maps
@@ -36,23 +35,28 @@ export const actions = {
 
 		const { width, height } = image.bitmap;
 
-		const images: string[] = [];
-		const map = [];
+		const images: { data: string; hash: string }[] = [];
+		const map: number[][] = [];
 
 		for (let y = 0; y < height; y += 16) {
 			const row = [];
 			for (let x = 0; x < width; x += 16) {
 				const tile = image.clone().crop({ x, y, w: 16, h: 16 });
 				const base64 = await tile.getBase64('image/png');
-				if (!images.includes(base64)) {
-					images.push(base64);
+				const hash = tile.hash();
+				const foundImage = images.find((img) => img.hash === hash);
+				if (!foundImage) {
+					images.push({
+						data: base64,
+						hash
+					});
 				}
-				row.push(images.findIndex((image) => image === base64));
+				row.push(images.findIndex((image) => image.hash === hash) + 1);
 			}
 			map.push(row);
 		}
 
-		const buffer = new BufferHelper(Buffer.alloc(30000));
+		/*const buffer = new BufferHelper(Buffer.alloc(30000));
 		buffer.writeByte(1);
 		buffer.writeString(simplifiedName);
 		buffer.writeByte(width / 16);
@@ -68,8 +72,46 @@ export const actions = {
 				buffer.writeByte(map[y][x]);
 				buffer.writeByte(0);
 			}
-		}
+		}*/
 
-		await fs.writeFile(`./static/maps/${simplifiedName}.map`, buffer.getUsed(), 'binary');
+		await prisma.$transaction(async (transaction) => {
+			const insertedMap = await transaction.maps.create({
+				data: {
+					name: simplifiedName,
+					area: 'overworld',
+					width: width / 16,
+					height: height / 16
+				}
+			});
+
+			const highestTileId =
+				(
+					await prisma.tiles.findFirst({
+						orderBy: { id: 'desc' },
+						select: { id: true }
+					})
+				)?.id ?? 1;
+
+			await transaction.tiles.createMany({
+				data: images.map((img, index) => ({
+					...img,
+					id: index + highestTileId,
+					original: img.data
+				})),
+				skipDuplicates: true
+			});
+
+			await transaction.mapTiles.createMany({
+				data: map.flatMap((col, y) =>
+					col.flatMap((row, x) => ({
+						mapId: insertedMap.id,
+						tileId: row,
+						x,
+						y,
+						permissions: 0
+					}))
+				)
+			});
+		});
 	}
 };

@@ -1,35 +1,44 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import type { BaseEvent } from '$lib/classes/events/BaseEvent.js';
 	import { SignEvent } from '$lib/classes/events/SignEvent.js';
 	import { Game } from '$lib/classes/Game.js';
 	import { GameEditor } from '$lib/classes/GameEditor.js';
-	import SpriteBank from '$lib/classes/SpriteBank.js';
-	import Switch from '$lib/icons/switch.svelte';
+	import Tab from '$lib/components/Tab.svelte';
+	import TileGrid from '$lib/components/TileGrid.svelte';
 	import type { MapEvent } from '$lib/interfaces/Events.js';
+	import type { PageProps } from './$types.js';
 
 	type Mode = 'color' | 'select';
+	type Tabs = 'Tiles' | 'Permissions' | 'Events';
 
 	const modes: Mode[] = ['color', 'select'];
+	const tabs: Tabs[] = ['Tiles', 'Permissions', 'Events'];
 
-	let { data } = $props();
+	let { data }: PageProps = $props();
+
 	let canvasRef: HTMLCanvasElement;
 	let topCanvasRef: HTMLCanvasElement;
-	let game: GameEditor;
-	let selectedColor = $state(0);
-	let mouse: { down: boolean; selectingBackground: boolean; mode: Mode } = $state({
-		down: false,
-		selectingBackground: false,
-		mode: 'color'
+	let game: GameEditor = new GameEditor(data.map);
+	let mouse: { down: boolean } = $state({
+		down: false
 	});
-	let backgroundTile: { id: number | null; data: string | null } = $state({
-		id: null,
-		data: null
-	});
-	let selectedTile: { x: number; y: number; event: MapEvent | undefined } | null = $state(null);
+
+	let selectedTile: { id: number; x: number; y: number; event: MapEvent | undefined } | null =
+		$state(null);
 	let events: MapEvent[] = $state([]);
-	let selectInput: HTMLSelectElement;
+
+	let options = $state<{
+		activeTab: Tabs;
+		activeTile: number | null;
+		activeColor: number;
+		backgroundTile: number | null;
+	}>({
+		activeTab: 'Tiles',
+		activeTile: null,
+		activeColor: 0,
+		backgroundTile: game.map.backgroundTile
+	});
 
 	const colorTable: Record<number, string> = {
 		0: 'blue',
@@ -61,14 +70,9 @@
 		let animId = 0;
 
 		if (canvasRef) {
-			game = new GameEditor(data.map, canvasRef, topCanvasRef);
+			game.setRefs(canvasRef, topCanvasRef);
 			events = game.map.events;
 			await game.init();
-
-			backgroundTile = {
-				id: game.map.backgroundTile,
-				data: SpriteBank.getTile(game.map.name, game.map.area, game.map.backgroundTile).src
-			};
 
 			const render = () => {
 				animId++;
@@ -76,7 +80,7 @@
 				game.topCanvas.context.globalAlpha = 0.5;
 
 				// draw top layer
-				if (mouse.mode !== 'select') {
+				if (options.activeTab === 'Permissions') {
 					for (let y = 0; y < game.map.height; y++) {
 						for (let x = 0; x < game.map.width; x++) {
 							const tile = game.map.getTile(x, y);
@@ -105,71 +109,92 @@
 	};
 
 	const onMouseMove = (e: MouseEvent) => {
-		const { x, y } = getMousePosition(e);
 		if (mouse.down) {
-			const tile = game.map.getTile(x, y);
-			tile.permissions = selectedColor;
+			handleMouseDown(e);
 		}
 	};
 
-	const onMouseDown = (e: MouseEvent) => {
+	const handleMouseDown = (e: MouseEvent) => {
 		const { x, y } = getMousePosition(e);
+		switch (options.activeTab) {
+			case 'Tiles':
+				switch (e.buttons) {
+					case 1:
+						if (!options.activeTile) {
+							break;
+						}
+						game.map.getTile(x, y).tileId = options.activeTile;
+						break;
+					case 2:
+						options.activeTile = game.map.getTile(x, y).tileId;
+						break;
+				}
+				break;
+			case 'Permissions':
+				game.map.getTile(x, y).permissions = options.activeColor;
+				break;
+			case 'Events':
+				break;
+		}
 
-		if (mouse.mode === 'select') {
+		/*if (mouse.mode === 'select') {
 			const event = events.find((ev) => ev?.position.x === x && ev?.position.y === y);
+			const id = game.map.tiles[y][x].id;
 			if (selectInput) {
 				selectInput.value = event?.type ?? 'none';
 			}
-			selectedTile = { x, y, event };
+			selectedTile = { id, x, y, event };
 			return;
-		}
+		}*/
 
-		if (mouse.selectingBackground) {
+		/*if (mouse.selectingBackground) {
 			const tile = game.map.getTile(x, y);
 			backgroundTile = {
 				id: tile.id,
 				data: SpriteBank.getTile(game.map.name, game.map.area, tile.id).src
 			};
 			return;
-		}
+		}*/
 
 		mouse.down = true;
-		const tile = game.map.getTile(x, y);
-		tile.permissions = selectedColor;
+		//const tile = game.map.getTile(x, y);
+		//tile.permissions = selectedColor;
+	};
+
+	const onMouseDown = (e: MouseEvent) => {
+		handleMouseDown(e);
+		mouse.down = true;
 	};
 </script>
 
 <h1>{page.params.map}</h1>
+<div class="tabs">
+	{#each tabs as tab}
+		<Tab label={tab} onClick={() => (options.activeTab = tab)} />
+	{/each}
+</div>
 
 <div class="wrapper">
-	<div class="col">
+	<div class="left-top">
 		<div
 			class="container"
 			onmousemove={onMouseMove}
 			onmousedown={onMouseDown}
 			onmouseup={() => (mouse.down = false)}
+			oncontextmenu={(e) => e.preventDefault()}
 		>
 			<canvas bind:this={canvasRef}></canvas>
 			<canvas class="topCanvas" bind:this={topCanvasRef}></canvas>
 		</div>
-		<div class="buttons">
-			<button
-				onclick={() =>
-					(mouse.mode = modes[(modes.findIndex((mode) => mode === mouse.mode) + 1) % modes.length])}
-			>
-				<Switch size="2rem" color="black" />
-			</button>
-			{#each Object.entries(colorTable) as [key, value]}
-				<button
-					class={`square ${value} ${key === selectedColor.toString() ? 'selected' : ''}`}
-					onclick={() => (selectedColor = parseInt(key))}>{key}</button
-				>
-			{/each}
-			<img
-				class="image"
-				src={backgroundTile.data}
-				onclick={() => (mouse.selectingBackground = true)}
-			/>
+		<div class="left-bottom">
+			{#if options.activeTab === 'Permissions'}
+				{#each Object.entries(colorTable) as [key, value]}
+					<button
+						class={`square ${value} ${key === options.activeColor.toString() ? 'selected' : ''}`}
+						onclick={() => (options.activeColor = parseInt(key))}>{key}</button
+					>
+				{/each}
+			{/if}
 		</div>
 
 		<form
@@ -180,7 +205,6 @@
 					'map',
 					JSON.stringify({
 						...game.map.toJSON(),
-						backgroundTile,
 						events: events.map((ev) => ev.toJSON())
 					})
 				);
@@ -188,33 +212,91 @@
 		>
 			<button>Save</button>
 		</form>
-	</div>
-	<div>
-		<h1>Options</h1>
-		<p>Mode: {mouse.mode}</p>
-		{#if selectedTile}
-			<h3>Event</h3>
-			<select onchange={onTileChange} bind:this={selectInput}>
-				<option value="none">None</option>
-				<option value="sign" selected={selectedTile.event?.type === 'sign'}>Sign</option>
-			</select>
-			<p>X: {selectedTile?.x}</p>
-			<p>Y: {selectedTile?.y}</p>
-			{@const Component = selectedTile.event?.getEditorUI().component}
-			<Component {...selectedTile.event?.getEditorUI().props} {onChange} />
+		{#if options.activeTile !== null}
+			<button
+				onclick={() => {
+					options.backgroundTile = options.activeTile;
+					game.map.backgroundTile = options.activeTile;
+				}}>Set background tile</button
+			>
 		{/if}
 	</div>
+	<div class="right">
+		{#if options.activeTab === 'Tiles'}
+			<TileGrid
+				tiles={data.tiles}
+				active={options.activeTile}
+				background={options.backgroundTile}
+				onClick={(id) => (options.activeTile = id)}
+			/>
+		{/if}
+	</div>
+	<!--<div class="subCol">
+		<div class="row">
+			<h2>Options</h2>
+			<p>Mode: {mouse.mode}</p>
+			{#if selectedTile}
+				<h3>Event</h3>
+				<select onchange={onTileChange} bind:this={selectInput}>
+					<option value="none">None</option>
+					<option value="sign" selected={selectedTile.event?.type === 'sign'}>Sign</option>
+				</select>
+				<p>X: {selectedTile?.x}</p>
+				<p>Y: {selectedTile?.y}</p>
+				{@const Component = selectedTile.event?.getEditorUI().component}
+				<Component {...selectedTile.event?.getEditorUI().props} {onChange} />
+			{/if}
+		</div>
+		<div class="row">
+			<h2>Tile Properties</h2>
+			{#if selectedTile}
+				<img
+					src={SpriteBank.getTile(game.map.name, game.map.area, selectedTile.id).src}
+					alt="tile"
+				/>
+			{/if}
+		</div>
+	</div>-->
 </div>
 
 <style>
 	.wrapper {
-		display: flex;
+		display: grid;
+		grid-template-areas: 'left right' 'bottom right';
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 1fr 1fr;
 		gap: 1rem;
 	}
+	.tabs {
+		display: flex;
+	}
+	.left-top {
+		grid-area: left;
+	}
+
+	.left-bottom {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		justify-content: center;
+		grid-area: bottom;
+	}
+
+	.right {
+		grid-area: right;
+	}
+
 	.col {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		flex: 70%;
+	}
+	.subCol {
+		flex: 15%;
+	}
+	.row {
+		height: 50%;
 	}
 	.container {
 		display: flex;

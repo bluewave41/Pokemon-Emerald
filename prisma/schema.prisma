@@ -13,9 +13,44 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       Int @id @default(autoincrement())
+model Users {
+  id       Int    @id @default(autoincrement())
   uuid     String @unique @default(uuid())
   username String @unique
   password String
+}
+
+model Maps {
+  id               Int        @id @default(autoincrement())
+  name             String     @unique
+  area             String
+  width            Int
+  height           Int
+  backgroundTileId Int?
+  MapTile          MapTiles[]
+
+  backgroundTile Tiles? @relation(fields: [backgroundTileId], references: [id])
+}
+
+model Tiles {
+  id       Int        @id
+  original String
+  data     String
+  hash     String     @unique
+  MapTile  MapTiles[]
+  Maps     Maps[]
+}
+
+model MapTiles {
+  id          Int @id @default(autoincrement())
+  mapId       Int
+  tileId      Int
+  x           Int
+  y           Int
+  permissions Int
+
+  map  Maps  @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  tile Tiles @relation(fields: [tileId], references: [id], onDelete: Cascade)
+
+  @@unique([mapId, x, y])
 }
