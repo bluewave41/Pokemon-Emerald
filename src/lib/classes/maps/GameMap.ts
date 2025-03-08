@@ -17,6 +17,10 @@ export const gameMapSchema = z.object({
 	backgroundTile: z.number()
 });
 
+export const gameEditorMapSchema = gameMapSchema.extend({
+	overlayTiles: z.number().array()
+});
+
 export interface GameMapType {
 	name: MapNames;
 	area: string;
@@ -62,11 +66,20 @@ export class GameMap {
 			}
 		}
 	}
+	drawTopLayer(canvas: Canvas) {
+		const tiles = this.tiles.flat().filter((tile) => tile.overlay);
+		for (const tile of tiles) {
+			canvas.drawTile(SpriteBank.getTile(this.name, this.area, tile.id), tile.x, tile.y);
+		}
+	}
 	tick(canvas: Canvas) {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				const tile = this.tiles[y][x];
 				if (!this.editor && tile.id === this.backgroundTile) {
+					continue;
+				}
+				if (tile.overlay) {
 					continue;
 				}
 				canvas.drawTile(SpriteBank.getTile(this.name, this.area, tile.id), x, y);

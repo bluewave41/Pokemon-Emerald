@@ -11,8 +11,9 @@ export class GameEditor {
 	static zoom: number = 2;
 	overlayTiles: number[] = [];
 
-	constructor(mapBuffer: string) {
+	constructor(mapBuffer: string, overlayTiles: number[]) {
 		this.map = GameMap.readMap(Buffer.from(mapBuffer, 'base64'));
+		this.overlayTiles = overlayTiles;
 		this.map.setEditor(true);
 	}
 	setRefs(canvas: HTMLCanvasElement, topCanvas: HTMLCanvasElement) {

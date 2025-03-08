@@ -6,7 +6,7 @@ import { mapToBuffer } from '$lib/utils/mapToBuffer';
 import { z } from 'zod';
 import { mapNamesSchema } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
-import { gameMapSchema } from '$lib/classes/maps/GameMap';
+import { gameEditorMapSchema } from '$lib/classes/maps/GameMap';
 
 const removeImageBackground = async (background: string, top: string) => {
 	if (background === top) {
@@ -39,7 +39,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const map = await mapToBuffer(result.data.map);
-	const tiles = await prisma.tiles.findMany();
+	const tiles = await prisma.tiles.findMany({
+		orderBy: { id: 'asc' }
+	});
 
 	return {
 		map: map.toString('base64'),
@@ -63,7 +65,7 @@ export const actions = {
 		const schema = zfd.formData({
 			map: zfd.text().transform(async (map) => {
 				const parsedMap = JSON.parse(map);
-				const result = await gameMapSchema.safeParseAsync(parsedMap);
+				const result = await gameEditorMapSchema.safeParseAsync(parsedMap);
 
 				if (!result.success) {
 					throw new Error(result.error.message);
@@ -122,6 +124,33 @@ export const actions = {
 		});
 
 		await Promise.all(updates);
+
+		// update tile overlays
+		const uniqueTiles = Array.from(new Set(tiles.map((tile) => tile.tile.id)));
+
+		// reset them all
+		await prisma.tiles.updateMany({
+			data: {
+				overlay: false
+			},
+			where: {
+				id: {
+					in: uniqueTiles
+				}
+			}
+		});
+
+		//set them
+		await prisma.tiles.updateMany({
+			data: {
+				overlay: true
+			},
+			where: {
+				id: {
+					in: map.overlayTiles
+				}
+			}
+		});
 
 		await prisma.$transaction(
 			map.tiles.flat().map((tile) =>

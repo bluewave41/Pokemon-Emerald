@@ -19,7 +19,10 @@
 
 	let canvasRef: HTMLCanvasElement;
 	let topCanvasRef: HTMLCanvasElement;
-	let game: GameEditor = new GameEditor(data.map);
+	let game: GameEditor = new GameEditor(
+		data.map,
+		data.tiles.filter((tile) => tile.overlay).map((tile) => tile.id)
+	);
 	let mouse: { down: boolean } = $state({
 		down: false
 	});
@@ -205,6 +208,7 @@
 					'map',
 					JSON.stringify({
 						...game.map.toJSON(),
+						overlayTiles: game.overlayTiles,
 						events: events.map((ev) => ev.toJSON())
 					})
 				);
