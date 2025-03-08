@@ -37,6 +37,7 @@ model Tiles {
   original String
   data     String
   hash     String     @unique
+  overlay  Boolean    @default(false)
   MapTile  MapTiles[]
   Maps     Maps[]
 }

@@ -9,6 +9,9 @@ export class BufferHelper {
 	readByte() {
 		return this.#buffer.readUInt8(this.#index++);
 	}
+	readBoolean() {
+		return Boolean(this.#buffer.readUInt8(this.#index++));
+	}
 	readShort() {
 		const s = this.#buffer.readUInt16LE(this.#index);
 		this.#index += 2;
@@ -29,6 +32,9 @@ export class BufferHelper {
 	}
 	writeByte(b: number) {
 		this.#buffer.writeUInt8(b, this.#index++);
+	}
+	writeBoolean(bool: boolean) {
+		this.#buffer.writeUInt8(bool ? 1 : 0, this.#index++);
 	}
 	writeShort(s: number) {
 		this.#buffer.writeUInt16LE(s, this.#index);

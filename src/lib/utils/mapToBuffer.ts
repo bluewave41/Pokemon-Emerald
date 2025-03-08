@@ -16,7 +16,7 @@ export const mapToBuffer = async (name: MapNames) => {
 	});
 
 	if (!map) {
-		return null;
+		throw new Error('Map was null');
 	}
 
 	const uniqueTiles = await prisma.mapTiles.findMany({
@@ -25,6 +25,7 @@ export const mapToBuffer = async (name: MapNames) => {
 			tileId: true,
 			tile: {
 				select: {
+					overlay: true,
 					data: true
 				}
 			}
@@ -49,6 +50,7 @@ export const mapToBuffer = async (name: MapNames) => {
 	//write map data
 	for (const tile of map.MapTile) {
 		buffer.writeByte(tile.tileId);
+		buffer.writeBoolean(tile.tile.overlay);
 		buffer.writeByte(tile.permissions);
 	}
 

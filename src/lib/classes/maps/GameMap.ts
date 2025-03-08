@@ -36,6 +36,7 @@ export class GameMap {
 	tiles: TileType[][];
 	backgroundTile: number = -1;
 	events: MapEvent[] = [];
+	editor: boolean = false;
 
 	constructor(
 		name: MapNames,
@@ -65,6 +66,9 @@ export class GameMap {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				const tile = this.tiles[y][x];
+				if (!this.editor && tile.id === this.backgroundTile) {
+					continue;
+				}
 				canvas.drawTile(SpriteBank.getTile(this.name, this.area, tile.id), x, y);
 			}
 		}
@@ -88,7 +92,7 @@ export class GameMap {
 		for (let y = 0; y < height; y++) {
 			const row = [];
 			for (let x = 0; x < width; x++) {
-				row.push(new Tile(x, y, buffer.readByte(), buffer.readByte()));
+				row.push(new Tile(x, y, buffer.readByte(), buffer.readBoolean(), buffer.readByte()));
 			}
 			map.push(row);
 		}
@@ -126,5 +130,8 @@ export class GameMap {
 			images: this.images,
 			backgroundTile: this.backgroundTile
 		};
+	}
+	setEditor(editor: boolean) {
+		this.editor = editor;
 	}
 }

@@ -47,9 +47,9 @@ export class Game {
 		// draw base layer
 		this.mapHandler.active.drawBaseLayer(this.#canvas);
 		// draw player on top
+		this.player.tick(this, currentFrameTime);
 		// draw map elements so the player hides behind the,
 		this.mapHandler.active.tick(this.#canvas);
-		this.player.tick(this, currentFrameTime);
 
 		KeyHandler.tick();
 

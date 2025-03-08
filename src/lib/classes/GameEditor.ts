@@ -9,9 +9,11 @@ export class GameEditor {
 	#topCanvas: Canvas | null = null;
 	static tileSize: number = 16;
 	static zoom: number = 2;
+	overlayTiles: number[] = [];
 
 	constructor(mapBuffer: string) {
 		this.map = GameMap.readMap(Buffer.from(mapBuffer, 'base64'));
+		this.map.setEditor(true);
 	}
 	setRefs(canvas: HTMLCanvasElement, topCanvas: HTMLCanvasElement) {
 		this.#canvas = new Canvas(canvas);

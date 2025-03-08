@@ -46,12 +46,12 @@
 		2: 'green'
 	};
 
-	const onChange = (e: Event) => {
+	/*const onChange = (e: Event) => {
 		const target = e.target as HTMLSelectElement;
 		selectedTile?.event?.update(target.value);
-	};
+	};*/
 
-	const onTileChange = (e: Event) => {
+	/*const onTileChange = (e: Event) => {
 		if (!selectedTile) {
 			return;
 		}
@@ -64,7 +64,7 @@
 		selectedTile.event = events.find(
 			(ev) => ev?.position.x === selectedTile?.x && ev?.position.y === selectedTile?.y
 		);
-	};
+	};*/
 
 	async function init() {
 		let animId = 0;
@@ -212,23 +212,48 @@
 		>
 			<button>Save</button>
 		</form>
+		<form method="POST" action="?/reset" use:enhance>
+			<button>Reset</button>
+		</form>
 		{#if options.activeTile !== null}
+			{@const { activeTile } = options}
 			<button
 				onclick={() => {
-					options.backgroundTile = options.activeTile;
-					game.map.backgroundTile = options.activeTile;
+					options.backgroundTile = activeTile;
+					game.map.backgroundTile = activeTile;
 				}}>Set background tile</button
 			>
 		{/if}
 	</div>
 	<div class="right">
-		{#if options.activeTab === 'Tiles'}
-			<TileGrid
-				tiles={data.tiles}
-				active={options.activeTile}
-				background={options.backgroundTile}
-				onClick={(id) => (options.activeTile = id)}
-			/>
+		<div>
+			{#if options.activeTab === 'Tiles'}
+				<TileGrid
+					tiles={data.tiles}
+					active={options.activeTile}
+					background={options.backgroundTile}
+					onClick={(id) => (options.activeTile = id)}
+				/>
+			{/if}
+		</div>
+		{#if options.activeTile}
+			{@const { activeTile } = options}
+			{#key options.activeTile}
+				<div>Properties</div>
+				<div>
+					<label for="overlay">Overlay</label>
+					<input
+						name="overlay"
+						type="checkbox"
+						checked={game.overlayTiles.includes(options.activeTile)}
+						onchange={(e) => {
+							game.overlayTiles = e.currentTarget.checked
+								? [...game.overlayTiles, activeTile]
+								: game.overlayTiles.filter((el) => el !== activeTile);
+						}}
+					/>
+				</div>
+			{/key}
 		{/if}
 	</div>
 	<!--<div class="subCol">
@@ -283,7 +308,10 @@
 	}
 
 	.right {
+		display: flex;
+		flex-direction: column;
 		grid-area: right;
+		gap: 1rem;
 	}
 
 	.col {

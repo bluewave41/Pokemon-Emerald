@@ -48,6 +48,17 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions = {
+	reset: async ({ request }) => {
+		const schema = zfd.formData({
+			name: zfd.text()
+		});
+		const result = await schema.safeParseAsync(await request.formData());
+		if (!result) {
+			return fail(400);
+		}
+
+		await prisma.$executeRaw`UPDATE "Tiles" SET data = original`;
+	},
 	save: async ({ request }) => {
 		const schema = zfd.formData({
 			map: zfd.text().transform(async (map) => {
@@ -84,10 +95,11 @@ export const actions = {
 			}
 		});
 
-		/*const tiles = await prisma.mapTiles.findMany({
+		const tiles = await prisma.mapTiles.findMany({
 			select: {
 				tile: {
 					select: {
+						id: true,
 						original: true
 					}
 				}
@@ -95,9 +107,21 @@ export const actions = {
 			where: {
 				mapId: updated.id
 			}
-		});*/
+		});
 
-		// now we need to remove the background tile from each tile
+		const updates = tiles.map(async ({ tile }) => {
+			const backgroundImage = map.images[map.backgroundTile - 1];
+			const processedData = await removeImageBackground(backgroundImage, tile.original);
+
+			return prisma.tiles.update({
+				data: { data: processedData },
+				where: {
+					id: tile.id
+				}
+			});
+		});
+
+		await Promise.all(updates);
 
 		await prisma.$transaction(
 			map.tiles.flat().map((tile) =>
