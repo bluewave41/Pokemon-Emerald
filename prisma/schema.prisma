@@ -35,8 +35,7 @@ model Maps {
 model Tiles {
   id       Int        @id
   original String
-  data     String
-  hash     String     @unique
+  data     String     @unique
   overlay  Boolean    @default(false)
   MapTile  MapTiles[]
   Maps     Maps[]

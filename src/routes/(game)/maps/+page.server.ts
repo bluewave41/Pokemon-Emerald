@@ -35,7 +35,7 @@ export const actions = {
 
 		const { width, height } = image.bitmap;
 
-		const images: { data: string; hash: string }[] = [];
+		const images: string[] = [];
 		const map: number[][] = [];
 
 		for (let y = 0; y < height; y += 16) {
@@ -43,36 +43,14 @@ export const actions = {
 			for (let x = 0; x < width; x += 16) {
 				const tile = image.clone().crop({ x, y, w: 16, h: 16 });
 				const base64 = await tile.getBase64('image/png');
-				const hash = tile.hash();
-				const foundImage = images.find((img) => img.hash === hash);
+				const foundImage = images.find((img) => img === base64);
 				if (!foundImage) {
-					images.push({
-						data: base64,
-						hash
-					});
+					images.push(base64);
 				}
-				row.push(images.findIndex((image) => image.hash === hash) + 1);
+				row.push(images.findIndex((image) => image === base64) + 1);
 			}
 			map.push(row);
 		}
-
-		/*const buffer = new BufferHelper(Buffer.alloc(30000));
-		buffer.writeByte(1);
-		buffer.writeString(simplifiedName);
-		buffer.writeByte(width / 16);
-		buffer.writeByte(height / 16);
-		buffer.writeByte(0);
-		buffer.writeShort(images.length);
-		for (const image of images) {
-			buffer.writeString(image);
-		}
-
-		for (let y = 0; y < map.length; y++) {
-			for (let x = 0; x < map[0].length; x++) {
-				buffer.writeByte(map[y][x]);
-				buffer.writeByte(0);
-			}
-		}*/
 
 		await prisma.$transaction(async (transaction) => {
 			const insertedMap = await transaction.maps.create({
@@ -94,9 +72,9 @@ export const actions = {
 
 			await transaction.tiles.createMany({
 				data: images.map((img, index) => ({
-					...img,
 					id: index + highestTileId,
-					original: img.data
+					data: img,
+					original: img
 				})),
 				skipDuplicates: true
 			});
