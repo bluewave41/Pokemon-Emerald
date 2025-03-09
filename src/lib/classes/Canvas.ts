@@ -44,7 +44,13 @@ export class Canvas {
 		this.context.drawImage(image, rect.x, rect.y, rect.width, rect.height);
 	}
 	drawAbsoluteImage(image: HTMLImageElement, x: number, y: number) {
-		this.context.drawImage(image, x, y, Game.getAdjustedTileSize(), Game.getAdjustedTileSize());
+		this.context.drawImage(
+			image,
+			x,
+			y,
+			Game.getAdjustedTileSize() - 2,
+			Game.getAdjustedTileSize() + 8
+		);
 	}
 	translate(x: number, y: number) {
 		const rect = new AdjustedRect(x, y);

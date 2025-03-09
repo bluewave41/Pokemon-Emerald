@@ -38,8 +38,8 @@ export class Player extends Entity {
 		const sprite = SpriteBank.getSprite('player', walkSprite);
 		game.canvas.drawAbsoluteImage(
 			sprite,
-			Math.round(this.subPosition.x) + 3,
-			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) - 7
+			Math.round(this.subPosition.x) + 1,
+			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) - 10
 		);
 
 		// but don't let them move if a textbox or something is active...
