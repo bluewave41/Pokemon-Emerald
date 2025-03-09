@@ -1,14 +1,18 @@
-import type { SignEvent } from '../events/SignEvent';
+import { z } from 'zod';
 import type { Game } from '../Game';
-import { Tile } from './Tile';
+import { Tile, tileSchema } from './Tile';
+
+export const signTileSchema = tileSchema.extend({
+	text: z.string()
+});
 
 export class SignTile extends Tile {
 	text: string;
-	event: SignEvent | null = null;
 
 	constructor(tile: Tile, text: string) {
-		super(tile.x, tile.y, tile.id, tile.permissions);
+		super(tile.x, tile.y, tile.id, tile.overlay, tile.permissions);
 		this.text = text;
+		this.kind = 'sign';
 	}
 	activate(game: Game) {
 		game.activeTextBox = this.text;

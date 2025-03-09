@@ -1,11 +1,12 @@
 import { BufferHelper } from '$lib/BufferHelper';
 import type { MapEvent } from '$lib/interfaces/Events';
 import { mapNamesSchema, type MapNames } from '$lib/interfaces/MapNames';
-import type { TileType } from '$lib/interfaces/TileType';
 import { z } from 'zod';
 import type { Canvas } from '../Canvas';
 import SpriteBank from '../SpriteBank';
 import { Tile, tileSchema } from '../tiles/Tile';
+import type { AnyTile } from '$lib/interfaces/AnyTile';
+import { signTileSchema } from '../tiles/SignTile';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
@@ -13,7 +14,7 @@ export const gameMapSchema = z.object({
 	width: z.number(),
 	height: z.number(),
 	images: z.string().array(),
-	tiles: tileSchema.array().array(),
+	tiles: z.union([signTileSchema, tileSchema]).array().array(),
 	backgroundTile: z.number()
 });
 
@@ -27,7 +28,7 @@ export interface GameMapType {
 	width: number;
 	height: number;
 	images: string[];
-	tiles: TileType[][];
+	tiles: AnyTile[][];
 	backgroundTile: number;
 }
 
@@ -37,7 +38,7 @@ export class GameMap {
 	width: number;
 	height: number;
 	images: string[];
-	tiles: TileType[][];
+	tiles: AnyTile[][];
 	backgroundTile: number = -1;
 	events: MapEvent[] = [];
 	editor: boolean = false;
@@ -47,7 +48,7 @@ export class GameMap {
 		width: number,
 		height: number,
 		images: string[],
-		tiles: TileType[][],
+		tiles: AnyTile[][],
 		backgroundTile: number,
 		events: MapEvent[]
 	) {
@@ -101,7 +102,7 @@ export class GameMap {
 			images.push(buffer.readString());
 		}
 
-		const map: TileType[][] = [];
+		const map: AnyTile[][] = [];
 		for (let y = 0; y < height; y++) {
 			const row = [];
 			for (let x = 0; x < width; x++) {

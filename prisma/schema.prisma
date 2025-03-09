@@ -29,7 +29,8 @@ model Maps {
   backgroundTileId Int?
   MapTile          MapTiles[]
 
-  backgroundTile Tiles? @relation(fields: [backgroundTileId], references: [id])
+  backgroundTile Tiles?   @relation(fields: [backgroundTileId], references: [id])
+  Events         Events[]
 }
 
 model Tiles {
@@ -53,4 +54,18 @@ model MapTiles {
   tile Tiles @relation(fields: [tileId], references: [id], onDelete: Cascade)
 
   @@unique([mapId, x, y])
+}
+
+model Events {
+  id    Int @id @default(autoincrement())
+  x     Int
+  y     Int
+  mapId Int
+
+  map Maps @relation(fields: [mapId], references: [id], onDelete: Cascade)
+}
+
+model Signs {
+  id   Int    @id @default(autoincrement())
+  text String
 }

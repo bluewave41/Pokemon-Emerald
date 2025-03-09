@@ -169,5 +169,7 @@ export const actions = {
 				})
 			)
 		);
+
+		const eventTiles = map.tiles.flat().filter((tile) => tile.kind === 'sign');
 	}
 };

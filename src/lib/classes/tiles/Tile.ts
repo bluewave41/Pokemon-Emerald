@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import type { Game } from '../Game';
+import type { TileKind } from '$lib/interfaces/TileKind';
+import type { SignTile } from './SignTile';
 
 export const tileSchema = z.object({
+	kind: z.union([z.literal('tile'), z.literal('sign'), z.literal('warp')]),
 	x: z.number(),
 	y: z.number(),
 	id: z.number(),
@@ -9,15 +12,8 @@ export const tileSchema = z.object({
 	permissions: z.number()
 });
 
-export interface TileType {
-	x: number;
-	y: number;
-	id: number;
-	overlay: boolean;
-	permissions: number;
-}
-
 export class Tile {
+	kind: TileKind = 'tile';
 	x: number;
 	y: number;
 	id: number;
@@ -36,5 +32,8 @@ export class Tile {
 	}
 	activate(game: Game) {
 		void game;
+	}
+	isSign(): this is SignTile {
+		return this.kind === 'sign';
 	}
 }
