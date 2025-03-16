@@ -59,7 +59,7 @@ export class GameEditor {
 		}
 		this.#canvas.reset();
 		this.#topCanvas.reset();
-		this.map.tick(this.#canvas);
+		this.map.tick({ lastFrameTime: 0 }, this.#canvas);
 		this.map.drawTopLayer(this.#canvas);
 	}
 	static getAdjustedTileSize() {

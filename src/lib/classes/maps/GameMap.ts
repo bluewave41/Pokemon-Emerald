@@ -71,7 +71,7 @@ export class GameMap {
 			canvas.drawTile(tile.getActiveSprite(), tile.x, tile.y);
 		}
 	}
-	tick(game: Game, canvas: Canvas) {
+	tick(game: { lastFrameTime: number }, canvas: Canvas) {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				const tile = this.tiles[y][x];

@@ -57,7 +57,7 @@ export class Tile {
 	isSign(): this is SignTile {
 		return this.kind === 'sign';
 	}
-	tick(game: Game) {
+	tick(game: { lastFrameTime: number }) {
 		if (this.tileSprites.delay) {
 			if (this.lastFrame + this.tileSprites.delay < game.lastFrameTime) {
 				this.lastFrame = game.lastFrameTime;
