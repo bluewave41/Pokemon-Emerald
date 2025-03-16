@@ -13,36 +13,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Users {
+model User {
   id       Int    @id @default(autoincrement())
   uuid     String @unique @default(uuid())
   username String @unique
   password String
 }
 
-model Maps {
-  id               Int        @id @default(autoincrement())
-  name             String     @unique
+model Map {
+  id               Int       @id @default(autoincrement())
+  name             String    @unique
   area             String
   width            Int
   height           Int
   backgroundTileId Int?
-  MapTile          MapTiles[]
+  MapTile          MapTile[]
 
-  backgroundTile Tiles?   @relation(fields: [backgroundTileId], references: [id])
-  Events         Events[]
+  backgroundTile Tile?   @relation(fields: [backgroundTileId], references: [id])
+  Events         Event[]
 }
 
-model Tiles {
-  id       Int        @id
+model Tile {
+  id       Int     @id
   original String
-  data     String     @unique
-  overlay  Boolean    @default(false)
-  MapTile  MapTiles[]
-  Maps     Maps[]
+  data     String  @unique
+  overlay  Boolean @default(false)
+  animated Boolean @default(false)
+  sequence Int[]   @default([])
+  delay    Int?
+
+  MapTile   MapTile[]
+  Maps      Map[]
+  TileFrame TileFrame[]
 }
 
-model MapTiles {
+model TileFrame {
+  id     Int    @id @default(autoincrement())
+  tileId Int
+  data   String @unique
+
+  tile Tile @relation(fields: [tileId], references: [id], onDelete: Cascade)
+}
+
+model MapTile {
   id          Int @id @default(autoincrement())
   mapId       Int
   tileId      Int
@@ -50,22 +63,49 @@ model MapTiles {
   y           Int
   permissions Int
 
-  map  Maps  @relation(fields: [mapId], references: [id], onDelete: Cascade)
-  tile Tiles @relation(fields: [tileId], references: [id], onDelete: Cascade)
+  map  Map  @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  tile Tile @relation(fields: [tileId], references: [id], onDelete: Cascade)
 
   @@unique([mapId, x, y])
 }
 
-model Events {
-  id    Int @id @default(autoincrement())
+model Event {
+  id    Int       @id @default(autoincrement())
+  mapId Int
+  type  EventType
   x     Int
   y     Int
-  mapId Int
 
-  map Maps @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  map  Map   @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  sign Sign?
 }
 
-model Signs {
+model Sign {
+  eventId Int    @unique
+  text    String
+
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model SpriteBank {
   id   Int    @id @default(autoincrement())
-  text String
+  name String @unique
+
+  Sprites Sprites[]
+}
+
+model Sprites {
+  id     Int    @id @default(autoincrement())
+  bankId Int
+  name   String
+  data   String
+
+  bank SpriteBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
+
+  @@unique([bankId, name])
+}
+
+enum EventType {
+  SIGN
+  WARP
 }

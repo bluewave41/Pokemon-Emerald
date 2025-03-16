@@ -1,5 +1,6 @@
 import { AdjustedRect } from './AdjustedRect';
-import { Game } from './Game';
+import { Game, type MessageBox } from './Game';
+import KeyHandler from './KeyHandler';
 
 interface DrawOptions {
 	color?: string;
@@ -22,8 +23,8 @@ export class Canvas {
 		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
 	drawText(text: string, x: number, y: number) {
-		this.context.font = '16pt "pokemon"';
-		this.context.fillStyle = 'black';
+		this.context.font = '22pt "pokemon"';
+		this.context.fillStyle = '#303030';
 		const metrics = this.context.measureText(text);
 		const fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
 		this.context.fillText(text, x, y + fontHeight);
@@ -56,21 +57,32 @@ export class Canvas {
 		const rect = new AdjustedRect(x, y);
 		this.context.translate(rect.x, rect.y);
 	}
-	showMessageBox(text: string) {
+	showMessageBox(message: MessageBox, currentFrameTime: number) {
+		const delay = KeyHandler.getActiveKeyState('z').down ? 25 : 50; // Adjust delay to control the speed of the scrolling text (in milliseconds).
+		const elapsedTime = currentFrameTime - message.startFrame; // Time elapsed since the message started
+		const lengthToShow = Math.floor(elapsedTime / delay); // Determine how many characters to show based on elapsed time
+		const textToShow = message.text.slice(0, lengthToShow); // Slice the message up to the calculated length
+
+		const pieces = textToShow.split('\\n');
 		const gap = 5;
-		const size = 60;
+		const size = 80;
 		const rectOffset = 2;
+		const textOffset = 20;
 
 		const x = gap - rectOffset;
-		const y = this.canvas.height - size - gap - rectOffset;
+		let y = this.canvas.height - size - gap - rectOffset;
 		const length = this.canvas.width - gap * 2 + rectOffset * 2;
 		const height = size + rectOffset * 2;
 
-		this.context.fillStyle = 'black';
+		this.context.fillStyle = 'green';
 		this.context.fillRect(x, y, length, height);
 		this.context.fillStyle = 'white';
 		this.context.fillRect(gap, this.canvas.height - gap - size, this.canvas.width - gap * 2, size);
-		this.drawText(text, x + gap, y);
+
+		for (const piece of pieces) {
+			this.drawText(piece.replaceAll('\\', ''), x + gap + textOffset, y + textOffset / 3);
+			y += 32;
+		}
 	}
 	get width() {
 		return this.canvas.width;

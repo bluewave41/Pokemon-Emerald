@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { mapNamesSchema } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
 import { gameEditorMapSchema } from '$lib/classes/maps/GameMap';
+import type { SignProps } from '$lib/classes/tiles/SignTile';
 
 const removeImageBackground = async (background: string, top: string) => {
 	if (background === top) {
@@ -38,8 +39,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		return error(400, 'Invalid map name.');
 	}
 
-	const map = await mapToBuffer(result.data.map);
-	const tiles = await prisma.tiles.findMany({
+	const { map } = await mapToBuffer(result.data.map);
+	const tiles = await prisma.tile.findMany({
 		orderBy: { id: 'asc' }
 	});
 
@@ -85,7 +86,7 @@ export const actions = {
 
 		const { map } = result.data;
 
-		const updated = await prisma.maps.update({
+		const updated = await prisma.map.update({
 			data: {
 				name: map.name,
 				width: map.width,
@@ -97,7 +98,7 @@ export const actions = {
 			}
 		});
 
-		const tiles = await prisma.mapTiles.findMany({
+		const tiles = await prisma.mapTile.findMany({
 			select: {
 				tile: {
 					select: {
@@ -111,11 +112,19 @@ export const actions = {
 			}
 		});
 
-		const updates = tiles.map(async ({ tile }) => {
-			const backgroundImage = map.images[map.backgroundTile - 1];
-			const processedData = await removeImageBackground(backgroundImage, tile.original);
+		const backgroundImage = await prisma.tile.findFirst({
+			select: {
+				data: true
+			},
+			where: {
+				id: map.backgroundTile
+			}
+		});
 
-			return prisma.tiles.update({
+		const updates = tiles.map(async ({ tile }) => {
+			const processedData = await removeImageBackground(backgroundImage.data, tile.original);
+
+			return prisma.tile.update({
 				data: { data: processedData },
 				where: {
 					id: tile.id
@@ -129,7 +138,7 @@ export const actions = {
 		const uniqueTiles = Array.from(new Set(tiles.map((tile) => tile.tile.id)));
 
 		// reset them all
-		await prisma.tiles.updateMany({
+		await prisma.tile.updateMany({
 			data: {
 				overlay: false
 			},
@@ -141,7 +150,7 @@ export const actions = {
 		});
 
 		//set them
-		await prisma.tiles.updateMany({
+		await prisma.tile.updateMany({
 			data: {
 				overlay: true
 			},
@@ -154,7 +163,7 @@ export const actions = {
 
 		await prisma.$transaction(
 			map.tiles.flat().map((tile) =>
-				prisma.mapTiles.update({
+				prisma.mapTile.update({
 					where: {
 						mapId_x_y: {
 							x: tile.x,
@@ -170,6 +179,24 @@ export const actions = {
 			)
 		);
 
-		const eventTiles = map.tiles.flat().filter((tile) => tile.kind === 'sign');
+		const signEvents: SignProps[] = map.tiles
+			.flat()
+			.filter((tile): tile is SignProps => tile.kind === 'sign');
+
+		for (const event of signEvents) {
+			await prisma.event.create({
+				data: {
+					mapId: updated.id,
+					type: 'SIGN',
+					x: event.x,
+					y: event.y,
+					sign: {
+						create: {
+							text: event.text
+						}
+					}
+				}
+			});
+		}
 	}
 };

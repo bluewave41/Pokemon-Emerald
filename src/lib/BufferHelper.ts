@@ -1,3 +1,5 @@
+import type { EventType } from '@prisma/client';
+
 export class BufferHelper {
 	#buffer: Buffer;
 	#index: number = 0;
@@ -30,6 +32,12 @@ export class BufferHelper {
 		}
 		return str;
 	}
+	readEventId() {
+		switch (this.readByte()) {
+			case 1:
+				return 'sign';
+		}
+	}
 	writeByte(b: number) {
 		this.#buffer.writeUInt8(b, this.#index++);
 	}
@@ -48,6 +56,12 @@ export class BufferHelper {
 		this.writeShort(str.length);
 		for (let i = 0; i < str.length; i++) {
 			this.writeByte(str.charCodeAt(i));
+		}
+	}
+	writeEventId(event: EventType) {
+		switch (event) {
+			case 'SIGN':
+				this.writeByte(1);
 		}
 	}
 	seek(index: number) {

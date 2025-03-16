@@ -3,17 +3,16 @@ import type { MapEvent } from '$lib/interfaces/Events';
 import { mapNamesSchema, type MapNames } from '$lib/interfaces/MapNames';
 import { z } from 'zod';
 import type { Canvas } from '../Canvas';
-import SpriteBank from '../SpriteBank';
 import { Tile, tileSchema } from '../tiles/Tile';
 import type { AnyTile } from '$lib/interfaces/AnyTile';
-import { signTileSchema } from '../tiles/SignTile';
+import { SignTile, signTileSchema } from '../tiles/SignTile';
+import type { Game } from '../Game';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
 	area: z.string(),
 	width: z.number(),
 	height: z.number(),
-	images: z.string().array(),
 	tiles: z.union([signTileSchema, tileSchema]).array().array(),
 	backgroundTile: z.number()
 });
@@ -27,9 +26,8 @@ export interface GameMapType {
 	area: string;
 	width: number;
 	height: number;
-	images: string[];
 	tiles: AnyTile[][];
-	backgroundTile: number;
+	backgroundTile: Tile;
 }
 
 export class GameMap {
@@ -37,9 +35,8 @@ export class GameMap {
 	area: string = 'overworld';
 	width: number;
 	height: number;
-	images: string[];
 	tiles: AnyTile[][];
-	backgroundTile: number = -1;
+	backgroundTile: Tile | null = null;
 	events: MapEvent[] = [];
 	editor: boolean = false;
 
@@ -47,43 +44,45 @@ export class GameMap {
 		name: MapNames,
 		width: number,
 		height: number,
-		images: string[],
 		tiles: AnyTile[][],
-		backgroundTile: number,
+		backgroundTile: Tile,
 		events: MapEvent[]
 	) {
 		this.name = name;
 		this.width = width;
 		this.height = height;
-		this.images = images;
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
 		this.events = events;
 	}
 	drawBaseLayer(canvas: Canvas) {
+		if (!this.backgroundTile) {
+			return;
+		}
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
-				canvas.drawTile(SpriteBank.getTile(this.name, this.area, this.backgroundTile), x, y);
+				canvas.drawTile(this.backgroundTile.getActiveSprite(), x, y);
 			}
 		}
 	}
 	drawTopLayer(canvas: Canvas) {
 		const tiles = this.tiles.flat().filter((tile) => tile.overlay);
 		for (const tile of tiles) {
-			canvas.drawTile(SpriteBank.getTile(this.name, this.area, tile.id), tile.x, tile.y);
+			canvas.drawTile(tile.getActiveSprite(), tile.x, tile.y);
 		}
 	}
-	tick(canvas: Canvas) {
+	tick(game: Game, canvas: Canvas) {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				const tile = this.tiles[y][x];
-				if (!this.editor && tile.id === this.backgroundTile) {
+				tile.tick(game);
+				if (!this.editor && tile.id === this.backgroundTile?.id) {
 					continue;
 				}
 				if (tile.overlay) {
 					continue;
 				}
-				canvas.drawTile(SpriteBank.getTile(this.name, this.area, tile.id), x, y);
+				canvas.drawTile(tile.getActiveSprite(), x, y);
 			}
 		}
 	}
@@ -94,42 +93,39 @@ export class GameMap {
 		const name = buffer.readString() as MapNames;
 		const width = buffer.readByte();
 		const height = buffer.readByte();
-		const backgroundTile = buffer.readByte();
-		const imageCount = buffer.readShort();
-		const images = [];
+		const backgroundId = buffer.readByte();
 
-		for (let i = 0; i < imageCount; i++) {
-			images.push(buffer.readString());
-		}
+		let backgroundTile: Tile | null = null;
 
 		const map: AnyTile[][] = [];
 		for (let y = 0; y < height; y++) {
 			const row = [];
 			for (let x = 0; x < width; x++) {
-				row.push(new Tile(x, y, buffer.readByte(), buffer.readBoolean(), buffer.readByte()));
+				const tile = new Tile(x, y, buffer.readByte(), buffer.readBoolean(), buffer.readByte());
+				if (!backgroundTile && tile.id === backgroundId) {
+					backgroundTile = tile;
+				}
+				row.push(tile);
 			}
 			map.push(row);
 		}
 
-		/*const events: MapEvent[] = [];
-		while (buffer.hasMore()) {
-			const eventId = buffer.readByte();
-			const event = EventMap[eventId];
-			if (!event) {
-				throw new Error('Unhandled event!');
-			}
-			events.push(event.read(buffer));
+		if (!backgroundTile) {
+			throw new Error('Map is missing a background tile.');
 		}
 
-		for (const event of events) {
-			const { x, y } = event.position;
-			const tile = map[y][x];
-			if (event.type === 'sign') {
-				map[y][x] = new SignTile(tile, event.text);
+		while (buffer.hasMore()) {
+			const eventId = buffer.readEventId();
+			const x = buffer.readByte();
+			const y = buffer.readByte();
+			switch (eventId) {
+				case 'sign':
+					map[y][x] = new SignTile(map[y][x], buffer.readString());
+					break;
 			}
-		}*/
+		}
 
-		return new GameMap(name, width, height, images, map, backgroundTile, []);
+		return new GameMap(name, width, height, map, backgroundTile, []);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];
@@ -141,7 +137,6 @@ export class GameMap {
 			width: this.width,
 			height: this.height,
 			tiles: this.tiles,
-			images: this.images,
 			backgroundTile: this.backgroundTile
 		};
 	}

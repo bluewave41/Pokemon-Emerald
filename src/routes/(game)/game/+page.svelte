@@ -2,6 +2,9 @@
 	import { page } from '$app/state';
 	import { Game } from '$lib/classes/Game.js';
 	import KeyHandler from '$lib/classes/KeyHandler.js';
+	import { GameMap } from '$lib/classes/maps/GameMap.js';
+	import SpriteBank from '$lib/classes/SpriteBank.js';
+	import { Buffer } from 'buffer';
 
 	let { data } = $props();
 	let canvasRef: HTMLCanvasElement;
@@ -9,9 +12,13 @@
 
 	async function init() {
 		if (canvasRef) {
-			game = new Game(data.map, canvasRef);
+			await SpriteBank.readMap(data.images);
+			const gameMap = GameMap.readMap(Buffer.from(data.map, 'base64'));
 
-			await game.init();
+			//player
+			await SpriteBank.readBank('player', data.player);
+
+			game = new Game(canvasRef, gameMap);
 
 			const render = (frameTime: number) => {
 				game.tick(frameTime);

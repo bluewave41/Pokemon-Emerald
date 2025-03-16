@@ -6,7 +6,7 @@ import { removeExtension } from '$lib/utils/removeExtension.js';
 import prisma from '$lib/prisma.js';
 
 export const load: PageServerLoad = async () => {
-	const maps = (await prisma.maps.findMany()).map((map) => map.name);
+	const maps = (await prisma.map.findMany()).map((map) => map.name);
 
 	return {
 		maps
@@ -53,7 +53,7 @@ export const actions = {
 		}
 
 		await prisma.$transaction(async (transaction) => {
-			const insertedMap = await transaction.maps.create({
+			const insertedMap = await transaction.map.create({
 				data: {
 					name: simplifiedName,
 					area: 'overworld',
@@ -64,13 +64,13 @@ export const actions = {
 
 			const highestTileId =
 				(
-					await prisma.tiles.findFirst({
+					await prisma.tile.findFirst({
 						orderBy: { id: 'desc' },
 						select: { id: true }
 					})
 				)?.id ?? 1;
 
-			await transaction.tiles.createMany({
+			await transaction.tile.createMany({
 				data: images.map((img, index) => ({
 					id: index + highestTileId,
 					data: img,
@@ -79,7 +79,7 @@ export const actions = {
 				skipDuplicates: true
 			});
 
-			await transaction.mapTiles.createMany({
+			await transaction.mapTile.createMany({
 				data: map.flatMap((col, y) =>
 					col.flatMap((row, x) => ({
 						mapId: insertedMap.id,

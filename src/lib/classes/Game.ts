@@ -1,11 +1,13 @@
-import axios from 'axios';
 import { Canvas } from './Canvas';
 import { Player } from './entities/Player';
 import { GameMap } from './maps/GameMap';
-import SpriteBank from './SpriteBank';
-import { Buffer } from 'buffer';
 import KeyHandler from './KeyHandler';
 import { MapHandler } from './maps/MapHandler';
+
+export interface MessageBox {
+	text: string;
+	startFrame: number;
+}
 
 export class Game {
 	mapHandler: MapHandler;
@@ -15,24 +17,15 @@ export class Game {
 	static tileSize: number = 16;
 	static zoom: number = 2;
 	lastFrameTime: number = 0;
-	activeTextBox: string | null = null;
+	activeTextBox: MessageBox | null = null;
 	canPlayerMove: boolean = true;
 
-	constructor(mapBuffer: string, canvas: HTMLCanvasElement) {
-		this.mapHandler = new MapHandler(GameMap.readMap(Buffer.from(mapBuffer, 'base64')));
+	constructor(canvas: HTMLCanvasElement, map: GameMap) {
+		this.mapHandler = new MapHandler(map);
 		this.#canvas = new Canvas(canvas);
 		this.player = new Player(10, 10, 'down', () => null);
 		this.#canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.#canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
-	}
-	async init() {
-		await SpriteBank.readMap(
-			this.mapHandler.active.name,
-			this.mapHandler.active.area,
-			this.mapHandler.active.images
-		);
-		const playerBank = (await axios.get('sprites?bank=player')).data;
-		await SpriteBank.readBank('player', playerBank);
 	}
 	tick(currentFrameTime: number) {
 		this.#canvas.reset();
@@ -47,7 +40,7 @@ export class Game {
 		// draw base layer
 		this.mapHandler.active.drawBaseLayer(this.#canvas);
 		// draw map elements so the player hides behind the,
-		this.mapHandler.active.tick(this.#canvas);
+		this.mapHandler.active.tick(this, this.#canvas);
 		// draw player
 		this.player.tick(this, currentFrameTime);
 		// draw the overlaid tles
@@ -60,7 +53,7 @@ export class Game {
 		this.#canvas.translate(-this.viewport.pos.x, -this.viewport.pos.y);
 
 		if (this.activeTextBox !== null) {
-			this.#canvas.showMessageBox(this.activeTextBox);
+			this.#canvas.showMessageBox(this.activeTextBox, currentFrameTime);
 		}
 
 		this.canPlayerMove = this.activeTextBox === null;

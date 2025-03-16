@@ -1,14 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import { zfd } from 'zod-form-data';
-import { promises as fs } from 'fs';
 import type { PageServerLoad } from './$types.js';
-import { removeExtension } from '$lib/utils/removeExtension.js';
+import prisma from '$lib/prisma.js';
 
 export const load: PageServerLoad = async () => {
-	const sprites = (await fs.readdir('./static/sprites')).map(removeExtension);
+	const banks = await prisma.spriteBank.findMany();
 
 	return {
-		sprites
+		banks
 	};
 };
 
@@ -25,6 +24,10 @@ export const actions = {
 
 		const { bank } = result.data;
 
-		await fs.writeFile(`./static/sprites/${bank}.bank`, Buffer.alloc(1).fill(0));
+		await prisma.spriteBank.create({
+			data: {
+				name: bank
+			}
+		});
 	}
 };

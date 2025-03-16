@@ -35,6 +35,11 @@
 			label: 'Game',
 			Icon: Game,
 			href: '/game'
+		},
+		{
+			label: 'Tiles',
+			Icon: Image,
+			href: '/tiles'
 		}
 	];
 </script>

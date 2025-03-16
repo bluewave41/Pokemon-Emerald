@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Tiles } from '@prisma/client';
+	import type { Tile } from '@prisma/client';
 
 	interface Props {
-		tiles: Tiles[];
-		active: number | null;
-		background: number | null;
-		onClick: (id: number) => void;
+		tiles: Tile[];
+		active?: number | null;
+		background?: number | null;
+		onClick: (tile: Tile) => void;
 	}
 
 	let { tiles, active, background, onClick }: Props = $props();
@@ -13,16 +13,20 @@
 
 <div class="grid">
 	{#each tiles as tile}
-		<img
-			class={`icon ${tile.id === active ? 'active' : ''} ${tile.id === background ? 'background' : ''}`}
-			src={tile.data}
-			alt="tile"
-			onclick={() => onClick(tile.id)}
-		/>
+		<button onclick={() => onClick(tile)}>
+			<img
+				class={`icon ${tile.id === active ? 'active' : ''} ${tile.id === background ? 'background' : ''}`}
+				src={tile.data}
+				alt="tile"
+			/>
+		</button>
 	{/each}
 </div>
 
 <style>
+	button {
+		all: unset;
+	}
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(5, 16px);

@@ -3,11 +3,14 @@ import type { MapNames } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
 
 export const mapToBuffer = async (name: MapNames) => {
-	const map = await prisma.maps.findFirst({
+	const map = await prisma.map.findFirst({
 		include: {
 			MapTile: {
 				include: { tile: true },
 				orderBy: { id: 'asc' }
+			},
+			Events: {
+				include: { sign: true }
 			}
 		},
 		where: {
@@ -19,33 +22,12 @@ export const mapToBuffer = async (name: MapNames) => {
 		throw new Error('Map was null');
 	}
 
-	const uniqueTiles = await prisma.mapTiles.findMany({
-		distinct: ['tileId'],
-		select: {
-			tileId: true,
-			tile: {
-				select: {
-					overlay: true,
-					data: true
-				}
-			}
-		},
-		orderBy: { id: 'asc' },
-		where: { mapId: map.id }
-	});
-
-	const buffer = new BufferHelper(Buffer.alloc(30000));
+	const buffer = new BufferHelper(Buffer.alloc(50000));
 	buffer.writeByte(1);
 	buffer.writeString(map.name);
 	buffer.writeByte(map.width);
 	buffer.writeByte(map.height);
 	buffer.writeByte(map.backgroundTileId ?? 1);
-	buffer.writeShort(uniqueTiles.length);
-
-	// write image data
-	for (const { tile } of uniqueTiles) {
-		buffer.writeString(tile.data);
-	}
 
 	//write map data
 	for (const tile of map.MapTile) {
@@ -54,5 +36,14 @@ export const mapToBuffer = async (name: MapNames) => {
 		buffer.writeByte(tile.permissions);
 	}
 
-	return buffer.getUsed();
+	for (const event of map.Events) {
+		buffer.writeEventId(event.type);
+		buffer.writeByte(event.x);
+		buffer.writeByte(event.y);
+		buffer.writeString(event.sign?.text ?? '');
+	}
+
+	return {
+		map: buffer.getUsed()
+	};
 };

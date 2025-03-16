@@ -1,10 +1,15 @@
 import { z } from 'zod';
 import type { Game } from '../Game';
-import { Tile, tileSchema } from './Tile';
+import { Tile, tileSchema, type BaseTileProps } from './Tile';
 
 export const signTileSchema = tileSchema.extend({
 	text: z.string()
 });
+
+export interface SignProps extends BaseTileProps {
+	kind: 'sign';
+	text: string;
+}
 
 export class SignTile extends Tile {
 	text: string;
@@ -15,6 +20,9 @@ export class SignTile extends Tile {
 		this.kind = 'sign';
 	}
 	activate(game: Game) {
-		game.activeTextBox = this.text;
+		game.activeTextBox = {
+			text: this.text,
+			startFrame: game.lastFrameTime
+		};
 	}
 }

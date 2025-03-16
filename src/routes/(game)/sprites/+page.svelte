@@ -14,8 +14,8 @@
 	<h2>Banks</h2>
 
 	<div>
-		{#each data.sprites as bank}
-			- <a class="bank" href={`/sprites/${bank}`}>{bank}</a>
+		{#each data.banks as { name }}
+			- <a class="bank" href={`/sprites/${name}`}>{name}</a>
 		{/each}
 	</div>
 </div>

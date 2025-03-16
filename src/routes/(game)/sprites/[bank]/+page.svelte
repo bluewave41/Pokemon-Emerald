@@ -16,7 +16,7 @@
 <div class="container">
 	{#each data.sprites as sprite}
 		<div class="sprite">
-			<img src={'data:image/png;base64,' + sprite.data} alt={sprite.name} />
+			<img src={sprite.data} alt={sprite.name} />
 			<p>{sprite.name}</p>
 		</div>
 	{/each}

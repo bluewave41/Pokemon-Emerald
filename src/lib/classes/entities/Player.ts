@@ -42,6 +42,17 @@ export class Player extends Entity {
 			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) - 10
 		);
 
+		const activeKey = KeyHandler.getActiveKeyState('z');
+
+		if (activeKey.down && activeKey.initial) {
+			if (game.activeTextBox) {
+				game.activeTextBox = null;
+			} else {
+				const tile = this.getFacingTile(game.mapHandler.active);
+				tile.activate(game);
+			}
+		}
+
 		// but don't let them move if a textbox or something is active...
 		if (!game.canPlayerMove) {
 			return;
@@ -52,11 +63,6 @@ export class Player extends Entity {
 		}
 
 		this.move(game.lastFrameTime, currentFrameTime);
-
-		if (KeyHandler.getActiveKeyState('z').down) {
-			const tile = this.getFacingTile(game.mapHandler.active);
-			tile.activate(game);
-		}
 	}
 	updateDirection(game: Game) {
 		const moveTable = {

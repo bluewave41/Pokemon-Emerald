@@ -1,4 +1,4 @@
-export type ActiveKeys = 'Enter' | 'z';
+export type ActiveKeys = 'z';
 export type MovementKeys = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
 
 interface KeyState {
@@ -8,6 +8,7 @@ interface KeyState {
 
 interface PressedKey {
 	down: boolean;
+	initial: boolean;
 }
 
 export class InternalKeyHandler {
@@ -18,8 +19,7 @@ export class InternalKeyHandler {
 		ArrowRight: { down: false, holdCount: 0 }
 	};
 	#pressedKeys: Record<ActiveKeys, PressedKey> = {
-		Enter: { down: false },
-		z: { down: false }
+		z: { down: false, initial: false }
 	};
 
 	constructor() {}
@@ -28,14 +28,20 @@ export class InternalKeyHandler {
 			this.#keys[key].down = true;
 			this.#keys[key].holdCount = 0;
 		} else if (this.canHandlePressedKey(key)) {
-			this.#pressedKeys[key].down = true;
+			this.#pressedKeys[key] = {
+				down: true,
+				initial: true
+			};
 		}
 	}
 	keyUp(key: string) {
 		if (this.canHandleKey(key)) {
 			this.#keys[key].down = false;
 		} else if (this.canHandlePressedKey(key)) {
-			this.#pressedKeys[key].down = false;
+			this.#pressedKeys[key] = {
+				down: false,
+				initial: false
+			};
 		}
 	}
 	tick() {
@@ -69,7 +75,9 @@ export class InternalKeyHandler {
 		return this.#keys[key];
 	}
 	getActiveKeyState(key: ActiveKeys) {
-		return this.#pressedKeys[key];
+		const value = { ...this.#pressedKeys[key] };
+		this.#pressedKeys[key].initial = false;
+		return value;
 	}
 }
 

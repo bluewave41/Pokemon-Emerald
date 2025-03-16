@@ -2,47 +2,30 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { Game } from '$lib/classes/Game.js';
-	import { GameEditor } from '$lib/classes/GameEditor.js';
 	import Tab from '$lib/components/Tab.svelte';
 	import TileGrid from '$lib/components/TileGrid.svelte';
 	import type { MapEvent } from '$lib/interfaces/Events.js';
-	import type { AnyTile } from '$lib/interfaces/AnyTile.js';
 	import type { PageProps } from './$types.js';
 	import { Tile } from '$lib/classes/tiles/Tile.js';
 	import { SignTile } from '$lib/classes/tiles/SignTile.js';
 	import type { TileKind } from '$lib/interfaces/TileKind.js';
-
-	type Tabs = 'Tiles' | 'Permissions' | 'Events';
-
-	const tabs: Tabs[] = ['Tiles', 'Permissions', 'Events'];
+	import SpriteBank from '$lib/classes/SpriteBank.js';
+	import { GameEditor } from '$lib/classes/GameEditor.svelte.js';
 
 	let { data }: PageProps = $props();
 
+	const tabs = ['Tiles', 'Permissions', 'Events'];
+
 	let canvasRef: HTMLCanvasElement;
 	let topCanvasRef: HTMLCanvasElement;
-	let game: GameEditor = new GameEditor(
-		data.map,
-		data.tiles.filter((tile) => tile.overlay).map((tile) => tile.id)
+	let editor: GameEditor = $state(
+		new GameEditor(
+			data.map,
+			data.tiles.filter((tile) => tile.overlay).map((tile) => tile.id)
+		)
 	);
-	let mouse: { down: boolean } = $state({
-		down: false
-	});
 
 	let events: MapEvent[] = $state([]);
-
-	let options = $state<{
-		activeTab: Tabs;
-		activeTile: number | null;
-		activeColor: number;
-		backgroundTile: number | null;
-		selectedTile: AnyTile | null;
-	}>({
-		activeTab: 'Tiles',
-		activeTile: null,
-		activeColor: 0,
-		backgroundTile: game.map.backgroundTile,
-		selectedTile: null
-	});
 
 	const colorTable: Record<number, string> = {
 		0: 'blue',
@@ -51,14 +34,14 @@
 	};
 
 	const updateTileType = (type: TileKind) => {
-		const { selectedTile } = options;
+		const { selectedTile } = editor.options;
 		if (!selectedTile) {
 			return;
 		}
 		const { x, y } = selectedTile;
 		switch (type) {
 			case 'tile':
-				game.map.tiles[y][x] = new Tile(
+				editor.map.tiles[y][x] = new Tile(
 					x,
 					y,
 					selectedTile?.id,
@@ -67,32 +50,36 @@
 				);
 				break;
 			case 'sign':
-				game.map.tiles[y][x] = new SignTile(selectedTile, '');
+				editor.map.tiles[y][x] = new SignTile(selectedTile, '');
 			case 'warp':
 				break;
 		}
-		options.selectedTile = game.map.getTile(x, y);
+		editor.options.selectedTile = editor.map.getTile(x, y);
 	};
 
 	async function init() {
 		let animId = 0;
 
 		if (canvasRef) {
-			game.setRefs(canvasRef, topCanvasRef);
-			events = game.map.events;
-			await game.init();
+			await SpriteBank.readMap(data.images);
+			editor = new GameEditor(
+				data.map,
+				data.tiles.filter((tile) => tile.overlay).map((tile) => tile.id)
+			);
+			editor.setRefs(canvasRef, topCanvasRef);
+			events = editor.map.events;
 
 			const render = () => {
 				animId++;
-				game.tick();
-				game.topCanvas.context.globalAlpha = 0.5;
+				editor.tick();
+				editor.topCanvas.context.globalAlpha = 0.5;
 
 				// draw top layer
-				if (options.activeTab === 'Permissions') {
-					for (let y = 0; y < game.map.height; y++) {
-						for (let x = 0; x < game.map.width; x++) {
-							const tile = game.map.getTile(x, y);
-							game.topCanvas.drawOverlay(x, y, { color: colorTable[tile.permissions] });
+				if (editor.options.activeTab === 'Permissions') {
+					for (let y = 0; y < editor.map.height; y++) {
+						for (let x = 0; x < editor.map.width; x++) {
+							const tile = editor.map.getTile(x, y);
+							editor.topCanvas.drawOverlay(x, y, { color: colorTable[tile.permissions] });
 						}
 					}
 				}
@@ -108,7 +95,7 @@
 	});
 
 	const getMousePosition = (e: MouseEvent) => {
-		var rect = game.canvas.canvas.getBoundingClientRect();
+		var rect = editor.canvas.canvas.getBoundingClientRect();
 
 		return {
 			x: Math.floor((e.clientX - rect.left) / Game.getAdjustedTileSize()),
@@ -117,48 +104,48 @@
 	};
 
 	const onMouseMove = (e: MouseEvent) => {
-		if (mouse.down) {
+		if (editor.mouse.down) {
 			handleMouseDown(e);
 		}
 	};
 
 	const handleMouseDown = (e: MouseEvent) => {
 		const { x, y } = getMousePosition(e);
-		switch (options.activeTab) {
+		switch (editor.options.activeTab) {
 			case 'Tiles':
 				switch (e.buttons) {
 					case 1:
-						if (!options.activeTile) {
+						if (!editor.options.activeTile) {
 							break;
 						}
-						game.map.getTile(x, y).id = options.activeTile;
+						editor.map.getTile(x, y).newId = editor.options.activeTile;
 						break;
 					case 2:
-						options.activeTile = game.map.getTile(x, y).id;
+						editor.options.activeTile = editor.map.getTile(x, y).id;
 						break;
 				}
 				break;
 			case 'Permissions':
-				game.map.getTile(x, y).permissions = options.activeColor;
+				editor.map.getTile(x, y).permissions = editor.options.activeColor;
 				break;
 			case 'Events':
-				options.selectedTile = game.map.getTile(x, y);
+				editor.options.selectedTile = editor.map.getTile(x, y);
 				break;
 		}
 
-		mouse.down = true;
+		editor.mouse.down = true;
 	};
 
 	const onMouseDown = (e: MouseEvent) => {
 		handleMouseDown(e);
-		mouse.down = true;
+		editor.mouse.down = true;
 	};
 </script>
 
 <h1>{page.params.map}</h1>
 <div class="tabs">
 	{#each tabs as tab}
-		<Tab label={tab} onClick={() => (options.activeTab = tab)} />
+		<Tab label={tab} onClick={() => (editor.options.activeTab = tab)} />
 	{/each}
 </div>
 
@@ -168,102 +155,106 @@
 			class="container"
 			onmousemove={onMouseMove}
 			onmousedown={onMouseDown}
-			onmouseup={() => (mouse.down = false)}
+			onmouseup={() => (editor.mouse.down = false)}
 			oncontextmenu={(e) => e.preventDefault()}
 		>
 			<canvas bind:this={canvasRef}></canvas>
 			<canvas class="topCanvas" bind:this={topCanvasRef}></canvas>
 		</div>
 
-		<form
-			method="POST"
-			action="?/save"
-			use:enhance={({ formData }) => {
-				formData.append(
-					'map',
-					JSON.stringify({
-						...game.map.toJSON(),
-						overlayTiles: game.overlayTiles,
-						events: events.map((ev) => ev.toJSON())
-					})
-				);
-			}}
-		>
-			<button>Save</button>
-		</form>
-		<form method="POST" action="?/reset" use:enhance>
-			<button>Reset</button>
-		</form>
-		{#if options.activeTile !== null}
-			{@const { activeTile } = options}
-			<button
-				onclick={() => {
-					options.backgroundTile = activeTile;
-					game.map.backgroundTile = activeTile;
-				}}>Set background tile</button
+		{#if editor}
+			<form
+				method="POST"
+				action="?/save"
+				use:enhance={({ formData }) => {
+					formData.append(
+						'map',
+						JSON.stringify({
+							...editor.map.toJSON(),
+							overlayTiles: editor.overlayTiles,
+							events: events.map((ev) => ev.toJSON())
+						})
+					);
+				}}
 			>
+				<button>Save</button>
+			</form>
+			<form method="POST" action="?/reset" use:enhance>
+				<button>Reset</button>
+			</form>
+			{#if editor.options.activeTile !== null}
+				{@const { activeTile } = editor.options}
+				<button
+					onclick={() => {
+						editor.options.backgroundTile = activeTile;
+						editor.map.backgroundTile = activeTile;
+					}}>Set background tile</button
+				>
+			{/if}
 		{/if}
 	</div>
-	<div class="right">
-		<div>
-			{#if options.activeTab === 'Tiles'}
-				<TileGrid
-					tiles={data.tiles}
-					active={options.activeTile}
-					background={options.backgroundTile}
-					onClick={(id) => (options.activeTile = id)}
-				/>
-				{#if options.activeTile}
-					{@const { activeTile } = options}
-					{#key options.activeTile}
-						<div>Properties</div>
+	{#if editor}
+		<div class="right">
+			<div>
+				{#if editor.options.activeTab === 'Tiles'}
+					<TileGrid
+						tiles={data.tiles}
+						active={editor.options.activeTile}
+						background={editor.options.backgroundTile}
+						onClick={(tile) => (editor.options.activeTile = tile.id)}
+					/>
+					{#if editor.options.activeTile}
+						{@const { activeTile } = editor.options}
+						{#key editor.options.activeTile}
+							<div>Properties</div>
+							<div>
+								<label for="overlay">Overlay</label>
+								<input
+									name="overlay"
+									type="checkbox"
+									checked={editor.overlayTiles.includes(editor.options.activeTile)}
+									onchange={(e) => {
+										editor.overlayTiles = e.currentTarget.checked
+											? [...editor.overlayTiles, activeTile]
+											: editor.overlayTiles.filter((el) => el !== activeTile);
+									}}
+								/>
+							</div>
+						{/key}
+					{/if}
+				{/if}
+				{#if editor.options.activeTab === 'Permissions'}
+					{#each Object.entries(colorTable) as [key, value]}
+						<button
+							class={`square ${value} ${key === editor.options.activeColor.toString() ? 'selected' : ''}`}
+							onclick={() => (editor.options.activeColor = parseInt(key))}>{key}</button
+						>
+					{/each}
+				{/if}
+				{#if editor.options.activeTab === 'Events' && editor.options.selectedTile}
+					{@const { selectedTile } = editor.options}
+					<p>Events</p>
+					<p>X: {editor.options.selectedTile?.x}</p>
+					<p>Y: {editor.options.selectedTile?.y}</p>
+					{#key editor.options.selectedTile}
+						<select onchange={(e) => updateTileType(e.currentTarget.value as TileKind)}>
+							<option value="none" selected={selectedTile.kind === 'tile'}>None</option>
+							<option value="sign" selected={selectedTile.kind === 'sign'}>Sign</option>
+						</select>
 						<div>
-							<label for="overlay">Overlay</label>
-							<input
-								name="overlay"
-								type="checkbox"
-								checked={game.overlayTiles.includes(options.activeTile)}
-								onchange={(e) => {
-									game.overlayTiles = e.currentTarget.checked
-										? [...game.overlayTiles, activeTile]
-										: game.overlayTiles.filter((el) => el !== activeTile);
-								}}
-							/>
+							{#if selectedTile.isSign()}
+								<input
+									type="text"
+									value={selectedTile.text}
+									onchange={(e) => (selectedTile.text = e.currentTarget.value)}
+								/>
+							{/if}
 						</div>
 					{/key}
 				{/if}
-			{/if}
-			{#if options.activeTab === 'Permissions'}
-				{#each Object.entries(colorTable) as [key, value]}
-					<button
-						class={`square ${value} ${key === options.activeColor.toString() ? 'selected' : ''}`}
-						onclick={() => (options.activeColor = parseInt(key))}>{key}</button
-					>
-				{/each}
-			{/if}
-			{#if options.activeTab === 'Events' && options.selectedTile}
-				{@const { selectedTile } = options}
-				<p>Events</p>
-				<p>X: {options.selectedTile?.x}</p>
-				<p>Y: {options.selectedTile?.y}</p>
-				{#key options.selectedTile}
-					<select onchange={(e) => updateTileType(e.currentTarget.value as TileKind)}>
-						<option value="none" selected={selectedTile.kind === 'tile'}>None</option>
-						<option value="sign" selected={selectedTile.kind === 'sign'}>Sign</option>
-					</select>
-					<div>
-						{#if selectedTile.isSign()}
-							<input
-								type="text"
-								value={selectedTile.text}
-								onchange={(e) => (selectedTile.text = e.currentTarget.value)}
-							/>
-						{/if}
-					</div>
-				{/key}
-			{/if}
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>
 
 <style>

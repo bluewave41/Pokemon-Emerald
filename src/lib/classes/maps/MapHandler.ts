@@ -2,7 +2,6 @@ import axios from 'axios';
 import Connections from './Connections';
 import { GameMap } from './GameMap';
 import { Buffer } from 'buffer';
-import SpriteBank from '../SpriteBank';
 
 export class MapHandler {
 	up: GameMap | null = null;
@@ -21,7 +20,7 @@ export class MapHandler {
 			const response = await axios.get(`/maps?name=${connections.up}`);
 			if (response.status === 200) {
 				this.up = GameMap.readMap(Buffer.from(response.data, 'base64'));
-				await SpriteBank.readMap(this.up.name, this.up.area, this.up.images);
+				//await SpriteBank.readMap(this.up.images);
 			}
 		}
 	}
