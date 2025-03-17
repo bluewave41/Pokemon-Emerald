@@ -34,9 +34,10 @@ model Map {
 }
 
 model Tile {
-  id       Int     @id
+  id       Int     @id @default(autoincrement())
+  hash     String  @db.Char(32) @unique
   original String
-  data     String  @unique
+  data     String 
   overlay  Boolean @default(false)
   animated Boolean @default(false)
   sequence Int[]   @default([])

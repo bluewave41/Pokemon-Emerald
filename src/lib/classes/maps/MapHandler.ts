@@ -12,15 +12,14 @@ export class MapHandler {
 
 	constructor(active: GameMap) {
 		this.active = active;
-		//this.connect();
+		this.connect();
 	}
 	async connect() {
 		const connections = Connections[this.active.name];
 		if (connections.up) {
 			const response = await axios.get(`/maps?name=${connections.up}`);
 			if (response.status === 200) {
-				this.up = GameMap.readMap(Buffer.from(response.data, 'base64'));
-				//await SpriteBank.readMap(this.up.images);
+				this.up = GameMap.readMap(Buffer.from(response.data.map, 'base64'));
 			}
 		}
 	}

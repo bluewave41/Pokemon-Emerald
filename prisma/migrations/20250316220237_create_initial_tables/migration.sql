@@ -25,7 +25,8 @@ CREATE TABLE "Map" (
 
 -- CreateTable
 CREATE TABLE "Tile" (
-    "id" INTEGER NOT NULL,
+    "id" SERIAL NOT NULL,
+    "hash" CHAR(32) NOT NULL,
     "original" TEXT NOT NULL,
     "data" TEXT NOT NULL,
     "overlay" BOOLEAN NOT NULL DEFAULT false,
@@ -102,7 +103,7 @@ CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 CREATE UNIQUE INDEX "Map_name_key" ON "Map"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Tile_data_key" ON "Tile"("data");
+CREATE UNIQUE INDEX "Tile_hash_key" ON "Tile"("hash");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "TileFrame_data_key" ON "TileFrame"("data");

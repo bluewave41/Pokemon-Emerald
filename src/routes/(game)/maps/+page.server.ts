@@ -4,6 +4,14 @@ import { Jimp } from 'jimp';
 import type { PageServerLoad } from './$types.js';
 import { removeExtension } from '$lib/utils/removeExtension.js';
 import prisma from '$lib/prisma.js';
+import crypto from 'crypto';
+
+interface TileInfo {
+	id: number;
+	data: string;
+	hash: string;
+	new: boolean;
+}
 
 export const load: PageServerLoad = async () => {
 	const maps = (await prisma.map.findMany()).map((map) => map.name);
@@ -35,19 +43,37 @@ export const actions = {
 
 		const { width, height } = image.bitmap;
 
-		const images: string[] = [];
 		const map: number[][] = [];
+
+		const existingTiles: TileInfo[] = (
+			await prisma.tile.findMany({
+				select: {
+					id: true,
+					data: true,
+					hash: true
+				}
+			})
+		).map((tile) => ({
+			...tile,
+			new: false
+		}));
 
 		for (let y = 0; y < height; y += 16) {
 			const row = [];
 			for (let x = 0; x < width; x += 16) {
 				const tile = image.clone().crop({ x, y, w: 16, h: 16 });
 				const base64 = await tile.getBase64('image/png');
-				const foundImage = images.find((img) => img === base64);
+				const hash = crypto.createHash('md5').update(base64).digest('hex');
+				const foundImage = existingTiles.find((img) => img.hash === hash);
 				if (!foundImage) {
-					images.push(base64);
+					existingTiles.push({
+						id: existingTiles.length + 1,
+						data: base64,
+						hash,
+						new: true
+					});
 				}
-				row.push(images.findIndex((image) => image === base64) + 1);
+				row.push(existingTiles.findIndex((image) => image.hash === hash) + 1);
 			}
 			map.push(row);
 		}
@@ -62,20 +88,14 @@ export const actions = {
 				}
 			});
 
-			const highestTileId =
-				(
-					await prisma.tile.findFirst({
-						orderBy: { id: 'desc' },
-						select: { id: true }
-					})
-				)?.id ?? 1;
-
 			await transaction.tile.createMany({
-				data: images.map((img, index) => ({
-					id: index + highestTileId,
-					data: img,
-					original: img
-				})),
+				data: existingTiles
+					.filter((tile) => tile.new)
+					.map((image) => ({
+						data: image.data,
+						hash: image.hash,
+						original: image.data
+					})),
 				skipDuplicates: true
 			});
 

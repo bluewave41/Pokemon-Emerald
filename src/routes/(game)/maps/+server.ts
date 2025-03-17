@@ -1,8 +1,7 @@
 import { mapNamesSchema } from '$lib/interfaces/MapNames';
+import { mapToBuffer } from '$lib/utils/mapToBuffer.js';
 import { error, json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { promises as fs } from 'fs';
-import path from 'path';
 
 export async function GET({ url }) {
 	const schema = z.object({
@@ -14,9 +13,9 @@ export async function GET({ url }) {
 		return error(400, { message: 'Invalid name given.' });
 	}
 
-	const map = await fs.readFile(
-		path.join(path.resolve('./static/maps'), path.basename(result.data.name) + '.map')
-	);
+	const { map } = await mapToBuffer(result.data.name);
 
-	return json(map.toString('base64'));
+	return json({
+		map: map.toString('base64')
+	});
 }

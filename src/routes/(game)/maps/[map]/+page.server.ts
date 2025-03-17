@@ -8,6 +8,7 @@ import { mapNamesSchema } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
 import { gameEditorMapSchema } from '$lib/classes/maps/GameMap';
 import type { SignProps } from '$lib/classes/tiles/SignTile';
+import prisma from '$lib/prisma';
 
 const removeImageBackground = async (background: string, top: string) => {
 	if (background === top) {

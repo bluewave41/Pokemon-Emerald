@@ -26,7 +26,7 @@ export const load = async () => {
 		//where: { mapId: map.id }
 	});
 
-	const imageBuffer = new BufferHelper(Buffer.alloc(30000));
+	const imageBuffer = new BufferHelper(Buffer.alloc(50000));
 
 	imageBuffer.writeShort(images.length);
 
