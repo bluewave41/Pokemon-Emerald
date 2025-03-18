@@ -14,14 +14,8 @@ export class Player extends Entity {
 	speed: number = Game.getAdjustedTileSize() * 3;
 	walkFrame: number = 1;
 	counter: number = 0;
-	signalMapChange: (direction: Direction) => void;
 
-	constructor(
-		x: number,
-		y: number,
-		direction: Direction,
-		signalMapChange: (direction: Direction) => void
-	) {
+	constructor(x: number, y: number, direction: Direction) {
 		super(x, y);
 		this.targetPosition = new Position(
 			x * Game.getAdjustedTileSize(),
@@ -29,7 +23,6 @@ export class Player extends Entity {
 		);
 		this.subPosition = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 		this.direction = direction;
-		this.signalMapChange = signalMapChange;
 	}
 	tick(game: Game, currentFrameTime: number) {
 		// we should always draw the Player
@@ -38,8 +31,8 @@ export class Player extends Entity {
 		const sprite = SpriteBank.getSprite('player', walkSprite);
 		game.canvas.drawAbsoluteImage(
 			sprite,
-			Math.round(this.subPosition.x) + 1,
-			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) - 10
+			Math.round(this.subPosition.x) + 1 + game.viewport.pos.xOffset,
+			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) - 10 + game.viewport.pos.yOffset
 		);
 
 		const activeKey = KeyHandler.getActiveKeyState('z');
@@ -100,12 +93,11 @@ export class Player extends Entity {
 		if (direction !== null) {
 			const tableEntry = moveTable[direction];
 			if (this.isNewTileOutsideMap(game, tableEntry.x, tableEntry.y)) {
-				//this.signalMapChange(this.getOutsideMapDirection(game, tableEntry.x, tableEntry.y));
 				this.moving = true;
 				this.position = { x: tableEntry.x, y: game.mapHandler.active.height };
 				this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
-				console.log('here', this.position, this.targetPosition);
 				this.counter = 0;
+				game.changeMap(this.getOutsideMapDirection(game, tableEntry.x, tableEntry.y));
 			} else {
 				const newTile = game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
 				const keyState = KeyHandler.getKeyState(direction);
@@ -113,7 +105,6 @@ export class Player extends Entity {
 					this.moving = true;
 					this.position = { x: tableEntry.x, y: tableEntry.y };
 					this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
-					console.log(this.position, this.targetPosition);
 					this.counter = 0;
 				}
 				// we should always turn to face the direction
@@ -133,6 +124,8 @@ export class Player extends Entity {
 			return 'right';
 		} else if (y > game.mapHandler.active.height) {
 			return 'down';
+		} else {
+			throw new Error('Exited map in invalid direction.');
 		}
 	}
 	getFacingTile(map: GameMap) {

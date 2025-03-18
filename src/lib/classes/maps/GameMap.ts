@@ -55,26 +55,26 @@ export class GameMap {
 		this.backgroundTile = backgroundTile;
 		this.events = events;
 	}
-	drawBaseLayer(canvas: Canvas) {
+	drawBaseLayer(canvas: Canvas, x: number, y: number) {
 		if (!this.backgroundTile) {
 			return;
 		}
-		for (let y = 0; y < this.height; y++) {
-			for (let x = 0; x < this.width; x++) {
-				canvas.drawTile(this.backgroundTile.getActiveSprite(), x, y);
+		for (let loopY = 0; loopY < this.height; loopY++) {
+			for (let loopX = 0; loopX < this.width; loopX++) {
+				canvas.drawTile(this.backgroundTile.getActiveSprite(), loopX + x, loopY + y);
 			}
 		}
 	}
-	drawTopLayer(canvas: Canvas) {
+	drawTopLayer(canvas: Canvas, x: number, y: number) {
 		const tiles = this.tiles.flat().filter((tile) => tile.overlay);
 		for (const tile of tiles) {
-			canvas.drawTile(tile.getActiveSprite(), tile.x, tile.y);
+			canvas.drawTile(tile.getActiveSprite(), tile.x + x, tile.y + y);
 		}
 	}
-	tick(game: { lastFrameTime: number }, canvas: Canvas) {
-		for (let y = 0; y < this.height; y++) {
-			for (let x = 0; x < this.width; x++) {
-				const tile = this.tiles[y][x];
+	tick(game: { lastFrameTime: number }, canvas: Canvas, x: number, y: number) {
+		for (let loopY = 0; loopY < this.height; loopY++) {
+			for (let loopX = 0; loopX < this.width; loopX++) {
+				const tile = this.tiles[loopY][loopX];
 				tile.tick(game);
 				if (!this.editor && tile.id === this.backgroundTile?.id) {
 					continue;
@@ -82,7 +82,7 @@ export class GameMap {
 				if (tile.overlay) {
 					continue;
 				}
-				canvas.drawTile(tile.getActiveSprite(), x, y);
+				canvas.drawTile(tile.getActiveSprite(), loopX + x, loopY + y);
 			}
 		}
 	}
@@ -108,10 +108,6 @@ export class GameMap {
 				row.push(tile);
 			}
 			map.push(row);
-		}
-
-		if (!backgroundTile) {
-			throw new Error('Map is missing a background tile.');
 		}
 
 		while (buffer.hasMore()) {
