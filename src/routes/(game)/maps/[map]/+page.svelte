@@ -200,7 +200,7 @@
 					<TileGrid
 						tiles={data.tiles}
 						active={editor.options.activeTile}
-						background={editor.options.backgroundTile}
+						background={editor.options.backgroundTile?.id}
 						onClick={(tile) => (editor.options.activeTile = tile.id)}
 					/>
 					{#if editor.options.activeTile}

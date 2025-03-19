@@ -92,37 +92,39 @@ export class Player extends Entity {
 		const direction = KeyHandler.getPrioritizedKey();
 		if (direction !== null) {
 			const tableEntry = moveTable[direction];
-			if (this.isNewTileOutsideMap(game, tableEntry.x, tableEntry.y)) {
-				this.moving = true;
-				this.position = { x: tableEntry.x, y: game.mapHandler.active.height };
-				this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
-				this.counter = 0;
-				game.changeMap(this.getOutsideMapDirection(game, tableEntry.x, tableEntry.y));
-			} else {
-				const newTile = game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
-				const keyState = KeyHandler.getKeyState(direction);
-				if (keyState.holdCount > 8 && newTile.isPassable()) {
+			const keyState = KeyHandler.getKeyState(direction);
+			if (keyState.holdCount > 8) {
+				if (this.isNewTileOutsideMap(game, tableEntry.x, tableEntry.y)) {
+					game.changeMap(this.getOutsideMapDirection(game, tableEntry.x, tableEntry.y));
 					this.moving = true;
-					this.position = { x: tableEntry.x, y: tableEntry.y };
-					this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
 					this.counter = 0;
+				} else {
+					const newTile = game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
+					if (keyState.holdCount > 8 && newTile.isPassable()) {
+						this.moving = true;
+						this.position = { x: tableEntry.x, y: tableEntry.y };
+						this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
+						this.counter = 0;
+					}
 				}
-				// we should always turn to face the direction
-				this.direction = tableEntry.direction as Direction;
 			}
+			// we should always turn to face the direction
+			this.direction = tableEntry.direction as Direction;
 		}
 	}
 	isNewTileOutsideMap(game: Game, x: number, y: number) {
-		return x < 0 || y < 0 || x > game.mapHandler.active.width || y > game.mapHandler.active.height;
+		return (
+			x < 0 || y < 0 || x >= game.mapHandler.active.width || y >= game.mapHandler.active.height
+		);
 	}
 	getOutsideMapDirection(game: Game, x: number, y: number) {
 		if (x < 0) {
 			return 'left';
 		} else if (y < 0) {
 			return 'up';
-		} else if (x > game.mapHandler.active.width) {
+		} else if (x >= game.mapHandler.active.width) {
 			return 'right';
-		} else if (y > game.mapHandler.active.height) {
+		} else if (y >= game.mapHandler.active.height) {
 			return 'down';
 		} else {
 			throw new Error('Exited map in invalid direction.');

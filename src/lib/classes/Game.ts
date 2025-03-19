@@ -29,11 +29,31 @@ export class Game {
 		this.#canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 	}
 	changeMap(direction: Direction) {
-		console.log(direction);
+		const curr = this.mapHandler.active;
+		if (direction === 'up' && this.mapHandler.up) {
+			this.mapHandler.setActive(this.mapHandler.up);
+			this.mapHandler.setDown(curr);
+			this.mapHandler.up = null;
+			this.player.position = { x: this.player.position.x, y: this.mapHandler.active.height };
+			this.player.targetPosition = {
+				x: this.player.subPosition.x,
+				y: this.mapHandler.active.height * Game.getAdjustedTileSize()
+			};
+		}
+		if (direction === 'down' && this.mapHandler.down) {
+			this.mapHandler.setActive(this.mapHandler.down);
+			this.mapHandler.setUp(curr);
+			this.mapHandler.down = null;
+			this.player.position = { x: this.player.position.x, y: -1 };
+			this.player.targetPosition = {
+				x: this.player.subPosition.x,
+				y: -1 * Game.getAdjustedTileSize()
+			};
+		}
+		this.mapHandler.connect();
 	}
 	tick(currentFrameTime: number) {
 		this.#canvas.reset();
-
 		this.viewport.pos = {
 			x: -(this.player.subPosition.x / Game.getAdjustedTileSize() - this.viewport.width / 2),
 			y: -(
@@ -47,16 +67,33 @@ export class Game {
 
 		this.#canvas.translate(this.viewport.pos.x, this.viewport.pos.y);
 
-		let x = 0;
+		let x = this.mapHandler.left?.width ?? 0;
 		let y = 0;
 
 		if (this.mapHandler.up) {
-			x = this.mapHandler.left ?? 0;
 			this.drawMap(this.mapHandler.up, x, y);
+		}
+		if (this.mapHandler.down) {
+			y = this.mapHandler.up?.height ?? 0 + this.mapHandler.active.height;
+			this.drawMap(this.mapHandler.down, x, y);
 		}
 		y = this.mapHandler.up?.height ?? 0;
 		this.drawMap(this.mapHandler.active, x, y);
+
 		this.player.tick(this, currentFrameTime);
+
+		// after the player draw the top layer
+		x = this.mapHandler.left?.width ?? 0;
+
+		if (this.mapHandler.up) {
+			this.mapHandler.up.drawTopLayer(this.#canvas, x, y);
+		}
+		if (this.mapHandler.down) {
+			y = this.mapHandler.up?.height ?? 0 + this.mapHandler.active.height;
+			this.mapHandler.down.drawTopLayer(this.#canvas, x, y);
+		}
+		y = this.mapHandler.up?.height ?? 0;
+		this.mapHandler.active.drawTopLayer(this.#canvas, x, y);
 
 		KeyHandler.tick();
 
@@ -69,10 +106,8 @@ export class Game {
 		this.canPlayerMove = this.activeTextBox === null;
 	}
 	drawMap(map: GameMap, x: number, y: number) {
-		//this.#canvas.translate(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 		map.drawBaseLayer(this.#canvas, x, y);
 		map.tick(this, this.#canvas, x, y);
-		map.drawTopLayer(this.#canvas, x, y);
 	}
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;

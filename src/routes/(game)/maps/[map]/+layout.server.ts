@@ -9,7 +9,7 @@ export const load = async () => {
 			tile: {
 				select: {
 					overlay: true,
-					data: true,
+					original: true,
 					animated: true,
 					sequence: true,
 					delay: true,
@@ -32,7 +32,7 @@ export const load = async () => {
 
 	for (const tile of images) {
 		imageBuffer.writeShort(tile.tileId);
-		imageBuffer.writeString(tile.tile.data);
+		imageBuffer.writeString(tile.tile.original);
 		imageBuffer.writeBoolean(tile.tile.animated);
 		if (tile.tile.animated) {
 			imageBuffer.writeShort(tile.tile.delay);

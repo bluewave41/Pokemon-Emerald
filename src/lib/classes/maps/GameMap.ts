@@ -133,7 +133,7 @@ export class GameMap {
 			width: this.width,
 			height: this.height,
 			tiles: this.tiles,
-			backgroundTile: this.backgroundTile
+			backgroundTile: this.backgroundTile?.id
 		};
 	}
 	setEditor(editor: boolean) {

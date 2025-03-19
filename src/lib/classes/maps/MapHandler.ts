@@ -16,12 +16,19 @@ export class MapHandler {
 	}
 	async connect() {
 		const connections = Connections[this.active.name];
-		if (connections.up) {
-			const response = await axios.get(`/maps?name=${connections.up}`);
-			if (response.status === 200) {
-				this.up = GameMap.readMap(Buffer.from(response.data.map, 'base64'));
-			}
+		if (connections.up && !this.up) {
+			this.up = await this.setMap(connections.up);
 		}
+		if (connections.down && !this.down) {
+			this.down = await this.setMap(connections.down);
+		}
+	}
+	async setMap(name: string) {
+		const response = await axios.get(`/maps?name=${name}`);
+		if (response.status === 200) {
+			return GameMap.readMap(Buffer.from(response.data.map, 'base64'));
+		}
+		return null;
 	}
 	setActive(map: GameMap) {
 		this.active = map;

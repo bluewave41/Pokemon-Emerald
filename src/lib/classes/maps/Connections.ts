@@ -10,7 +10,13 @@ const Connections: Record<MapNames, Record<Direction, MapNames | null>> = {
 	},
 	route101: {
 		up: null,
-		down: null,
+		down: 'littleroot',
+		left: null,
+		right: null
+	},
+	oldale: {
+		up: null,
+		down: 'route101',
 		left: null,
 		right: null
 	}
