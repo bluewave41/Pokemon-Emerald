@@ -22,7 +22,7 @@ export const mapToBuffer = async (name: MapNames) => {
 		throw new Error('Map was null');
 	}
 
-	const buffer = new BufferHelper(Buffer.alloc(50000));
+	const buffer = new BufferHelper(Buffer.alloc(100000));
 	buffer.writeByte(1);
 	buffer.writeString(map.name);
 	buffer.writeByte(map.width);

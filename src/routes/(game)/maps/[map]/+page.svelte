@@ -118,10 +118,10 @@
 						if (!editor.options.activeTile) {
 							break;
 						}
-						editor.map.getTile(x, y).newId = editor.options.activeTile;
+						editor.map.getTile(x, y).newId = editor.options.activeTile.id;
 						break;
 					case 2:
-						editor.options.activeTile = editor.map.getTile(x, y).id;
+						editor.options.activeTile = editor.map.getTile(x, y);
 						break;
 				}
 				break;
@@ -167,6 +167,8 @@
 				method="POST"
 				action="?/save"
 				use:enhance={({ formData }) => {
+					console.log(editor.map);
+					console.log(editor.map.toJSON());
 					formData.append(
 						'map',
 						JSON.stringify({
@@ -199,9 +201,9 @@
 				{#if editor.options.activeTab === 'Tiles'}
 					<TileGrid
 						tiles={data.tiles}
-						active={editor.options.activeTile}
+						active={editor.options.activeTile?.id}
 						background={editor.options.backgroundTile?.id}
-						onClick={(tile) => (editor.options.activeTile = tile.id)}
+						onClick={(tile) => (editor.options.activeTile = tile)}
 					/>
 					{#if editor.options.activeTile}
 						{@const { activeTile } = editor.options}
@@ -212,7 +214,7 @@
 								<input
 									name="overlay"
 									type="checkbox"
-									checked={editor.overlayTiles.includes(editor.options.activeTile)}
+									checked={editor.overlayTiles.includes(editor.options.activeTile.id)}
 									onchange={(e) => {
 										editor.overlayTiles = e.currentTarget.checked
 											? [...editor.overlayTiles, activeTile]

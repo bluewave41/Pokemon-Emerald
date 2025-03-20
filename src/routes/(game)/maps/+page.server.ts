@@ -7,7 +7,6 @@ import prisma from '$lib/prisma.js';
 import crypto from 'crypto';
 
 interface TileInfo {
-	id: number;
 	data: string;
 	hash: string;
 	new: boolean;
@@ -51,6 +50,9 @@ export const actions = {
 					id: true,
 					data: true,
 					hash: true
+				},
+				orderBy: {
+					id: 'asc'
 				}
 			})
 		).map((tile) => ({
@@ -67,7 +69,6 @@ export const actions = {
 				const foundImage = existingTiles.find((img) => img.hash === hash);
 				if (!foundImage) {
 					existingTiles.push({
-						id: existingTiles.length + 1,
 						data: base64,
 						hash,
 						new: true

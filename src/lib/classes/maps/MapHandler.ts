@@ -16,10 +16,13 @@ export class MapHandler {
 	}
 	async connect() {
 		const connections = Connections[this.active.name];
-		if (connections.up && !this.up) {
+		if (connections.up) {
 			this.up = await this.setMap(connections.up);
 		}
-		if (connections.down && !this.down) {
+		if (connections.left) {
+			this.left = await this.setMap(connections.left);
+		}
+		if (connections.down) {
 			this.down = await this.setMap(connections.down);
 		}
 	}
@@ -38,5 +41,11 @@ export class MapHandler {
 	}
 	setDown(map: GameMap) {
 		this.down = map;
+	}
+	setLeft(map: GameMap) {
+		this.left = map;
+	}
+	setRight(map: GameMap) {
+		this.right = map;
 	}
 }

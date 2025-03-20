@@ -8,7 +8,7 @@ type Tabs = 'Tiles' | 'Permissions' | 'Events';
 
 interface Options {
 	activeTab: Tabs;
-	activeTile: number | null;
+	activeTile: Tile | null;
 	activeColor: number;
 	backgroundTile: Tile | null;
 	selectedTile: AnyTile | null;

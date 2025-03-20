@@ -27,7 +27,7 @@ export interface GameMapType {
 	width: number;
 	height: number;
 	tiles: AnyTile[][];
-	backgroundTile: Tile;
+	backgroundTile: number;
 }
 
 export class GameMap {

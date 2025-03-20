@@ -40,6 +40,26 @@ export class Game {
 				y: this.mapHandler.active.height * Game.getAdjustedTileSize()
 			};
 		}
+		if (direction === 'left' && this.mapHandler.left) {
+			this.mapHandler.setActive(this.mapHandler.left);
+			this.mapHandler.setRight(curr);
+			this.mapHandler.left = null;
+			this.player.position = { x: this.mapHandler.active.width, y: this.player.position.y };
+			this.player.targetPosition = {
+				x: this.mapHandler.active.width * Game.getAdjustedTileSize(),
+				y: this.player.subPosition.y
+			};
+		}
+		if (direction === 'right' && this.mapHandler.right) {
+			this.mapHandler.setActive(this.mapHandler.right);
+			this.mapHandler.setLeft(curr);
+			this.mapHandler.right = null;
+			this.player.position = { x: -1, y: this.player.position.y };
+			this.player.targetPosition = {
+				x: -1 * Game.getAdjustedTileSize(),
+				y: this.player.subPosition.y
+			};
+		}
 		if (direction === 'down' && this.mapHandler.down) {
 			this.mapHandler.setActive(this.mapHandler.down);
 			this.mapHandler.setUp(curr);
@@ -50,12 +70,17 @@ export class Game {
 				y: -1 * Game.getAdjustedTileSize()
 			};
 		}
+
 		this.mapHandler.connect();
 	}
 	tick(currentFrameTime: number) {
 		this.#canvas.reset();
 		this.viewport.pos = {
-			x: -(this.player.subPosition.x / Game.getAdjustedTileSize() - this.viewport.width / 2),
+			x: -(
+				this.player.subPosition.x / Game.getAdjustedTileSize() -
+				this.viewport.width / 2 +
+				(this.mapHandler?.left?.width ?? 0)
+			),
 			y: -(
 				this.player.subPosition.y / Game.getAdjustedTileSize() -
 				this.viewport.height / 2 +
@@ -67,33 +92,63 @@ export class Game {
 
 		this.#canvas.translate(this.viewport.pos.x, this.viewport.pos.y);
 
-		let x = this.mapHandler.left?.width ?? 0;
-		let y = 0;
-
 		if (this.mapHandler.up) {
-			this.drawMap(this.mapHandler.up, x, y);
+			this.drawMap(this.mapHandler.up, this.mapHandler.left?.width ?? 0, 0);
 		}
+
+		if (this.mapHandler.left) {
+			this.drawMap(this.mapHandler.left, 0, this.mapHandler.up?.height ?? 0);
+		}
+
+		this.drawMap(
+			this.mapHandler.active,
+			this.mapHandler.left?.width ?? 0,
+			this.mapHandler.up?.height ?? 0
+		);
+
+		if (this.mapHandler.right) {
+			this.drawMap(
+				this.mapHandler.right,
+				(this.mapHandler.left?.width ?? 0) + this.mapHandler.active.width,
+				this.mapHandler.up?.height ?? 0
+			);
+		}
+
 		if (this.mapHandler.down) {
-			y = this.mapHandler.up?.height ?? 0 + this.mapHandler.active.height;
-			this.drawMap(this.mapHandler.down, x, y);
+			this.drawMap(
+				this.mapHandler.down,
+				this.mapHandler.left?.width ?? 0,
+				(this.mapHandler.up?.height ?? 0) + this.mapHandler.active.height
+			);
 		}
-		y = this.mapHandler.up?.height ?? 0;
-		this.drawMap(this.mapHandler.active, x, y);
 
 		this.player.tick(this, currentFrameTime);
 
-		// after the player draw the top layer
-		x = this.mapHandler.left?.width ?? 0;
-
 		if (this.mapHandler.up) {
-			this.mapHandler.up.drawTopLayer(this.#canvas, x, y);
+			this.mapHandler.up.drawTopLayer(this.#canvas, this.mapHandler.left?.width ?? 0, 0);
+		}
+		if (this.mapHandler.left) {
+			this.mapHandler.left.drawTopLayer(this.#canvas, 0, this.mapHandler.up?.height ?? 0);
+		}
+		this.mapHandler.active.drawTopLayer(
+			this.#canvas,
+			this.mapHandler.left?.width ?? 0,
+			this.mapHandler.up?.height ?? 0
+		);
+		if (this.mapHandler.right) {
+			this.mapHandler.right.drawTopLayer(
+				this.#canvas,
+				(this.mapHandler.left?.width ?? 0) + this.mapHandler.active.width,
+				this.mapHandler.up?.height ?? 0
+			);
 		}
 		if (this.mapHandler.down) {
-			y = this.mapHandler.up?.height ?? 0 + this.mapHandler.active.height;
-			this.mapHandler.down.drawTopLayer(this.#canvas, x, y);
+			this.mapHandler.down.drawTopLayer(
+				this.#canvas,
+				this.mapHandler.left?.width ?? 0,
+				(this.mapHandler.up?.height ?? 0) + this.mapHandler.active.height
+			);
 		}
-		y = this.mapHandler.up?.height ?? 0;
-		this.mapHandler.active.drawTopLayer(this.#canvas, x, y);
 
 		KeyHandler.tick();
 
