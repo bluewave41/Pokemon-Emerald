@@ -15,7 +15,6 @@ CREATE TABLE "User" (
 CREATE TABLE "Map" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
-    "area" TEXT NOT NULL,
     "width" INTEGER NOT NULL,
     "height" INTEGER NOT NULL,
     "backgroundTileId" INTEGER,

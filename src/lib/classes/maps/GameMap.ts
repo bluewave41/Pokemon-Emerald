@@ -5,16 +5,16 @@ import { z } from 'zod';
 import type { Canvas } from '../Canvas';
 import { Tile, tileSchema } from '../tiles/Tile';
 import type { AnyTile } from '$lib/interfaces/AnyTile';
-import { SignTile, signTileSchema } from '../tiles/SignTile';
-import type { Game } from '../Game';
+import { Sign, signSchema } from '../tiles/Sign';
+import { Warp, warpSchema } from '../tiles/Warp';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
 	area: z.string(),
 	width: z.number(),
 	height: z.number(),
-	tiles: z.union([signTileSchema, tileSchema]).array().array(),
-	backgroundTile: z.number()
+	tiles: z.union([signSchema, warpSchema, tileSchema]).array().array(),
+	backgroundTile: z.number().optional()
 });
 
 export const gameEditorMapSchema = gameMapSchema.extend({
@@ -22,6 +22,7 @@ export const gameEditorMapSchema = gameMapSchema.extend({
 });
 
 export interface GameMapType {
+	id: number;
 	name: MapNames;
 	area: string;
 	width: number;
@@ -31,6 +32,7 @@ export interface GameMapType {
 }
 
 export class GameMap {
+	id: number;
 	name: MapNames;
 	area: string = 'overworld';
 	width: number;
@@ -41,6 +43,7 @@ export class GameMap {
 	editor: boolean = false;
 
 	constructor(
+		id: number,
 		name: MapNames,
 		width: number,
 		height: number,
@@ -48,6 +51,7 @@ export class GameMap {
 		backgroundTile: Tile,
 		events: MapEvent[]
 	) {
+		this.id = id;
 		this.name = name;
 		this.width = width;
 		this.height = height;
@@ -90,6 +94,7 @@ export class GameMap {
 		const buffer = new BufferHelper(mapBuffer);
 
 		buffer.readByte(); // version
+		const id = buffer.readByte();
 		const name = buffer.readString() as MapNames;
 		const width = buffer.readByte();
 		const height = buffer.readByte();
@@ -116,12 +121,15 @@ export class GameMap {
 			const y = buffer.readByte();
 			switch (eventId) {
 				case 'sign':
-					map[y][x] = new SignTile(map[y][x], buffer.readString());
+					map[y][x] = new Sign(map[y][x], buffer.readString());
+					break;
+				case 'warp':
+					map[y][x] = new Warp(map[y][x], buffer.readDirection(), buffer.readShort());
 					break;
 			}
 		}
 
-		return new GameMap(name, width, height, map, backgroundTile, []);
+		return new GameMap(id, name, width, height, map, backgroundTile, []);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];

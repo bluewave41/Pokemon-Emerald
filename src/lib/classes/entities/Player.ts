@@ -1,10 +1,10 @@
-import type { Direction } from '$lib/interfaces/Direction';
 import { Game } from '../Game';
 import type { GameMap } from '../maps/GameMap';
-import KeyHandler from '../KeyHandler';
+import KeyHandler, { type MovementKeys } from '../KeyHandler';
 import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
 import { Entity } from './Entity';
+import type { Direction } from '@prisma/client';
 
 export class Player extends Entity {
 	targetPosition: Position;
@@ -15,8 +15,8 @@ export class Player extends Entity {
 	walkFrame: number = 1;
 	counter: number = 0;
 
-	constructor(x: number, y: number, direction: Direction) {
-		super(x, y);
+	constructor(x: number, y: number, game: Game, direction: Direction) {
+		super(x, y, game);
 		this.targetPosition = new Position(
 			x * Game.getAdjustedTileSize(),
 			y * Game.getAdjustedTileSize()
@@ -24,68 +24,79 @@ export class Player extends Entity {
 		this.subPosition = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 		this.direction = direction;
 	}
-	tick(game: Game, currentFrameTime: number) {
+	tick(currentFrameTime: number) {
+		const direction = this.direction.toLowerCase();
 		// we should always draw the Player
-		const walkSprite =
-			this.moving && this.counter < 10 ? this.direction + this.walkFrame : this.direction;
+		const walkSprite = this.moving && this.counter < 10 ? direction + this.walkFrame : direction;
 		const sprite = SpriteBank.getSprite('player', walkSprite);
-		game.canvas.drawAbsoluteImage(
+		this.game.canvas.drawAbsoluteImage(
 			sprite,
-			Math.round(this.subPosition.x) + 1 + game.viewport.pos.xOffset,
-			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) - 10 + game.viewport.pos.yOffset
+			Math.round(this.subPosition.x) + 1 + this.game.viewport.pos.xOffset,
+			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) -
+				10 +
+				this.game.viewport.pos.yOffset
 		);
 
 		const activeKey = KeyHandler.getActiveKeyState('z');
 
 		if (activeKey.down && activeKey.initial) {
-			if (game.activeTextBox) {
-				game.activeTextBox = null;
+			if (this.game.activeTextBox) {
+				this.game.activeTextBox = null;
 			} else {
-				const tile = this.getFacingTile(game.mapHandler.active);
-				tile.activate(game);
+				const tile = this.getFacingTile(this.game.mapHandler.active);
+				tile.activate(this.game);
 			}
 		}
 
 		// but don't let them move if a textbox or something is active...
-		if (!game.canPlayerMove) {
+		if (!this.game.canPlayerMove) {
 			return;
 		}
 
 		if (!this.moving) {
-			this.updateDirection(game);
+			this.updateDirection();
 		}
 
-		this.move(game.lastFrameTime, currentFrameTime);
+		this.move(this.game.lastFrameTime, currentFrameTime);
 	}
-	updateDirection(game: Game) {
-		const moveTable = {
+	updateDirection() {
+		const moveTable: Record<
+			MovementKeys,
+			{
+				x: number;
+				y: number;
+				targetX: number;
+				targetY: number;
+				direction: Direction;
+			}
+		> = {
 			ArrowUp: {
 				x: this.position.x,
 				y: this.position.y - 1,
 				targetX: this.targetPosition.x,
 				targetY: this.targetPosition.y - Game.getAdjustedTileSize(),
-				direction: 'up'
+				direction: 'UP'
 			},
 			ArrowDown: {
 				x: this.position.x,
 				y: this.position.y + 1,
 				targetX: this.targetPosition.x,
 				targetY: this.targetPosition.y + Game.getAdjustedTileSize(),
-				direction: 'down'
+				direction: 'DOWN'
 			},
 			ArrowLeft: {
 				x: this.position.x - 1,
 				y: this.position.y,
 				targetX: this.targetPosition.x - Game.getAdjustedTileSize(),
 				targetY: this.targetPosition.y,
-				direction: 'left'
+				direction: 'LEFT'
 			},
 			ArrowRight: {
 				x: this.position.x + 1,
 				y: this.position.y,
 				targetX: this.targetPosition.x + Game.getAdjustedTileSize(),
 				targetY: this.targetPosition.y,
-				direction: 'right'
+				direction: 'RIGHT'
 			}
 		};
 
@@ -94,13 +105,28 @@ export class Player extends Entity {
 			const tableEntry = moveTable[direction];
 			const keyState = KeyHandler.getKeyState(direction);
 			if (keyState.holdCount > 8) {
-				if (this.isNewTileOutsideMap(game, tableEntry.x, tableEntry.y)) {
-					game.changeMap(this.getOutsideMapDirection(game, tableEntry.x, tableEntry.y));
+				if (this.isNewTileOutsideMap(tableEntry.x, tableEntry.y)) {
+					this.game.changeMap(this.getOutsideMapDirection(tableEntry.x, tableEntry.y));
 					this.moving = true;
 					this.counter = 0;
 				} else {
-					const newTile = game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
+					const newTile = this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
 					if (keyState.holdCount > 8 && newTile.isPassable()) {
+						const currentTile = this.game.mapHandler.active.getTile(
+							this.position.x,
+							this.position.y
+						);
+						if (currentTile.isWarp() && currentTile.activateDirection === this.direction) {
+							// get upper tile
+							// get linking tile
+							// set both door tiles
+							// do door animation
+							// walk
+							// fade to back
+							// change maps
+							// do backwards without delay
+							// walk out
+						}
 						this.moving = true;
 						this.position = { x: tableEntry.x, y: tableEntry.y };
 						this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
@@ -112,33 +138,36 @@ export class Player extends Entity {
 			this.direction = tableEntry.direction as Direction;
 		}
 	}
-	isNewTileOutsideMap(game: Game, x: number, y: number) {
+	isNewTileOutsideMap(x: number, y: number) {
 		return (
-			x < 0 || y < 0 || x >= game.mapHandler.active.width || y >= game.mapHandler.active.height
+			x < 0 ||
+			y < 0 ||
+			x >= this.game.mapHandler.active.width ||
+			y >= this.game.mapHandler.active.height
 		);
 	}
-	getOutsideMapDirection(game: Game, x: number, y: number) {
+	getOutsideMapDirection(x: number, y: number): Direction {
 		if (x < 0) {
-			return 'left';
+			return 'LEFT';
 		} else if (y < 0) {
-			return 'up';
-		} else if (x >= game.mapHandler.active.width) {
-			return 'right';
-		} else if (y >= game.mapHandler.active.height) {
-			return 'down';
+			return 'UP';
+		} else if (x >= this.game.mapHandler.active.width) {
+			return 'RIGHT';
+		} else if (y >= this.game.mapHandler.active.height) {
+			return 'DOWN';
 		} else {
 			throw new Error('Exited map in invalid direction.');
 		}
 	}
 	getFacingTile(map: GameMap) {
 		const pos = this.position;
-		if (this.direction === 'left') {
+		if (this.direction === 'LEFT') {
 			return map.getTile(pos.x - 1, pos.y);
-		} else if (this.direction === 'right') {
+		} else if (this.direction === 'RIGHT') {
 			return map.getTile(pos.x + 1, pos.y);
-		} else if (this.direction === 'up') {
+		} else if (this.direction === 'UP') {
 			return map.getTile(pos.x, pos.y - 1);
-		} else if (this.direction === 'down') {
+		} else if (this.direction === 'DOWN') {
 			return map.getTile(pos.x, pos.y + 1);
 		} else {
 			throw new Error('Invalid player direction.');
@@ -156,13 +185,13 @@ export class Player extends Entity {
 		const moveX = this.speed * deltaTime;
 		const moveY = this.speed * deltaTime;
 
-		if (this.direction === 'right') {
+		if (this.direction === 'RIGHT') {
 			this.subPosition.x = Math.round(Math.min(this.subPosition.x + moveX, this.targetPosition.x));
-		} else if (this.direction === 'left') {
+		} else if (this.direction === 'LEFT') {
 			this.subPosition.x = Math.round(Math.max(this.subPosition.x - moveX, this.targetPosition.x));
-		} else if (this.direction === 'down') {
+		} else if (this.direction === 'DOWN') {
 			this.subPosition.y = Math.round(Math.min(this.subPosition.y + moveY, this.targetPosition.y));
-		} else if (this.direction === 'up') {
+		} else if (this.direction === 'UP') {
 			this.subPosition.y = Math.round(Math.max(this.subPosition.y - moveY, this.targetPosition.y));
 		}
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Game } from '../Game';
 import { Tile, tileSchema, type BaseTileProps } from './Tile';
 
-export const signTileSchema = tileSchema.extend({
+export const signSchema = tileSchema.extend({
 	text: z.string()
 });
 
@@ -11,7 +11,7 @@ export interface SignProps extends BaseTileProps {
 	text: string;
 }
 
-export class SignTile extends Tile {
+export class Sign extends Tile {
 	text: string;
 
 	constructor(tile: Tile, text: string) {

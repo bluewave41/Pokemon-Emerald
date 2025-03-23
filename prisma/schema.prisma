@@ -23,7 +23,6 @@ model User {
 model Map {
   id               Int       @id @default(autoincrement())
   name             String    @unique
-  area             String
   width            Int
   height           Int
   backgroundTileId Int?
@@ -31,13 +30,14 @@ model Map {
 
   backgroundTile Tile?   @relation(fields: [backgroundTileId], references: [id])
   Events         Event[]
+  Warp           Warp[]
 }
 
 model Tile {
   id       Int     @id @default(autoincrement())
-  hash     String  @db.Char(32) @unique
+  hash     String  @unique @db.Char(32)
   original String
-  data     String 
+  data     String
   overlay  Boolean @default(false)
   animated Boolean @default(false)
   sequence Int[]   @default([])
@@ -78,7 +78,8 @@ model Event {
   y     Int
 
   map  Map   @relation(fields: [mapId], references: [id], onDelete: Cascade)
-  sign Sign?
+  Sign Sign?
+  Warp Warp?
 }
 
 model Sign {
@@ -86,6 +87,16 @@ model Sign {
   text    String
 
   event Event @relation(fields: [eventId], references: [id])
+}
+
+model Warp {
+  eventId   Int       @unique
+  target    Int
+  direction Direction
+  type      WarpType
+
+  event Event @relation(fields: [eventId], references: [id])
+  map   Map   @relation(fields: [target], references: [id])
 }
 
 model SpriteBank {
@@ -109,4 +120,16 @@ model Sprites {
 enum EventType {
   SIGN
   WARP
+}
+
+enum Direction {
+  UP
+  DOWN
+  LEFT
+  RIGHT
+}
+
+enum WarpType {
+  DOOR
+  CAVE
 }

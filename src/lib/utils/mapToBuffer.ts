@@ -10,7 +10,7 @@ export const mapToBuffer = async (name: MapNames) => {
 				orderBy: { id: 'asc' }
 			},
 			Events: {
-				include: { sign: true }
+				include: { Sign: true, Warp: true }
 			}
 		},
 		where: {
@@ -24,6 +24,7 @@ export const mapToBuffer = async (name: MapNames) => {
 
 	const buffer = new BufferHelper(Buffer.alloc(100000));
 	buffer.writeByte(1);
+	buffer.writeByte(map.id);
 	buffer.writeString(map.name);
 	buffer.writeByte(map.width);
 	buffer.writeByte(map.height);
@@ -40,7 +41,17 @@ export const mapToBuffer = async (name: MapNames) => {
 		buffer.writeEventId(event.type);
 		buffer.writeByte(event.x);
 		buffer.writeByte(event.y);
-		buffer.writeString(event.sign?.text ?? '');
+		switch (event.type) {
+			case 'SIGN':
+				buffer.writeString(event.Sign?.text ?? '');
+				break;
+			case 'WARP':
+				if (!event.Warp) {
+					throw new Error(`Invalid warp found with ID ${event.id}`);
+				}
+				buffer.writeDirection(event.Warp?.direction);
+				buffer.writeShort(event.Warp?.target);
+		}
 	}
 
 	return {

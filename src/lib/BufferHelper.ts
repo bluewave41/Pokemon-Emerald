@@ -1,4 +1,4 @@
-import type { EventType } from '@prisma/client';
+import type { Direction, EventType } from '@prisma/client';
 
 export class BufferHelper {
 	#buffer: Buffer;
@@ -36,6 +36,23 @@ export class BufferHelper {
 		switch (this.readByte()) {
 			case 1:
 				return 'sign';
+			case 2:
+				return 'warp';
+		}
+	}
+	readDirection(): Direction {
+		const b = this.readByte();
+		switch (b) {
+			case 1:
+				return 'UP';
+			case 2:
+				return 'LEFT';
+			case 3:
+				return 'RIGHT';
+			case 4:
+				return 'DOWN';
+			default:
+				throw new Error(`Invalid direction received from buffer: ${b}`);
 		}
 	}
 	writeByte(b: number) {
@@ -62,6 +79,26 @@ export class BufferHelper {
 		switch (event) {
 			case 'SIGN':
 				this.writeByte(1);
+				break;
+			case 'WARP':
+				this.writeByte(2);
+				break;
+		}
+	}
+	writeDirection(direction: PrismaDirection) {
+		switch (direction) {
+			case 'UP':
+				this.writeByte(1);
+				break;
+			case 'LEFT':
+				this.writeByte(2);
+				break;
+			case 'RIGHT':
+				this.writeByte(3);
+				break;
+			case 'DOWN':
+				this.writeByte(4);
+				break;
 		}
 	}
 	seek(index: number) {

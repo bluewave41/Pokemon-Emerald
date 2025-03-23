@@ -1,30 +1,36 @@
-import type { Direction } from '$lib/interfaces/Direction';
 import type { MapNames } from '$lib/interfaces/MapNames';
+import type { Direction } from '@prisma/client';
 
 const Connections: Record<MapNames, Record<Direction, MapNames | null>> = {
 	littleroot: {
-		up: 'route101',
-		down: null,
-		left: null,
-		right: null
+		UP: 'route101',
+		DOWN: null,
+		LEFT: null,
+		RIGHT: null
 	},
 	route101: {
-		up: 'oldale',
-		down: 'littleroot',
-		left: null,
-		right: null
+		UP: 'oldale',
+		DOWN: 'littleroot',
+		LEFT: null,
+		RIGHT: null
 	},
 	oldale: {
-		up: null,
-		down: 'route101',
-		left: 'route102',
-		right: null
+		UP: null,
+		DOWN: 'route101',
+		LEFT: 'route102',
+		RIGHT: null
 	},
 	route102: {
-		up: null,
-		down: null,
-		left: null,
-		right: 'oldale'
+		UP: null,
+		DOWN: null,
+		LEFT: null,
+		RIGHT: 'oldale'
+	},
+	'player-house': {
+		UP: null,
+		DOWN: null,
+		LEFT: null,
+		RIGHT: null
 	}
 };
 

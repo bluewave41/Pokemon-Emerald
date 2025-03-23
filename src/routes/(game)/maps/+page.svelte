@@ -19,7 +19,7 @@
 		<div>
 			{#each data.maps as map}
 				<div>
-					- <a class="map" href={`/maps/${map}`}>{map}</a>
+					- #{map.id}: <a class="map" href={`/maps/${map.name}`}>{map.name}</a>
 				</div>
 			{/each}
 		</div>

@@ -13,7 +13,13 @@ interface TileInfo {
 }
 
 export const load: PageServerLoad = async () => {
-	const maps = (await prisma.map.findMany()).map((map) => map.name);
+	const maps = await prisma.map.findMany({
+		select: {
+			id: true,
+			name: true
+		},
+		orderBy: { id: 'asc' }
+	});
 
 	return {
 		maps
@@ -60,6 +66,14 @@ export const actions = {
 			new: false
 		}));
 
+		const highestMapId =
+			(
+				await prisma.map.findFirst({
+					orderBy: { id: 'desc' },
+					take: 1
+				})
+			)?.id ?? 0;
+
 		for (let y = 0; y < height; y += 16) {
 			const row = [];
 			for (let x = 0; x < width; x += 16) {
@@ -82,8 +96,8 @@ export const actions = {
 		await prisma.$transaction(async (transaction) => {
 			const insertedMap = await transaction.map.create({
 				data: {
+					id: highestMapId + 1,
 					name: simplifiedName,
-					area: 'overworld',
 					width: width / 16,
 					height: height / 16
 				}

@@ -1,5 +1,5 @@
-import type { SignTile } from '$lib/classes/tiles/SignTile';
+import type { Sign } from '$lib/classes/tiles/Sign';
 import type { Tile } from '$lib/classes/tiles/Tile';
-import type { WarpTile } from '$lib/classes/tiles/WarpTile';
+import type { Warp } from '$lib/classes/tiles/Warp';
 
-export type AnyTile = Tile | SignTile | WarpTile;
+export type AnyTile = Tile | Sign | Warp;

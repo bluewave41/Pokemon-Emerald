@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import type { Game } from '../Game';
 import type { TileKind } from '$lib/interfaces/TileKind';
-import type { SignTile } from './SignTile';
 import SpriteBank, { type SpriteInfo } from '../SpriteBank';
+import type { Warp } from './Warp';
+import type { Sign } from './Sign';
 
 export const tileSchema = z.object({
 	kind: z.union([z.literal('tile'), z.literal('sign'), z.literal('warp')]),
@@ -54,8 +55,11 @@ export class Tile {
 	activate(game: Game) {
 		void game;
 	}
-	isSign(): this is SignTile {
+	isSign(): this is Sign {
 		return this.kind === 'sign';
+	}
+	isWarp(): this is Warp {
+		return this.kind === 'warp';
 	}
 	tick(game: { lastFrameTime: number }) {
 		if (this.tileSprites.delay) {
@@ -67,6 +71,9 @@ export class Tile {
 				}
 			}
 		}
+	}
+	handle(game: Game) {
+		void game;
 	}
 	getActiveSprite() {
 		if (!this.tileSprites) {

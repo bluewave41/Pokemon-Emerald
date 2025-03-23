@@ -4,7 +4,7 @@ import { GameMap } from './maps/GameMap';
 import { Buffer } from 'buffer';
 import type { Tile } from './tiles/Tile';
 
-type Tabs = 'Tiles' | 'Permissions' | 'Events';
+export type Tabs = 'Tiles' | 'Permissions' | 'Events' | 'Info';
 
 interface Options {
 	activeTab: Tabs;

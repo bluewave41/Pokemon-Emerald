@@ -3,7 +3,7 @@ import { Player } from './entities/Player';
 import { GameMap } from './maps/GameMap';
 import KeyHandler from './KeyHandler';
 import { MapHandler } from './maps/MapHandler';
-import type { Direction } from '$lib/interfaces/Direction';
+import type { Direction } from '@prisma/client';
 
 export interface MessageBox {
 	text: string;
@@ -24,13 +24,13 @@ export class Game {
 	constructor(canvas: HTMLCanvasElement, map: GameMap) {
 		this.mapHandler = new MapHandler(map);
 		this.#canvas = new Canvas(canvas);
-		this.player = new Player(10, 10, 'down');
+		this.player = new Player(10, 10, this, 'DOWN');
 		this.#canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.#canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 	}
 	changeMap(direction: Direction) {
 		const curr = this.mapHandler.active;
-		if (direction === 'up' && this.mapHandler.up) {
+		if (direction === 'UP' && this.mapHandler.up) {
 			this.mapHandler.setActive(this.mapHandler.up);
 			this.mapHandler.setDown(curr);
 			this.mapHandler.up = null;
@@ -40,7 +40,7 @@ export class Game {
 				y: this.mapHandler.active.height * Game.getAdjustedTileSize()
 			};
 		}
-		if (direction === 'left' && this.mapHandler.left) {
+		if (direction === 'LEFT' && this.mapHandler.left) {
 			this.mapHandler.setActive(this.mapHandler.left);
 			this.mapHandler.setRight(curr);
 			this.mapHandler.left = null;
@@ -50,7 +50,7 @@ export class Game {
 				y: this.player.subPosition.y
 			};
 		}
-		if (direction === 'right' && this.mapHandler.right) {
+		if (direction === 'RIGHT' && this.mapHandler.right) {
 			this.mapHandler.setActive(this.mapHandler.right);
 			this.mapHandler.setLeft(curr);
 			this.mapHandler.right = null;
@@ -60,7 +60,7 @@ export class Game {
 				y: this.player.subPosition.y
 			};
 		}
-		if (direction === 'down' && this.mapHandler.down) {
+		if (direction === 'DOWN' && this.mapHandler.down) {
 			this.mapHandler.setActive(this.mapHandler.down);
 			this.mapHandler.setUp(curr);
 			this.mapHandler.down = null;
@@ -122,7 +122,7 @@ export class Game {
 			);
 		}
 
-		this.player.tick(this, currentFrameTime);
+		this.player.tick(currentFrameTime);
 
 		if (this.mapHandler.up) {
 			this.mapHandler.up.drawTopLayer(this.#canvas, this.mapHandler.left?.width ?? 0, 0);

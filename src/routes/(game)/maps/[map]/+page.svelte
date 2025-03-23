@@ -7,14 +7,16 @@
 	import type { MapEvent } from '$lib/interfaces/Events.js';
 	import type { PageProps } from './$types.js';
 	import { Tile } from '$lib/classes/tiles/Tile.js';
-	import { SignTile } from '$lib/classes/tiles/SignTile.js';
 	import type { TileKind } from '$lib/interfaces/TileKind.js';
 	import SpriteBank from '$lib/classes/SpriteBank.js';
-	import { GameEditor } from '$lib/classes/GameEditor.svelte.js';
+	import { GameEditor, type Tabs } from '$lib/classes/GameEditor.svelte.js';
+	import { Sign } from '$lib/classes/tiles/Sign.js';
+	import { Warp } from '$lib/classes/tiles/Warp.js';
+	import { Direction } from '@prisma/client';
 
 	let { data }: PageProps = $props();
 
-	const tabs = ['Tiles', 'Permissions', 'Events'];
+	const tabs: Tabs[] = ['Tiles', 'Permissions', 'Events'];
 
 	let canvasRef: HTMLCanvasElement;
 	let topCanvasRef: HTMLCanvasElement;
@@ -50,8 +52,10 @@
 				);
 				break;
 			case 'sign':
-				editor.map.tiles[y][x] = new SignTile(selectedTile, '');
+				editor.map.tiles[y][x] = new Sign(selectedTile, '');
+				break;
 			case 'warp':
+				editor.map.tiles[y][x] = new Warp(selectedTile);
 				break;
 		}
 		editor.options.selectedTile = editor.map.getTile(x, y);
@@ -217,8 +221,8 @@
 									checked={editor.overlayTiles.includes(editor.options.activeTile.id)}
 									onchange={(e) => {
 										editor.overlayTiles = e.currentTarget.checked
-											? [...editor.overlayTiles, activeTile]
-											: editor.overlayTiles.filter((el) => el !== activeTile);
+											? [...editor.overlayTiles, activeTile.id]
+											: editor.overlayTiles.filter((el) => el !== activeTile.id);
 									}}
 								/>
 							</div>
@@ -242,6 +246,7 @@
 						<select onchange={(e) => updateTileType(e.currentTarget.value as TileKind)}>
 							<option value="none" selected={selectedTile.kind === 'tile'}>None</option>
 							<option value="sign" selected={selectedTile.kind === 'sign'}>Sign</option>
+							<option value="warp" selected={selectedTile.kind === 'warp'}>Warp</option>
 						</select>
 						<div>
 							{#if selectedTile.isSign()}
@@ -250,6 +255,31 @@
 									value={selectedTile.text}
 									onchange={(e) => (selectedTile.text = e.currentTarget.value)}
 								/>
+							{/if}
+							{#if selectedTile.isWarp()}
+								{@const tile = selectedTile as Warp}
+								<label for="warp">Activate Direction</label>
+								<select
+									name="activateDirection"
+									onchange={(e) => (tile.activateDirection = e.currentTarget.value as Direction)}
+								>
+									<option value="NONE">None</option>
+									<option value="UP" selected={tile.activateDirection === 'UP'}>Up</option>
+									<option value="DOWM" selected={tile.activateDirection === 'DOWN'}>Down</option>
+									<option value="LEFT" selected={tile.activateDirection === 'LEFT'}>Left</option>
+									<option value="RIGHT" selected={tile.activateDirection === 'RIGHT'}>Right</option>
+								</select>
+								<label for="target">Target</label>
+								<select
+									name="target"
+									onchange={(e) => (tile.target = parseInt(e.currentTarget.value))}
+								>
+									<option value="NONE">None</option>
+
+									{#each data.maps as map}
+										<option value={map.id} selected={tile.target === map.id}>{map.name} </option>
+									{/each}
+								</select>
 							{/if}
 						</div>
 					{/key}

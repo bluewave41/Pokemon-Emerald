@@ -7,7 +7,8 @@ import { z } from 'zod';
 import { mapNamesSchema } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
 import { gameEditorMapSchema } from '$lib/classes/maps/GameMap';
-import type { SignProps } from '$lib/classes/tiles/SignTile';
+import type { SignProps } from '$lib/classes/tiles/Sign';
+import type { WarpProps } from '$lib/classes/tiles/Warp';
 
 const removeImageBackground = async (background: string, top: string) => {
 	if (background === top) {
@@ -39,6 +40,13 @@ export const load: PageServerLoad = async ({ params }) => {
 		return error(400, 'Invalid map name.');
 	}
 
+	const maps = await prisma.map.findMany({
+		select: {
+			id: true,
+			name: true
+		}
+	});
+
 	const { map } = await mapToBuffer(result.data.map);
 	const tiles = await prisma.tile.findMany({
 		orderBy: { id: 'asc' }
@@ -46,6 +54,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		map: map.toString('base64'),
+		maps,
 		tiles
 	};
 };
@@ -85,6 +94,8 @@ export const actions = {
 		}
 
 		const { map } = result.data;
+
+		const flattened = map.tiles.flat();
 
 		const updated = await prisma.map.update({
 			data: {
@@ -179,7 +190,30 @@ export const actions = {
 			)
 		);
 
-		const signEvents: SignProps[] = map.tiles
+		const warps: WarpProps[] = flattened.filter((tile) => tile.kind === 'warp');
+
+		console.log(map.tiles[9][5]);
+
+		for (const event of warps) {
+			console.log(event);
+			await prisma.event.create({
+				data: {
+					mapId: updated.id,
+					type: 'WARP',
+					x: event.x,
+					y: event.y,
+					Warp: {
+						create: {
+							type: 'DOOR',
+							target: event.target,
+							direction: event.activateDirection
+						}
+					}
+				}
+			});
+		}
+
+		/*const signEvents: SignProps[] = map.tiles
 			.flat()
 			.filter((tile): tile is SignProps => tile.kind === 'sign');
 
@@ -197,6 +231,6 @@ export const actions = {
 					}
 				}
 			});
-		}
+		}*/
 	}
 };
