@@ -1,6 +1,7 @@
 import prisma from '$lib/prisma';
 import { error } from '@sveltejs/kit';
 import { Jimp } from 'jimp';
+import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 
 export async function load() {
@@ -18,15 +19,18 @@ export const actions = {
 	upload: async ({ request }) => {
 		const schema = zfd.formData({
 			tile: zfd.numeric(),
-			files: zfd.file().array()
+			files: z.union([zfd.file(), zfd.file().array()])
 		});
 
 		const result = await schema.safeParseAsync(await request.formData());
 		if (result.error) {
+			console.log(result.error);
 			return error(400);
 		}
 
-		const { tile, files } = result.data;
+		const { tile } = result.data;
+
+		const files = Array.isArray(result.data.files) ? result.data.files : [result.data.files];
 
 		const fileData = await Promise.all(
 			files.map(async (file) => ({
@@ -52,7 +56,8 @@ export const actions = {
 		const schema = zfd.formData({
 			tile: zfd.numeric(),
 			sequence: zfd.text(),
-			delay: zfd.numeric()
+			delay: zfd.numeric(),
+			activated: zfd.text()
 		});
 
 		const result = await schema.safeParseAsync(await request.formData());
@@ -61,12 +66,13 @@ export const actions = {
 			return error(400);
 		}
 
-		const { tile, sequence, delay } = result.data;
+		const { tile, sequence, delay, activated } = result.data;
 
 		await prisma.tile.update({
 			data: {
 				sequence: sequence.split(',').map((el) => parseInt(el)),
-				delay
+				delay,
+				activatedAnimation: activated === 'true'
 			},
 			where: {
 				id: tile

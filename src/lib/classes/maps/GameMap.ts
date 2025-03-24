@@ -106,7 +106,14 @@ export class GameMap {
 		for (let y = 0; y < height; y++) {
 			const row = [];
 			for (let x = 0; x < width; x++) {
-				const tile = new Tile(x, y, buffer.readByte(), buffer.readBoolean(), buffer.readByte());
+				const tile = new Tile(
+					x,
+					y,
+					buffer.readByte(),
+					buffer.readBoolean(),
+					buffer.readByte(),
+					buffer.readBoolean()
+				);
 				if (!backgroundTile && tile.id === backgroundId) {
 					backgroundTile = tile;
 				}
@@ -124,7 +131,7 @@ export class GameMap {
 					map[y][x] = new Sign(map[y][x], buffer.readString());
 					break;
 				case 'warp':
-					map[y][x] = new Warp(map[y][x], buffer.readDirection(), buffer.readShort());
+					map[y][x] = new Warp(map[y][x], buffer.readShort());
 					break;
 			}
 		}

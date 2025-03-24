@@ -7,6 +7,7 @@ export interface SpriteInfo {
 	images: HTMLImageElement[];
 	delay: number;
 	sequence: number[];
+	activated: boolean;
 }
 
 class InternalSpriteBank {

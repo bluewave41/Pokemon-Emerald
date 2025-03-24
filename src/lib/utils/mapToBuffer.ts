@@ -35,6 +35,7 @@ export const mapToBuffer = async (name: MapNames) => {
 		buffer.writeByte(tile.tileId);
 		buffer.writeBoolean(tile.tile.overlay);
 		buffer.writeByte(tile.permissions);
+		buffer.writeBoolean(tile.tile.activatedAnimation ?? false);
 	}
 
 	for (const event of map.Events) {

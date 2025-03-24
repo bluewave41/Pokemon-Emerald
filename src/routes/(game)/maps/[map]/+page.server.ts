@@ -125,7 +125,7 @@ export const actions = {
 
 		const backgroundImage = await prisma.tile.findFirst({
 			select: {
-				data: true
+				original: true
 			},
 			where: {
 				id: map.backgroundTile
@@ -133,7 +133,7 @@ export const actions = {
 		});
 
 		const updates = tiles.map(async ({ tile }) => {
-			const processedData = await removeImageBackground(backgroundImage.data, tile.original);
+			const processedData = await removeImageBackground(backgroundImage.original, tile.original);
 
 			return prisma.tile.update({
 				data: { data: processedData },
@@ -205,8 +205,7 @@ export const actions = {
 					Warp: {
 						create: {
 							type: 'DOOR',
-							target: event.target,
-							direction: event.activateDirection
+							target: event.target
 						}
 					}
 				}

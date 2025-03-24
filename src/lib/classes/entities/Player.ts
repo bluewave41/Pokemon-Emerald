@@ -1,5 +1,5 @@
 import { Game } from '../Game';
-import type { GameMap } from '../maps/GameMap';
+import GameEvent from '../GameEvent';
 import KeyHandler, { type MovementKeys } from '../KeyHandler';
 import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
@@ -43,7 +43,7 @@ export class Player extends Entity {
 			if (this.game.activeTextBox) {
 				this.game.activeTextBox = null;
 			} else {
-				const tile = this.getFacingTile(this.game.mapHandler.active);
+				const tile = this.getFacingTile();
 				tile.activate(this.game);
 			}
 		}
@@ -55,9 +55,9 @@ export class Player extends Entity {
 
 		if (!this.moving) {
 			this.updateDirection();
+		} else if (this.game.canPlayerMove) {
+			this.move(this.game.lastFrameTime, currentFrameTime);
 		}
-
-		this.move(this.game.lastFrameTime, currentFrameTime);
 	}
 	updateDirection() {
 		const moveTable: Record<
@@ -112,25 +112,35 @@ export class Player extends Entity {
 				} else {
 					const newTile = this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
 					if (keyState.holdCount > 8 && newTile.isPassable()) {
-						const currentTile = this.game.mapHandler.active.getTile(
-							this.position.x,
-							this.position.y
-						);
-						if (currentTile.isWarp() && currentTile.activateDirection === this.direction) {
+						if (newTile.isWarp()) {
+							this.game.blockMovement();
+							newTile.isAnimating = true;
+							GameEvent.once('warpAnimationComplete', () => {
+								this.moving = true;
+								this.targetPosition = {
+									x: this.targetPosition.x,
+									y: this.targetPosition.y - Game.getAdjustedTileSize()
+								};
+								requestAnimationFrame((time) => {
+									this.counter = 0;
+									this.scriptedMovement(time);
+								});
+							});
 							// get upper tile
 							// get linking tile
 							// set both door tiles
-							// do door animation
-							// walk
+							// clear player
 							// fade to back
+							// load target
 							// change maps
-							// do backwards without delay
+							// do backwards
 							// walk out
+						} else {
+							this.moving = true;
+							this.position = { x: tableEntry.x, y: tableEntry.y };
+							this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
+							this.counter = 0;
 						}
-						this.moving = true;
-						this.position = { x: tableEntry.x, y: tableEntry.y };
-						this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
-						this.counter = 0;
 					}
 				}
 			}
@@ -159,7 +169,8 @@ export class Player extends Entity {
 			throw new Error('Exited map in invalid direction.');
 		}
 	}
-	getFacingTile(map: GameMap) {
+	getFacingTile() {
+		const map = this.game.mapHandler.active;
 		const pos = this.position;
 		if (this.direction === 'LEFT') {
 			return map.getTile(pos.x - 1, pos.y);
@@ -172,6 +183,18 @@ export class Player extends Entity {
 		} else {
 			throw new Error('Invalid player direction.');
 		}
+	}
+	scriptedMovement(currentFrameTime: number) {
+		if (!this.moving) {
+			return;
+		}
+		GameEvent.once('movementFinished', () => {
+			this.moving = false;
+			return;
+		});
+		this.tick(currentFrameTime);
+		this.move(this.game.lastFrameTime, currentFrameTime);
+		requestAnimationFrame((time) => this.scriptedMovement(time));
 	}
 	move(lastFrameTime: number, currentFrameTime: number) {
 		if (!this.moving) {
@@ -201,6 +224,7 @@ export class Player extends Entity {
 		) {
 			this.moving = false;
 			this.walkFrame = this.walkFrame === 1 ? 2 : 1;
+			GameEvent.dispatchEvent(new CustomEvent('movementFinished'));
 		}
 	}
 }

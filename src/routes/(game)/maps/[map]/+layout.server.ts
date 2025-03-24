@@ -23,7 +23,6 @@ export const load = async () => {
 			}
 		},
 		orderBy: { id: 'asc' }
-		//where: { mapId: map.id }
 	});
 
 	const imageBuffer = new BufferHelper(Buffer.alloc(100000));

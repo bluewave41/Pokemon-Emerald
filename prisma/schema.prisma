@@ -34,14 +34,15 @@ model Map {
 }
 
 model Tile {
-  id       Int     @id @default(autoincrement())
-  hash     String  @unique @db.Char(32)
-  original String
-  data     String
-  overlay  Boolean @default(false)
-  animated Boolean @default(false)
-  sequence Int[]   @default([])
-  delay    Int?
+  id                 Int      @id @default(autoincrement())
+  hash               String   @unique @db.Char(32)
+  original           String
+  data               String
+  overlay            Boolean  @default(false)
+  animated           Boolean  @default(false)
+  sequence           Int[]    @default([])
+  delay              Int?
+  activatedAnimation Boolean?
 
   MapTile   MapTile[]
   Maps      Map[]
@@ -92,11 +93,10 @@ model Sign {
 model Warp {
   eventId   Int       @unique
   target    Int
-  direction Direction
   type      WarpType
 
-  event Event @relation(fields: [eventId], references: [id])
-  map   Map   @relation(fields: [target], references: [id])
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  map   Map   @relation(fields: [target], references: [id], onDelete: Cascade)
 }
 
 model SpriteBank {

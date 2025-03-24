@@ -258,17 +258,6 @@
 							{/if}
 							{#if selectedTile.isWarp()}
 								{@const tile = selectedTile as Warp}
-								<label for="warp">Activate Direction</label>
-								<select
-									name="activateDirection"
-									onchange={(e) => (tile.activateDirection = e.currentTarget.value as Direction)}
-								>
-									<option value="NONE">None</option>
-									<option value="UP" selected={tile.activateDirection === 'UP'}>Up</option>
-									<option value="DOWM" selected={tile.activateDirection === 'DOWN'}>Down</option>
-									<option value="LEFT" selected={tile.activateDirection === 'LEFT'}>Left</option>
-									<option value="RIGHT" selected={tile.activateDirection === 'RIGHT'}>Right</option>
-								</select>
 								<label for="target">Target</label>
 								<select
 									name="target"

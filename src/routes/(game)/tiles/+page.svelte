@@ -69,6 +69,13 @@
 									<input type="text" name="sequence" value={selectedTile.sequence} />
 									<label for="delay">Delay</label>
 									<input type="delay" name="delay" value={selectedTile.delay} />
+									<label for="activated">Activated</label>
+									<input
+										type="checkbox"
+										checked={selectedTile.activatedAnimation}
+										onchange={(e) => (selectedTile.activatedAnimation = e.currentTarget.checked)}
+									/>
+									<input type="hidden" name="activated" value={selectedTile.activatedAnimation} />
 								</div>
 								<button type="submit">Update</button>
 							</form>

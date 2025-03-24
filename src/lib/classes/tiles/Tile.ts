@@ -4,6 +4,7 @@ import type { TileKind } from '$lib/interfaces/TileKind';
 import SpriteBank, { type SpriteInfo } from '../SpriteBank';
 import type { Warp } from './Warp';
 import type { Sign } from './Sign';
+import GameEvent from '../GameEvent';
 
 export const tileSchema = z.object({
 	kind: z.union([z.literal('tile'), z.literal('sign'), z.literal('warp')]),
@@ -39,8 +40,17 @@ export class Tile {
 	tileSprites: SpriteInfo;
 	sequenceIndex: number = 0;
 	lastFrame: number = 0;
+	activatedAnimation: boolean = false;
+	isAnimating: boolean = false;
 
-	constructor(x: number, y: number, id: number, overlay: boolean, permissions: number) {
+	constructor(
+		x: number,
+		y: number,
+		id: number,
+		overlay: boolean,
+		permissions: number,
+		activatedAnimation: boolean
+	) {
 		this.x = x;
 		this.y = y;
 		this.id = id;
@@ -48,6 +58,8 @@ export class Tile {
 		this.overlay = overlay;
 		this.permissions = permissions;
 		this.tileSprites = SpriteBank.getTile(this.id);
+		this.activatedAnimation = activatedAnimation;
+		this.isAnimating = this.activatedAnimation ? false : true;
 	}
 	isPassable() {
 		return this.permissions !== 1;
@@ -62,12 +74,17 @@ export class Tile {
 		return this.kind === 'warp';
 	}
 	tick(game: { lastFrameTime: number }) {
-		if (this.tileSprites.delay) {
+		if ((this.tileSprites.delay && !this.activatedAnimation) || this.isAnimating) {
 			if (this.lastFrame + this.tileSprites.delay < game.lastFrameTime) {
 				this.lastFrame = game.lastFrameTime;
 				this.sequenceIndex++;
 				if (this.sequenceIndex >= this.tileSprites.sequence.length) {
-					this.sequenceIndex = 0;
+					if (this.activatedAnimation) {
+						this.isAnimating = false;
+						this.sequenceIndex--;
+					} else {
+						this.sequenceIndex = 0;
+					}
 				}
 			}
 		}

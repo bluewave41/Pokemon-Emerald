@@ -1,6 +1,12 @@
 -- CreateEnum
 CREATE TYPE "EventType" AS ENUM ('SIGN', 'WARP');
 
+-- CreateEnum
+CREATE TYPE "Direction" AS ENUM ('UP', 'DOWN', 'LEFT', 'RIGHT');
+
+-- CreateEnum
+CREATE TYPE "WarpType" AS ENUM ('DOOR', 'CAVE');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
@@ -32,6 +38,7 @@ CREATE TABLE "Tile" (
     "animated" BOOLEAN NOT NULL DEFAULT false,
     "sequence" INTEGER[] DEFAULT ARRAY[]::INTEGER[],
     "delay" INTEGER,
+    "activatedAnimation" BOOLEAN,
 
     CONSTRAINT "Tile_pkey" PRIMARY KEY ("id")
 );
@@ -75,6 +82,13 @@ CREATE TABLE "Sign" (
 );
 
 -- CreateTable
+CREATE TABLE "Warp" (
+    "eventId" INTEGER NOT NULL,
+    "target" INTEGER NOT NULL,
+    "type" "WarpType" NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "SpriteBank" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
@@ -114,6 +128,9 @@ CREATE UNIQUE INDEX "MapTile_mapId_x_y_key" ON "MapTile"("mapId", "x", "y");
 CREATE UNIQUE INDEX "Sign_eventId_key" ON "Sign"("eventId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Warp_eventId_key" ON "Warp"("eventId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "SpriteBank_name_key" ON "SpriteBank"("name");
 
 -- CreateIndex
@@ -136,6 +153,12 @@ ALTER TABLE "Event" ADD CONSTRAINT "Event_mapId_fkey" FOREIGN KEY ("mapId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Sign" ADD CONSTRAINT "Sign_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Warp" ADD CONSTRAINT "Warp_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Warp" ADD CONSTRAINT "Warp_target_fkey" FOREIGN KEY ("target") REFERENCES "Map"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Sprites" ADD CONSTRAINT "Sprites_bankId_fkey" FOREIGN KEY ("bankId") REFERENCES "SpriteBank"("id") ON DELETE CASCADE ON UPDATE CASCADE;

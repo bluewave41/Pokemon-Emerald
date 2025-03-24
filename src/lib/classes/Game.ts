@@ -157,8 +157,6 @@ export class Game {
 		if (this.activeTextBox !== null) {
 			this.#canvas.showMessageBox(this.activeTextBox, currentFrameTime);
 		}
-
-		this.canPlayerMove = this.activeTextBox === null;
 	}
 	drawMap(map: GameMap, x: number, y: number) {
 		map.drawBaseLayer(this.#canvas, x, y);
@@ -172,5 +170,8 @@ export class Game {
 			throw new Error('Game has no canvas.');
 		}
 		return this.#canvas;
+	}
+	blockMovement() {
+		this.canPlayerMove = false;
 	}
 }
