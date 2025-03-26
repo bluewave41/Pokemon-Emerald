@@ -2,16 +2,18 @@ import { BufferHelper } from '$lib/BufferHelper';
 import { mapNamesSchema, type MapNames } from '$lib/interfaces/MapNames';
 import { z } from 'zod';
 import type { Canvas } from '../Canvas';
-import { Tile, tileSchema } from '../tiles/Tile';
-import type { AnyTile } from '$lib/interfaces/AnyTile';
-import { Sign } from '../tiles/Sign';
-import { Warp } from '../tiles/Warp';
+import { tileSchema } from '../tiles/Tile';
+import { signSchema } from '../tiles/Sign';
+import { warpSchema, type EditorWarpProps } from '../tiles/Warp';
+import { EditorTile } from '../tiles/EditorTile';
+import type { MapEvents } from '$lib/interfaces/Events';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
+	area: z.string(),
 	width: z.number(),
 	height: z.number(),
-	tiles: tileSchema.array().array(),
+	tiles: z.union([warpSchema, signSchema, tileSchema]).array().array(),
 	backgroundTile: z.number().optional()
 });
 
@@ -19,31 +21,33 @@ export const gameEditorMapSchema = gameMapSchema.extend({
 	overlayTiles: z.number().array()
 });
 
-export interface GameMapType {
+export interface EditorGameMapType {
 	id: number;
 	name: MapNames;
 	width: number;
 	height: number;
-	tiles: AnyTile[][];
-	backgroundTile: number;
+	tiles: EditorTile[][];
+	backgroundTile: EditorTile | null;
+	events: MapEvents[];
 }
 
-export class GameMap {
+export class EditorGameMap {
 	id: number;
 	name: MapNames;
 	width: number;
 	height: number;
-	tiles: AnyTile[][];
-	backgroundTile: Tile;
-	editor: boolean = false;
+	tiles: EditorTile[][];
+	backgroundTile: EditorTile | null = null;
+	events: MapEvents[] = $state([]);
 
 	constructor(
 		id: number,
 		name: MapNames,
 		width: number,
 		height: number,
-		tiles: AnyTile[][],
-		backgroundTile: Tile
+		tiles: EditorTile[][],
+		backgroundTile: EditorTile | null,
+		events: MapEvents[]
 	) {
 		this.id = id;
 		this.name = name;
@@ -51,6 +55,7 @@ export class GameMap {
 		this.height = height;
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
+		this.events = events;
 	}
 	drawBaseLayer(canvas: Canvas, x: number, y: number) {
 		if (!this.backgroundTile) {
@@ -68,15 +73,11 @@ export class GameMap {
 			canvas.drawTile(tile.getActiveSprite(), tile.x + x, tile.y + y);
 		}
 	}
-	tick(game: { lastFrameTime: number }, canvas: Canvas, x: number, y: number) {
+	tick(canvas: Canvas, x: number, y: number) {
 		for (let loopY = 0; loopY < this.height; loopY++) {
 			for (let loopX = 0; loopX < this.width; loopX++) {
 				const tile = this.tiles[loopY][loopX];
-				tile.tick(game);
 
-				if (!this.editor && tile.id === this.backgroundTile?.id) {
-					continue;
-				}
 				if (tile.overlay) {
 					continue;
 				}
@@ -94,20 +95,20 @@ export class GameMap {
 		const height = buffer.readByte();
 		const backgroundId = buffer.readByte();
 
-		let backgroundTile: Tile | null = null;
+		let backgroundTile: EditorTile | null = null;
 
-		const map: AnyTile[][] = [];
+		const map: EditorTile[][] = [];
 		for (let y = 0; y < height; y++) {
 			const row = [];
 			for (let x = 0; x < width; x++) {
-				const tile = new Tile(
+				const tile = new EditorTile(
 					x,
 					y,
 					buffer.readByte(),
 					buffer.readBoolean(),
-					buffer.readByte(),
-					buffer.readBoolean()
+					buffer.readByte()
 				);
+				buffer.readBoolean(); //unused animation byte
 				if (!backgroundTile && tile.id === backgroundId) {
 					backgroundTile = tile;
 				}
@@ -116,30 +117,28 @@ export class GameMap {
 			map.push(row);
 		}
 
-		if (!backgroundTile) {
-			throw new Error('Map is missing a background tile.');
-		}
+		const warps: EditorWarpProps[] = [];
 
 		while (buffer.hasMore()) {
 			const eventId = buffer.readEventId();
 			const x = buffer.readByte();
 			const y = buffer.readByte();
 			switch (eventId) {
-				case 'sign':
-					map[y][x] = new Sign(map[y][x], buffer.readString());
-					break;
 				case 'warp':
-					map[y][x] = new Warp(
-						buffer.readShort(),
-						map[y][x],
-						buffer.readDirection()
-						//buffer.readShort()
-					);
+					warps.push({
+						kind: 'warp',
+						x,
+						y,
+						warpId: buffer.readByte(),
+						targetMapId: buffer.readShort(),
+						targetWarpId: buffer.readByte(),
+						activateDirection: buffer.readDirection()
+					});
 					break;
 			}
 		}
 
-		return new GameMap(id, name, width, height, map, backgroundTile, []);
+		return new EditorGameMap(id, name, width, height, map, backgroundTile, warps);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];
@@ -147,7 +146,6 @@ export class GameMap {
 	toJSON() {
 		return {
 			name: this.name,
-			area: this.area,
 			width: this.width,
 			height: this.height,
 			tiles: this.tiles,

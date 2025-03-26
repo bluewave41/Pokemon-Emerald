@@ -16,14 +16,14 @@ export class MapHandler {
 	}
 	async connect() {
 		const connections = Connections[this.active.name];
-		if (connections.up) {
-			this.up = await this.setMap(connections.up);
+		if (connections.UP) {
+			this.up = await this.setMap(connections.UP);
 		}
-		if (connections.left) {
-			this.left = await this.setMap(connections.left);
+		if (connections.LEFT) {
+			this.left = await this.setMap(connections.LEFT);
 		}
-		if (connections.down) {
-			this.down = await this.setMap(connections.down);
+		if (connections.DOWN) {
+			this.down = await this.setMap(connections.DOWN);
 		}
 	}
 	async setMap(name: string) {

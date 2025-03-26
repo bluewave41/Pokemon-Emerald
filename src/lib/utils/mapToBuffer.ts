@@ -47,12 +47,14 @@ export const mapToBuffer = async (name: MapNames) => {
 				buffer.writeString(event.Sign?.text ?? '');
 				break;
 			case 'WARP':
-				if (!event.Warp) {
+				if (!event.Warp || !event.Warp.mapId || !event.Warp.warpId) {
 					throw new Error(`Invalid warp found with ID ${event.id}`);
 				}
 				buffer.writeShort(event.Warp.eventId);
 				buffer.writeDirection(event.Warp?.direction);
-			//buffer.writeShort(event.Warp?.target);
+				buffer.writeShort(event.Warp?.mapId);
+				buffer.writeByte(event.Warp?.warpId);
+				break;
 		}
 	}
 

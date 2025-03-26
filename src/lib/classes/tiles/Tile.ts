@@ -7,7 +7,6 @@ import type { Sign } from './Sign';
 import GameEvent from '../GameEvent';
 
 export const tileSchema = z.object({
-	kind: z.union([z.literal('tile'), z.literal('sign'), z.literal('warp')]),
 	x: z.number(),
 	y: z.number(),
 	id: z.number(),

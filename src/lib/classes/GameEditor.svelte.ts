@@ -1,17 +1,17 @@
-import type { AnyTile } from '$lib/interfaces/AnyTile';
 import { Canvas } from './Canvas';
-import { GameMap } from './maps/GameMap';
 import { Buffer } from 'buffer';
-import type { Tile } from './tiles/Tile';
+import { EditorGameMap } from './maps/EditorGameMap.svelte';
+import type { EditorTile } from './tiles/EditorTile';
 
 export type Tabs = 'Tiles' | 'Permissions' | 'Events' | 'Info';
 
 interface Options {
 	activeTab: Tabs;
-	activeTile: Tile | null;
+	activeTile: EditorTile | null;
 	activeColor: number;
-	backgroundTile: Tile | null;
-	selectedTile: AnyTile | null;
+	backgroundTile: EditorTile | null;
+	selectedTile: EditorTile | null;
+	selectedEventIndex: number;
 }
 
 interface Mouse {
@@ -19,7 +19,7 @@ interface Mouse {
 }
 
 export class GameEditor {
-	map: GameMap;
+	map: EditorGameMap;
 	#canvas: Canvas | null = null;
 	#topCanvas: Canvas | null = null;
 	static tileSize: number = 16;
@@ -30,16 +30,16 @@ export class GameEditor {
 		activeTile: null,
 		activeColor: 0,
 		backgroundTile: null,
-		selectedTile: null
+		selectedTile: null,
+		selectedEventIndex: 0
 	});
 	mouse: Mouse = $state({
 		down: false
 	});
 
 	constructor(mapBuffer: string, overlayTiles: number[]) {
-		this.map = GameMap.readMap(Buffer.from(mapBuffer, 'base64'));
+		this.map = EditorGameMap.readMap(Buffer.from(mapBuffer, 'base64'));
 		this.overlayTiles = overlayTiles;
-		this.map.setEditor(true);
 		this.options.backgroundTile = this.map.backgroundTile;
 	}
 	setRefs(canvas: HTMLCanvasElement, topCanvas: HTMLCanvasElement) {
@@ -59,7 +59,7 @@ export class GameEditor {
 		}
 		this.#canvas.reset();
 		this.#topCanvas.reset();
-		this.map.tick({ lastFrameTime: 0 }, this.#canvas, 0, 0);
+		this.map.tick(this.#canvas, 0, 0);
 		this.map.drawTopLayer(this.#canvas, 0, 0);
 	}
 	static getAdjustedTileSize() {
@@ -76,8 +76,5 @@ export class GameEditor {
 			throw new Error('GameEditor has no top canvas.');
 		}
 		return this.#topCanvas;
-	}
-	warpCount() {
-		return this.map.tiles.flat().filter((tile) => tile.kind === 'warp').length;
 	}
 }

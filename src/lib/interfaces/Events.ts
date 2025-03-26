@@ -1,5 +1,4 @@
-import type { SignEvent } from '$lib/classes/events/SignEvent';
+import type { EditorWarpProps } from '$lib/classes/tiles/Warp';
 
-export type Events = 'none' | 'sign';
-
-export type MapEvent = SignEvent;
+export type TileEvents = 'none' | 'sign' | 'warp';
+export type MapEvents = EditorWarpProps;

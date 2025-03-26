@@ -4,15 +4,35 @@ import { Direction } from '@prisma/client';
 
 type WarpType = 'door' | 'cave';
 
-export const warpSchema = tileSchema.extend({
-	activateDirection: z.nativeEnum(Direction),
-	targetMapId: z.number().nullable(),
-	targetWarpId: z.number().nullable()
+export const createWarp = (warpId: number, x: number, y: number): EditorWarpProps => ({
+	kind: 'warp',
+	x,
+	y,
+	warpId,
+	targetMapId: null,
+	targetWarpId: null,
+	activateDirection: null
 });
 
-export interface WarpProps extends BaseTileProps {
-	warpId: number;
+export const warpSchema = tileSchema.extend({
+	targetMapId: z.number().nullable(),
+	targetWarpId: z.number().nullable(),
+	activateDirection: z.nativeEnum(Direction)
+});
+
+export interface EditorWarpProps {
 	kind: 'warp';
+	x: number;
+	y: number;
+	warpId: number;
+	targetMapId: number | null;
+	targetWarpId: number | null;
+	activateDirection: Direction | null;
+}
+
+export interface WarpProps extends BaseTileProps {
+	kind: 'warp';
+	warpId: number;
 	targetMapId: number;
 	targetWarpId: number;
 	activateDirection: Direction;

@@ -4,14 +4,11 @@
 	import { Game } from '$lib/classes/Game.js';
 	import Tab from '$lib/components/Tab.svelte';
 	import TileGrid from '$lib/components/TileGrid.svelte';
-	import type { MapEvent } from '$lib/interfaces/Events.js';
 	import type { PageProps } from './$types.js';
-	import { Tile } from '$lib/classes/tiles/Tile.js';
-	import type { TileKind } from '$lib/interfaces/TileKind.js';
 	import SpriteBank from '$lib/classes/SpriteBank.js';
 	import { GameEditor, type Tabs } from '$lib/classes/GameEditor.svelte.js';
-	import { Sign } from '$lib/classes/tiles/Sign.js';
-	import { Warp } from '$lib/classes/tiles/Warp.js';
+	import { createWarp, Warp, type EditorWarpProps } from '$lib/classes/tiles/Warp.js';
+	import type { EditorTile } from '$lib/classes/tiles/EditorTile.js';
 
 	let { data }: PageProps = $props();
 
@@ -34,30 +31,26 @@
 		2: 'green'
 	};
 
-	const updateTileType = (type: TileKind) => {
+	const hasEvents = (tile: EditorTile) => {
+		return editor.map.events.some((event) => event.x === tile.x && event.y === tile.y);
+	};
+
+	const createEvent = (event: Events) => {
 		const { selectedTile } = editor.options;
 		if (!selectedTile) {
 			return;
 		}
 		const { x, y } = selectedTile;
-		switch (type) {
-			case 'tile':
-				editor.map.tiles[y][x] = new Tile(
-					x,
-					y,
-					selectedTile?.id,
-					selectedTile?.overlay,
-					selectedTile?.permissions
-				);
+
+		switch (event) {
+			case 'none':
 				break;
 			case 'sign':
-				editor.map.tiles[y][x] = new Sign(selectedTile, '');
 				break;
 			case 'warp':
-				editor.map.tiles[y][x] = new Warp(editor.warpCount() + 1, selectedTile);
+				editor.map.events.push(createWarp(editor.map.events.length + 1, x, y));
 				break;
 		}
-		editor.options.selectedTile = editor.map.getTile(x, y);
 	};
 
 	async function init() {
@@ -121,7 +114,7 @@
 						if (!editor.options.activeTile) {
 							break;
 						}
-						editor.map.getTile(x, y).newId = editor.options.activeTile.id;
+						editor.map.getTile(x, y).id = editor.options.activeTile.id;
 						break;
 					case 2:
 						editor.options.activeTile = editor.map.getTile(x, y);
@@ -174,8 +167,7 @@
 						'map',
 						JSON.stringify({
 							...editor.map.toJSON(),
-							overlayTiles: editor.overlayTiles,
-							events: events.map((ev) => ev.toJSON())
+							overlayTiles: editor.overlayTiles
 						})
 					);
 				}}
@@ -239,44 +231,48 @@
 					<p>Events</p>
 					<p>X: {editor.options.selectedTile?.x}</p>
 					<p>Y: {editor.options.selectedTile?.y}</p>
-					{#key editor.options.selectedTile}
-						<select onchange={(e) => updateTileType(e.currentTarget.value as TileKind)}>
-							<option value="none" selected={selectedTile.kind === 'tile'}>None</option>
-							<option value="sign" selected={selectedTile.kind === 'sign'}>Sign</option>
-							<option value="warp" selected={selectedTile.kind === 'warp'}>Warp</option>
-						</select>
+					<button onclick={() => createEvent('warp')}>Create warp</button>
+					{#if hasEvents(selectedTile)}
+						{@const events = editor.map.events.filter(
+							(event) => event.x === selectedTile.x && event.y === selectedTile.y
+						)}
+						{@const selectedEvent = editor.map.events[editor.options.selectedEventIndex]}
 						<div>
-							{#if selectedTile.isSign()}
-								<input type="text" bind:value={selectedTile.text} />
-							{/if}
-							{#if selectedTile.isWarp()}
-								{@const tile = selectedTile as Warp}
+							{#each events as _, index}
+								<button onclick={() => (editor.options.selectedEventIndex = index)}
+									>{index + 1}</button
+								>
+							{/each}
+						</div>
+
+						<div>
+							{#if selectedEvent.kind === 'warp'}
 								<div class="container">
 									<label for="id">ID</label>
-									<input type="text" bind:value={tile.warpId} disabled />
+									<input type="text" value={selectedEvent.warpId} disabled />
 									<label for="activateDirection">Direction</label>
-									<select name="activateDirection" bind:value={tile.activateDirection}>
+									<select name="activateDirection" bind:value={selectedEvent.activateDirection}>
 										<option value="UP">Up</option>
 										<option value="LEFT">Left</option>
 										<option value="RIGHT">Right</option>
 										<option value="DOWN">Down</option>
 									</select>
 									<label for="mapId">Target Map</label>
-									<select name="mapId" bind:value={tile.targetMapId}>
+									<select name="mapId" bind:value={selectedEvent.targetMapId}>
 										<option value="NONE">None</option>
 
 										{#each data.maps as map}
-											<option value={map.id} selected={tile.targetMapId === map.id}
+											<option value={map.id} selected={selectedEvent.targetMapId === map.id}
 												>{map.name}
 											</option>
 										{/each}
 									</select>
 									<label for="warpId">Target Warp</label>
-									<input type="number" name="warpId" bind:value={tile.targetWarpId} />
+									<input type="number" name="warpId" bind:value={selectedEvent.targetWarpId} />
 								</div>
 							{/if}
 						</div>
-					{/key}
+					{/if}
 				{/if}
 			</div>
 		</div>
