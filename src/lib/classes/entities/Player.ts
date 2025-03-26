@@ -1,8 +1,10 @@
+import { sleep } from '$lib/utils/sleep';
 import { Game } from '../Game';
 import GameEvent from '../GameEvent';
 import KeyHandler, { type MovementKeys } from '../KeyHandler';
 import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
+import type { Tile } from '../tiles/Tile';
 import { Entity } from './Entity';
 import type { Direction } from '@prisma/client';
 
@@ -14,6 +16,7 @@ export class Player extends Entity {
 	speed: number = Game.getAdjustedTileSize() * 3;
 	walkFrame: number = 1;
 	counter: number = 0;
+	shouldDraw: boolean = true;
 
 	constructor(x: number, y: number, game: Game, direction: Direction) {
 		super(x, y, game);
@@ -29,13 +32,15 @@ export class Player extends Entity {
 		// we should always draw the Player
 		const walkSprite = this.moving && this.counter < 10 ? direction + this.walkFrame : direction;
 		const sprite = SpriteBank.getSprite('player', walkSprite);
-		this.game.canvas.drawAbsoluteImage(
-			sprite,
-			Math.round(this.subPosition.x) + 1 + this.game.viewport.pos.xOffset,
-			Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) -
-				10 +
-				this.game.viewport.pos.yOffset
-		);
+		if (this.shouldDraw) {
+			this.game.canvas.drawAbsoluteImage(
+				sprite,
+				Math.round(this.subPosition.x) + 1 + this.game.viewport.pos.xOffset,
+				Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) -
+					10 +
+					this.game.viewport.pos.yOffset
+			);
+		}
 
 		const activeKey = KeyHandler.getActiveKeyState('z');
 
@@ -111,36 +116,36 @@ export class Player extends Entity {
 					this.counter = 0;
 				} else {
 					const newTile = this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
-					if (keyState.holdCount > 8 && newTile.isPassable()) {
-						if (newTile.isWarp()) {
-							this.game.blockMovement();
-							newTile.isAnimating = true;
-							GameEvent.once('warpAnimationComplete', () => {
-								this.moving = true;
-								this.targetPosition = {
-									x: this.targetPosition.x,
-									y: this.targetPosition.y - Game.getAdjustedTileSize()
-								};
-								requestAnimationFrame((time) => {
-									this.counter = 0;
-									this.scriptedMovement(time);
-								});
-							});
-							// get upper tile
-							// get linking tile
-							// set both door tiles
-							// clear player
-							// fade to back
-							// load target
-							// change maps
-							// do backwards
-							// walk out
-						} else {
-							this.moving = true;
-							this.position = { x: tableEntry.x, y: tableEntry.y };
-							this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
-							this.counter = 0;
+					const currentTile = this.getCurrentTile();
+
+					if (currentTile.isWarp() && this.direction === currentTile.activateDirection) {
+						const tiles: Tile[] = [this.getFacingTile()];
+						if (currentTile.type === 'door') {
+							tiles.push(this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y - 1)); //upper door
 						}
+						this.game.blockMovement();
+						tiles.forEach((tile) => (tile.animationOptions.isAnimating = true));
+						GameEvent.once('animationComplete', () => {
+							this.moving = true;
+							this.targetPosition = {
+								x: this.targetPosition.x,
+								y: this.targetPosition.y - Game.getAdjustedTileSize()
+							};
+							requestAnimationFrame((time) => {
+								this.counter = 0;
+								this.scriptedMovement(time);
+								this.handleAsyncMovement(tiles);
+							});
+						});
+						// load target
+						// change maps
+						// do backwards
+						// walk out
+					} else if (keyState.holdCount > 8 && newTile.isPassable()) {
+						this.moving = true;
+						this.position = { x: tableEntry.x, y: tableEntry.y };
+						this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
+						this.counter = 0;
 					}
 				}
 			}
@@ -184,12 +189,28 @@ export class Player extends Entity {
 			throw new Error('Invalid player direction.');
 		}
 	}
+	getCurrentTile() {
+		return this.game.mapHandler.active.getTile(this.position.x, this.position.y);
+	}
+	async handleAsyncMovement(tiles: Tile[]) {
+		await GameEvent.waitForOnce('scriptedMovementComplete');
+		this.shouldDraw = false;
+		await sleep(200);
+		tiles.map((tile) => (tile.animationOptions = { isAnimating: true, direction: 'backwards' }));
+		await sleep(500);
+		this.game.canvas.fadeToBlack();
+		await GameEvent.waitForOnce('fadedOut');
+		// load next map
+		await sleep(1000);
+		this.game.canvas.fadeIn();
+	}
 	scriptedMovement(currentFrameTime: number) {
 		if (!this.moving) {
 			return;
 		}
 		GameEvent.once('movementFinished', () => {
 			this.moving = false;
+			GameEvent.dispatchEvent(new CustomEvent('scriptedMovementComplete'));
 			return;
 		});
 		this.tick(currentFrameTime);

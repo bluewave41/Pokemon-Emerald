@@ -72,7 +72,7 @@ model MapTile {
 }
 
 model Event {
-  id    Int       @id @default(autoincrement())
+  id    Int       @id
   mapId Int
   type  EventType
   x     Int
@@ -92,11 +92,13 @@ model Sign {
 
 model Warp {
   eventId   Int       @unique
-  target    Int
+  mapId     Int?
+  warpId    Int?
   type      WarpType
+  direction Direction
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  map   Map   @relation(fields: [target], references: [id], onDelete: Cascade)
+  map   Map?  @relation(fields: [mapId], references: [id], onDelete: Cascade)
 }
 
 model SpriteBank {

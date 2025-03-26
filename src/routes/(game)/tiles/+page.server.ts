@@ -60,7 +60,10 @@ export const actions = {
 			activated: zfd.text()
 		});
 
-		const result = await schema.safeParseAsync(await request.formData());
+		const data = await request.formData();
+		console.log(data);
+
+		const result = await schema.safeParseAsync(data);
 		if (result.error) {
 			console.log(result.error);
 			return error(400);

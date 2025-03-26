@@ -1,38 +1,42 @@
 import { z } from 'zod';
 import { Tile, tileSchema, type BaseTileProps } from './Tile';
-import GameEvent from '../GameEvent';
+import { Direction } from '@prisma/client';
 
 type WarpType = 'door' | 'cave';
 
 export const warpSchema = tileSchema.extend({
-	target: z.number()
+	activateDirection: z.nativeEnum(Direction),
+	targetMapId: z.number().nullable(),
+	targetWarpId: z.number().nullable()
 });
 
 export interface WarpProps extends BaseTileProps {
+	warpId: number;
 	kind: 'warp';
-	target: number;
+	targetMapId: number;
+	targetWarpId: number;
+	activateDirection: Direction;
 }
 
 export class Warp extends Tile {
-	target: number | null = null;
+	warpId: number;
+	targetMapId: number | null;
+	targetWarpId: number | null;
 	type: WarpType = 'door';
+	activateDirection: Direction | null = null;
 
-	constructor(tile: Tile, target?: number) {
+	constructor(
+		warpId: number,
+		tile: Tile,
+		activateDirection?: Direction,
+		targetMapId?: number,
+		targetWarpId?: number
+	) {
 		super(tile.x, tile.y, tile.id, tile.overlay, tile.permissions, tile.activatedAnimation);
+		this.warpId = warpId;
 		this.kind = 'warp';
-		this.target = target ?? null;
-	}
-	tick(game: { lastFrameTime: number }) {
-		if (this.isAnimating) {
-			if (this.lastFrame + this.tileSprites.delay < game.lastFrameTime) {
-				this.lastFrame = game.lastFrameTime;
-				this.sequenceIndex++;
-				if (this.sequenceIndex >= this.tileSprites.sequence.length) {
-					this.isAnimating = false;
-					this.sequenceIndex--;
-					GameEvent.dispatchEvent(new CustomEvent('warpAnimationComplete'));
-				}
-			}
-		}
+		this.activateDirection = activateDirection ?? null;
+		this.targetMapId = targetMapId ?? null;
+		this.targetWarpId = targetWarpId ?? null;
 	}
 }

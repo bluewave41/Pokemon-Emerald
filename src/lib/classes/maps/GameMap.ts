@@ -13,7 +13,7 @@ export const gameMapSchema = z.object({
 	area: z.string(),
 	width: z.number(),
 	height: z.number(),
-	tiles: z.union([signSchema, warpSchema, tileSchema]).array().array(),
+	tiles: z.union([warpSchema, signSchema, tileSchema]).array().array(),
 	backgroundTile: z.number().optional()
 });
 
@@ -80,6 +80,7 @@ export class GameMap {
 			for (let loopX = 0; loopX < this.width; loopX++) {
 				const tile = this.tiles[loopY][loopX];
 				tile.tick(game);
+
 				if (!this.editor && tile.id === this.backgroundTile?.id) {
 					continue;
 				}
@@ -131,7 +132,12 @@ export class GameMap {
 					map[y][x] = new Sign(map[y][x], buffer.readString());
 					break;
 				case 'warp':
-					map[y][x] = new Warp(map[y][x], buffer.readShort());
+					map[y][x] = new Warp(
+						buffer.readShort(),
+						map[y][x],
+						buffer.readDirection()
+						//buffer.readShort()
+					);
 					break;
 			}
 		}

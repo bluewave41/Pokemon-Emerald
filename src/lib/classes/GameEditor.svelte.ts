@@ -77,4 +77,7 @@ export class GameEditor {
 		}
 		return this.#topCanvas;
 	}
+	warpCount() {
+		return this.map.tiles.flat().filter((tile) => tile.kind === 'warp').length;
+	}
 }

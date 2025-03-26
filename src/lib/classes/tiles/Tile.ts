@@ -40,8 +40,11 @@ export class Tile {
 	tileSprites: SpriteInfo;
 	sequenceIndex: number = 0;
 	lastFrame: number = 0;
-	activatedAnimation: boolean = false;
-	isAnimating: boolean = false;
+	activatedAnimation: boolean;
+	animationOptions: { isAnimating: boolean; direction: 'forwards' | 'backwards' } = {
+		isAnimating: false,
+		direction: 'forwards'
+	};
 
 	constructor(
 		x: number,
@@ -49,7 +52,7 @@ export class Tile {
 		id: number,
 		overlay: boolean,
 		permissions: number,
-		activatedAnimation: boolean
+		activatedAnimation?: boolean
 	) {
 		this.x = x;
 		this.y = y;
@@ -58,8 +61,8 @@ export class Tile {
 		this.overlay = overlay;
 		this.permissions = permissions;
 		this.tileSprites = SpriteBank.getTile(this.id);
-		this.activatedAnimation = activatedAnimation;
-		this.isAnimating = this.activatedAnimation ? false : true;
+		this.activatedAnimation = activatedAnimation ?? false;
+		this.animationOptions.isAnimating = this.activatedAnimation ? false : true;
 	}
 	isPassable() {
 		return this.permissions !== 1;
@@ -74,16 +77,25 @@ export class Tile {
 		return this.kind === 'warp';
 	}
 	tick(game: { lastFrameTime: number }) {
-		if ((this.tileSprites.delay && !this.activatedAnimation) || this.isAnimating) {
+		if ((this.tileSprites.delay && !this.activatedAnimation) || this.animationOptions.isAnimating) {
 			if (this.lastFrame + this.tileSprites.delay < game.lastFrameTime) {
 				this.lastFrame = game.lastFrameTime;
-				this.sequenceIndex++;
-				if (this.sequenceIndex >= this.tileSprites.sequence.length) {
-					if (this.activatedAnimation) {
-						this.isAnimating = false;
-						this.sequenceIndex--;
-					} else {
-						this.sequenceIndex = 0;
+				this.sequenceIndex += this.animationOptions.direction === 'forwards' ? 1 : -1;
+
+				if (this.animationOptions.direction === 'forwards') {
+					if (this.sequenceIndex >= this.tileSprites.sequence.length) {
+						if (this.activatedAnimation) {
+							this.animationOptions.isAnimating = false;
+							this.sequenceIndex--;
+							GameEvent.dispatchEvent(new CustomEvent('animationComplete'));
+						} else {
+							this.sequenceIndex = 0;
+						}
+					}
+				} else {
+					if (this.sequenceIndex === 0) {
+						this.animationOptions.isAnimating = false;
+						GameEvent.dispatchEvent(new CustomEvent('animationComplete'));
 					}
 				}
 			}

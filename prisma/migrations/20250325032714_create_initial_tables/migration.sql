@@ -66,7 +66,7 @@ CREATE TABLE "MapTile" (
 
 -- CreateTable
 CREATE TABLE "Event" (
-    "id" SERIAL NOT NULL,
+    "id" INTEGER NOT NULL,
     "mapId" INTEGER NOT NULL,
     "type" "EventType" NOT NULL,
     "x" INTEGER NOT NULL,
@@ -84,8 +84,10 @@ CREATE TABLE "Sign" (
 -- CreateTable
 CREATE TABLE "Warp" (
     "eventId" INTEGER NOT NULL,
-    "target" INTEGER NOT NULL,
-    "type" "WarpType" NOT NULL
+    "mapId" INTEGER,
+    "warpId" INTEGER,
+    "type" "WarpType" NOT NULL,
+    "direction" "Direction" NOT NULL
 );
 
 -- CreateTable
@@ -158,7 +160,7 @@ ALTER TABLE "Sign" ADD CONSTRAINT "Sign_eventId_fkey" FOREIGN KEY ("eventId") RE
 ALTER TABLE "Warp" ADD CONSTRAINT "Warp_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Warp" ADD CONSTRAINT "Warp_target_fkey" FOREIGN KEY ("target") REFERENCES "Map"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Warp" ADD CONSTRAINT "Warp_mapId_fkey" FOREIGN KEY ("mapId") REFERENCES "Map"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Sprites" ADD CONSTRAINT "Sprites_bankId_fkey" FOREIGN KEY ("bankId") REFERENCES "SpriteBank"("id") ON DELETE CASCADE ON UPDATE CASCADE;

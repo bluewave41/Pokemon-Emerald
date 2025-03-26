@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { mapNamesSchema } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
 import { gameEditorMapSchema } from '$lib/classes/maps/GameMap';
-import type { SignProps } from '$lib/classes/tiles/Sign';
 import type { WarpProps } from '$lib/classes/tiles/Warp';
 
 const removeImageBackground = async (background: string, top: string) => {
@@ -190,14 +189,27 @@ export const actions = {
 			)
 		);
 
+		await prisma.event.deleteMany();
+
 		const warps: WarpProps[] = flattened.filter((tile) => tile.kind === 'warp');
 
-		console.log(map.tiles[9][5]);
+		let highestEventId =
+			(
+				await prisma.event.findFirst({
+					select: {
+						id: true
+					},
+					orderBy: {
+						id: 'desc'
+					},
+					take: 1
+				})
+			)?.id ?? 0;
 
 		for (const event of warps) {
-			console.log(event);
 			await prisma.event.create({
 				data: {
+					id: ++highestEventId,
 					mapId: updated.id,
 					type: 'WARP',
 					x: event.x,
@@ -205,7 +217,9 @@ export const actions = {
 					Warp: {
 						create: {
 							type: 'DOOR',
-							target: event.target
+							mapId: event.targetMapId,
+							warpId: event.targetWarpId,
+							direction: event.activateDirection
 						}
 					}
 				}

@@ -7,17 +7,6 @@
 	let { data } = $props();
 	let selectedTile: PageData['tiles'][0] | Tile | null = $state(null);
 	let form: HTMLFormElement;
-
-	const markTileAnimated = () => {
-		const tile = data.tiles.find((tile) => tile.id === selectedTile?.id);
-		if (!tile) {
-			return;
-		}
-		tile.animated = !tile.animated;
-		selectedTile = tile;
-	};
-
-	$inspect(selectedTile);
 </script>
 
 <h1>Tiles</h1>
@@ -37,12 +26,7 @@
 				<img class="img" src={selectedTile.data} alt="Tile" />
 				<div>
 					<label for="animated">Animated</label>
-					<input
-						type="checkbox"
-						name="animated"
-						checked={selectedTile.animated}
-						onchange={markTileAnimated}
-					/>
+					<input type="checkbox" name="animated" bind:checked={selectedTile.animated} />
 					{#if selectedTile.animated}
 						<form
 							action="?/upload"
@@ -51,31 +35,33 @@
 							bind:this={form}
 							enctype="multipart/form-data"
 						>
-							<input type="text" hidden name="tile" value={selectedTile.id} />
+							<input type="text" hidden name="tile" bind:value={selectedTile.id} />
 							<input type="file" multiple name="files" onchange={() => form.submit()} />
 						</form>
 						{#if 'TileFrame' in selectedTile}
 							<p>{selectedTile.TileFrame.length} frames.</p>
-							{#each selectedTile.TileFrame as frame}
+							{#each selectedTile.TileFrame as frame, index}
 								<div class="row">
 									<img class="img" src={frame.data} alt="Tile" />
-									<p>{frame.id}</p>
+									<p>{index + 1}</p>
 								</div>
 							{/each}
 							<form action="?/update" method="POST" use:enhance>
 								<div class="col-container">
-									<input type="text" hidden name="tile" value={selectedTile.id} />
+									<input type="text" hidden name="tile" bind:value={selectedTile.id} />
 									<label for="sequence">Sequence</label>
-									<input type="text" name="sequence" value={selectedTile.sequence} />
+									<input type="text" name="sequence" bind:value={selectedTile.sequence} />
 									<label for="delay">Delay</label>
-									<input type="delay" name="delay" value={selectedTile.delay} />
-									<label for="activated">Activated</label>
+									<input type="delay" name="delay" bind:value={selectedTile.delay} />
+									<div>
+										<label for="activated">Activated</label>
+										<input type="checkbox" bind:checked={selectedTile.activatedAnimation} />
+									</div>
 									<input
-										type="checkbox"
-										checked={selectedTile.activatedAnimation}
-										onchange={(e) => (selectedTile.activatedAnimation = e.currentTarget.checked)}
+										type="hidden"
+										name="activated"
+										bind:value={selectedTile.activatedAnimation}
 									/>
-									<input type="hidden" name="activated" value={selectedTile.activatedAnimation} />
 								</div>
 								<button type="submit">Update</button>
 							</form>

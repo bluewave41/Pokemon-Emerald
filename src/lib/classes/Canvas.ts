@@ -1,5 +1,6 @@
 import { AdjustedRect } from './AdjustedRect';
 import { Game, type MessageBox } from './Game';
+import GameEvent from './GameEvent';
 import KeyHandler from './KeyHandler';
 
 interface DrawOptions {
@@ -9,6 +10,7 @@ interface DrawOptions {
 export class Canvas {
 	canvas: HTMLCanvasElement;
 	context: CanvasRenderingContext2D;
+	#alpha: number = 1;
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
@@ -84,6 +86,29 @@ export class Canvas {
 			y += 32;
 		}
 	}
+	fadeToBlack() {
+		this.#alpha -= 0.05;
+		this.context.globalAlpha = this.#alpha;
+
+		if (this.#alpha > 0) {
+			requestAnimationFrame(() => this.fadeToBlack());
+		} else {
+			this.context.globalAlpha = 0;
+			GameEvent.dispatchEvent(new CustomEvent('fadedOut'));
+		}
+	}
+	fadeIn() {
+		this.#alpha += 0.05;
+		this.context.globalAlpha = this.#alpha;
+
+		if (this.#alpha < 1) {
+			requestAnimationFrame(() => this.fadeIn());
+		} else {
+			this.context.globalAlpha = 1;
+			GameEvent.dispatchEvent(new CustomEvent('fadedIn'));
+		}
+	}
+
 	get width() {
 		return this.canvas.width;
 	}

@@ -12,7 +12,6 @@
 	import { GameEditor, type Tabs } from '$lib/classes/GameEditor.svelte.js';
 	import { Sign } from '$lib/classes/tiles/Sign.js';
 	import { Warp } from '$lib/classes/tiles/Warp.js';
-	import { Direction } from '@prisma/client';
 
 	let { data }: PageProps = $props();
 
@@ -55,7 +54,7 @@
 				editor.map.tiles[y][x] = new Sign(selectedTile, '');
 				break;
 			case 'warp':
-				editor.map.tiles[y][x] = new Warp(selectedTile);
+				editor.map.tiles[y][x] = new Warp(editor.warpCount() + 1, selectedTile);
 				break;
 		}
 		editor.options.selectedTile = editor.map.getTile(x, y);
@@ -171,8 +170,6 @@
 				method="POST"
 				action="?/save"
 				use:enhance={({ formData }) => {
-					console.log(editor.map);
-					console.log(editor.map.toJSON());
 					formData.append(
 						'map',
 						JSON.stringify({
@@ -250,25 +247,33 @@
 						</select>
 						<div>
 							{#if selectedTile.isSign()}
-								<input
-									type="text"
-									value={selectedTile.text}
-									onchange={(e) => (selectedTile.text = e.currentTarget.value)}
-								/>
+								<input type="text" bind:value={selectedTile.text} />
 							{/if}
 							{#if selectedTile.isWarp()}
 								{@const tile = selectedTile as Warp}
-								<label for="target">Target</label>
-								<select
-									name="target"
-									onchange={(e) => (tile.target = parseInt(e.currentTarget.value))}
-								>
-									<option value="NONE">None</option>
+								<div class="container">
+									<label for="id">ID</label>
+									<input type="text" bind:value={tile.warpId} disabled />
+									<label for="activateDirection">Direction</label>
+									<select name="activateDirection" bind:value={tile.activateDirection}>
+										<option value="UP">Up</option>
+										<option value="LEFT">Left</option>
+										<option value="RIGHT">Right</option>
+										<option value="DOWN">Down</option>
+									</select>
+									<label for="mapId">Target Map</label>
+									<select name="mapId" bind:value={tile.targetMapId}>
+										<option value="NONE">None</option>
 
-									{#each data.maps as map}
-										<option value={map.id} selected={tile.target === map.id}>{map.name} </option>
-									{/each}
-								</select>
+										{#each data.maps as map}
+											<option value={map.id} selected={tile.targetMapId === map.id}
+												>{map.name}
+											</option>
+										{/each}
+									</select>
+									<label for="warpId">Target Warp</label>
+									<input type="number" name="warpId" bind:value={tile.targetWarpId} />
+								</div>
 							{/if}
 						</div>
 					{/key}
