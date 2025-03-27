@@ -10,7 +10,7 @@ export async function GET({ url }) {
 
 	const result = await schema.safeParseAsync(Object.fromEntries(url.searchParams));
 	if (result.error) {
-		return error(400, { message: 'Invalid name given.' });
+		return error(400, { message: 'Invalid id given.' });
 	}
 
 	const { map } = await mapToBuffer(result.data.name);

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { mapNamesSchema } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
 import { gameEditorMapSchema } from '$lib/classes/maps/GameMap';
-import type { WarpProps } from '$lib/classes/tiles/Warp';
+import type { EditorWarpProps, WarpProps } from '$lib/classes/tiles/Warp';
 
 const removeImageBackground = async (background: string, top: string) => {
 	if (background === top) {
@@ -93,8 +93,6 @@ export const actions = {
 		}
 
 		const { map } = result.data;
-
-		const flattened = map.tiles.flat();
 
 		const updated = await prisma.map.update({
 			data: {
@@ -189,37 +187,28 @@ export const actions = {
 			)
 		);
 
-		await prisma.event.deleteMany();
+		await prisma.event.deleteMany({
+			where: {
+				mapId: updated.id
+			}
+		});
 
-		const warps: WarpProps[] = flattened.filter((tile) => tile.kind === 'warp');
+		const warps: EditorWarpProps[] = map.events.filter((event) => event.kind === 'warp');
 
-		let highestEventId =
-			(
-				await prisma.event.findFirst({
-					select: {
-						id: true
-					},
-					orderBy: {
-						id: 'desc'
-					},
-					take: 1
-				})
-			)?.id ?? 0;
-
-		for (const event of warps) {
+		for (let i = 0; i < warps.length; i++) {
+			const warp = warps[i];
 			await prisma.event.create({
 				data: {
-					id: ++highestEventId,
 					mapId: updated.id,
 					type: 'WARP',
-					x: event.x,
-					y: event.y,
+					x: warp.x,
+					y: warp.y,
 					Warp: {
 						create: {
 							type: 'DOOR',
-							mapId: event.targetMapId,
-							warpId: event.targetWarpId,
-							direction: event.activateDirection
+							mapId: warp.targetMapId,
+							warpId: warp.targetWarpId,
+							direction: warp.activateDirection
 						}
 					}
 				}

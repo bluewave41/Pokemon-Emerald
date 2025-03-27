@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { Tile, tileSchema, type BaseTileProps } from './Tile';
+import { Tile, tileSchema } from './Tile';
 import { Direction } from '@prisma/client';
+import { tileEventKindSchema } from '$lib/interfaces/Events';
 
 type WarpType = 'door' | 'cave';
 
-export const createWarp = (warpId: number, x: number, y: number): EditorWarpProps => ({
+export const createWarp = (x: number, y: number): EditorWarpProps => ({
 	kind: 'warp',
 	x,
 	y,
-	warpId,
 	targetMapId: null,
 	targetWarpId: null,
 	activateDirection: null
@@ -20,43 +20,58 @@ export const warpSchema = tileSchema.extend({
 	activateDirection: z.nativeEnum(Direction)
 });
 
+export const editorWarpSchema = z.object({
+	kind: tileEventKindSchema,
+	x: z.number(),
+	y: z.number(),
+	targetMapId: z.number().nullable(),
+	targetWarpId: z.number().nullable(),
+	activateDirection: z.nativeEnum(Direction)
+});
+
 export interface EditorWarpProps {
 	kind: 'warp';
 	x: number;
 	y: number;
-	warpId: number;
 	targetMapId: number | null;
 	targetWarpId: number | null;
 	activateDirection: Direction | null;
 }
 
-export interface WarpProps extends BaseTileProps {
+export interface WarpProps {
 	kind: 'warp';
-	warpId: number;
+	x: number;
+	y: number;
 	targetMapId: number;
 	targetWarpId: number;
 	activateDirection: Direction;
 }
 
 export class Warp extends Tile {
-	warpId: number;
-	targetMapId: number | null;
-	targetWarpId: number | null;
+	targetMapId: number;
+	targetWarpId: number;
 	type: WarpType = 'door';
 	activateDirection: Direction | null = null;
 
-	constructor(
-		warpId: number,
-		tile: Tile,
-		activateDirection?: Direction,
-		targetMapId?: number,
-		targetWarpId?: number
-	) {
+	constructor(tile: Tile, activateDirection: Direction, targetMapId: number, targetWarpId: number) {
 		super(tile.x, tile.y, tile.id, tile.overlay, tile.permissions, tile.activatedAnimation);
-		this.warpId = warpId;
 		this.kind = 'warp';
-		this.activateDirection = activateDirection ?? null;
-		this.targetMapId = targetMapId ?? null;
-		this.targetWarpId = targetWarpId ?? null;
+		this.activateDirection = activateDirection;
+		this.targetMapId = targetMapId;
+		this.targetWarpId = targetWarpId;
+	}
+	getWarpOutSpot() {
+		switch (this.activateDirection) {
+			case 'UP':
+				return { x: this.x, y: this.y - 1 };
+			case 'LEFT':
+				return { x: this.x - 1, y: this.y };
+			case 'RIGHT':
+				return { x: this.x + 1, y: this.y };
+			case 'DOWN':
+				return { x: this.x, y: this.y + 1 };
+			default:
+				return { x: this.x, y: this.y };
+		}
 	}
 }

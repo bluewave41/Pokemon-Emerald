@@ -174,4 +174,7 @@ export class Game {
 	blockMovement() {
 		this.canPlayerMove = false;
 	}
+	unblockMovement() {
+		this.canPlayerMove = true;
+	}
 }

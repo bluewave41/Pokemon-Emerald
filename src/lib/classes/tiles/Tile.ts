@@ -37,12 +37,16 @@ export class Tile {
 	overlay: boolean;
 	permissions: number;
 	tileSprites: SpriteInfo;
-	sequenceIndex: number = 0;
 	lastFrame: number = 0;
 	activatedAnimation: boolean;
-	animationOptions: { isAnimating: boolean; direction: 'forwards' | 'backwards' } = {
+	animationOptions: {
+		isAnimating: boolean;
+		direction: 'forwards' | 'backwards';
+		sequenceIndex: number;
+	} = {
 		isAnimating: false,
-		direction: 'forwards'
+		direction: 'forwards',
+		sequenceIndex: 0
 	};
 
 	constructor(
@@ -75,24 +79,32 @@ export class Tile {
 	isWarp(): this is Warp {
 		return this.kind === 'warp';
 	}
+	playReversed() {
+		this.animationOptions = {
+			isAnimating: true,
+			direction: 'backwards',
+			sequenceIndex: this.tileSprites.images.length - 1
+		};
+	}
 	tick(game: { lastFrameTime: number }) {
 		if ((this.tileSprites.delay && !this.activatedAnimation) || this.animationOptions.isAnimating) {
 			if (this.lastFrame + this.tileSprites.delay < game.lastFrameTime) {
 				this.lastFrame = game.lastFrameTime;
-				this.sequenceIndex += this.animationOptions.direction === 'forwards' ? 1 : -1;
+				this.animationOptions.sequenceIndex +=
+					this.animationOptions.direction === 'forwards' ? 1 : -1;
 
 				if (this.animationOptions.direction === 'forwards') {
-					if (this.sequenceIndex >= this.tileSprites.sequence.length) {
+					if (this.animationOptions.sequenceIndex >= this.tileSprites.sequence.length) {
 						if (this.activatedAnimation) {
 							this.animationOptions.isAnimating = false;
-							this.sequenceIndex--;
+							this.animationOptions.sequenceIndex--;
 							GameEvent.dispatchEvent(new CustomEvent('animationComplete'));
 						} else {
-							this.sequenceIndex = 0;
+							this.animationOptions.sequenceIndex = 0;
 						}
 					}
 				} else {
-					if (this.sequenceIndex === 0) {
+					if (this.animationOptions.sequenceIndex === 0) {
 						this.animationOptions.isAnimating = false;
 						GameEvent.dispatchEvent(new CustomEvent('animationComplete'));
 					}
@@ -112,8 +124,10 @@ export class Tile {
 			this.id = this.newId;
 		}
 		if (this.tileSprites.sequence) {
-			return this.tileSprites.images[this.tileSprites.sequence[this.sequenceIndex]];
+			return this.tileSprites.images[
+				this.tileSprites.sequence[this.animationOptions.sequenceIndex]
+			];
 		}
-		return this.tileSprites.images[this.sequenceIndex];
+		return this.tileSprites.images[this.animationOptions.sequenceIndex];
 	}
 }

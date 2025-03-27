@@ -5,14 +5,15 @@ import type { Canvas } from '../Canvas';
 import { Tile, tileSchema } from '../tiles/Tile';
 import type { AnyTile } from '$lib/interfaces/AnyTile';
 import { Sign } from '../tiles/Sign';
-import { Warp } from '../tiles/Warp';
+import { editorWarpSchema, Warp } from '../tiles/Warp';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
 	width: z.number(),
 	height: z.number(),
 	tiles: tileSchema.array().array(),
-	backgroundTile: z.number().optional()
+	backgroundTile: z.number().optional(),
+	events: editorWarpSchema.array()
 });
 
 export const gameEditorMapSchema = gameMapSchema.extend({
@@ -35,7 +36,6 @@ export class GameMap {
 	height: number;
 	tiles: AnyTile[][];
 	backgroundTile: Tile;
-	editor: boolean = false;
 
 	constructor(
 		id: number,
@@ -74,7 +74,7 @@ export class GameMap {
 				const tile = this.tiles[loopY][loopX];
 				tile.tick(game);
 
-				if (!this.editor && tile.id === this.backgroundTile?.id) {
+				if (tile.id === this.backgroundTile?.id) {
 					continue;
 				}
 				if (tile.overlay) {
@@ -130,16 +130,16 @@ export class GameMap {
 					break;
 				case 'warp':
 					map[y][x] = new Warp(
-						buffer.readShort(),
 						map[y][x],
-						buffer.readDirection()
-						//buffer.readShort()
+						buffer.readDirection(),
+						buffer.readShort(),
+						buffer.readByte()
 					);
 					break;
 			}
 		}
 
-		return new GameMap(id, name, width, height, map, backgroundTile, []);
+		return new GameMap(id, name, width, height, map, backgroundTile);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];
@@ -147,7 +147,6 @@ export class GameMap {
 	toJSON() {
 		return {
 			name: this.name,
-			area: this.area,
 			width: this.width,
 			height: this.height,
 			tiles: this.tiles,

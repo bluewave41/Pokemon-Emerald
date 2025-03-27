@@ -66,7 +66,7 @@ CREATE TABLE "MapTile" (
 
 -- CreateTable
 CREATE TABLE "Event" (
-    "id" INTEGER NOT NULL,
+    "id" SERIAL NOT NULL,
     "mapId" INTEGER NOT NULL,
     "type" "EventType" NOT NULL,
     "x" INTEGER NOT NULL,
@@ -83,11 +83,14 @@ CREATE TABLE "Sign" (
 
 -- CreateTable
 CREATE TABLE "Warp" (
+    "id" SERIAL NOT NULL,
     "eventId" INTEGER NOT NULL,
     "mapId" INTEGER,
     "warpId" INTEGER,
     "type" "WarpType" NOT NULL,
-    "direction" "Direction" NOT NULL
+    "direction" "Direction" NOT NULL,
+
+    CONSTRAINT "Warp_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable

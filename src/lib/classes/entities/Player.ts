@@ -5,6 +5,7 @@ import KeyHandler, { type MovementKeys } from '../KeyHandler';
 import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
 import type { Tile } from '../tiles/Tile';
+import type { Warp } from '../tiles/Warp';
 import { Entity } from './Entity';
 import type { Direction } from '@prisma/client';
 
@@ -26,6 +27,14 @@ export class Player extends Entity {
 		);
 		this.subPosition = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 		this.direction = direction;
+	}
+	setPosition(x: number, y: number) {
+		this.position = new Position(x, y);
+		this.subPosition = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
+		this.targetPosition = new Position(
+			x * Game.getAdjustedTileSize(),
+			y * Game.getAdjustedTileSize()
+		);
 	}
 	tick(currentFrameTime: number) {
 		const direction = this.direction.toLowerCase();
@@ -109,14 +118,22 @@ export class Player extends Entity {
 		if (direction !== null) {
 			const tableEntry = moveTable[direction];
 			const keyState = KeyHandler.getKeyState(direction);
+			const currentTile = this.getCurrentTile();
 			if (keyState.holdCount > 8) {
-				if (this.isNewTileOutsideMap(tableEntry.x, tableEntry.y)) {
-					this.game.changeMap(this.getOutsideMapDirection(tableEntry.x, tableEntry.y));
-					this.moving = true;
-					this.counter = 0;
+				// this is like a houae warp
+				if (currentTile.isWarp() && this.isNewTileOutsideMap(tableEntry.x, tableEntry.y)) {
+					this.game.blockMovement();
+					this.handleWarpOut(false);
+					this.game.canvas.fadeToBlack();
+				} else if (this.isNewTileOutsideMap(tableEntry.x, tableEntry.y)) {
+					const direction = this.getOutsideMapDirection(tableEntry.x, tableEntry.y);
+					if (this.game.mapHandler.hasMap(direction)) {
+						this.game.changeMap(this.getOutsideMapDirection(tableEntry.x, tableEntry.y));
+						this.moving = true;
+						this.counter = 0;
+					}
 				} else {
 					const newTile = this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
-					const currentTile = this.getCurrentTile();
 
 					if (currentTile.isWarp() && this.direction === currentTile.activateDirection) {
 						const tiles: Tile[] = [this.getFacingTile()];
@@ -192,14 +209,56 @@ export class Player extends Entity {
 	getCurrentTile() {
 		return this.game.mapHandler.active.getTile(this.position.x, this.position.y);
 	}
+	async handleWarpOut(animated: boolean = false) {
+		const currentTile = this.getCurrentTile() as Warp;
+		this.game.blockMovement();
+		this.game.canvas.fadeToBlack();
+		await GameEvent.waitForOnce('fadedOut');
+		// load original map
+		const map = await this.game.mapHandler.fetchMapById(currentTile.targetMapId);
+		const targetWarp: Warp = map.tiles
+			.flat()
+			.find((tile) => tile.isWarp() && tile.targetWarpId === currentTile.targetWarpId);
+		if (!targetWarp) {
+			throw new Error(`Couldn't find target warp.`);
+		}
+		this.game.mapHandler.setActive(map);
+		const { x, y } = targetWarp.getWarpOutSpot();
+		const targetTile = this.game.mapHandler.active.getTile(x, y);
+		targetTile.playReversed();
+		this.setPosition(x, y);
+		this.game.canvas.fadeIn();
+		await GameEvent.waitForOnce('fadedIn');
+		this.game.unblockMovement();
+	}
 	async handleAsyncMovement(tiles: Tile[]) {
+		const currentTile = this.getCurrentTile();
 		await GameEvent.waitForOnce('scriptedMovementComplete');
 		this.shouldDraw = false;
 		await sleep(200);
-		tiles.map((tile) => (tile.animationOptions = { isAnimating: true, direction: 'backwards' }));
+		tiles.forEach((tile) => tile.playReversed());
 		await sleep(500);
 		this.game.canvas.fadeToBlack();
 		await GameEvent.waitForOnce('fadedOut');
+
+		if (currentTile.isWarp()) {
+			const map = await this.game.mapHandler.fetchMapById(currentTile.targetMapId);
+			if (!map) {
+				throw new Error('Failed to load warp map.');
+			}
+			this.game.mapHandler.setInterior(map);
+			const targetWarp = this.game.mapHandler.active.tiles
+				.flat()
+				.find((tile) => tile.isWarp() && tile.targetWarpId === currentTile.targetWarpId);
+			if (!targetWarp) {
+				throw new Error("Couldn't find warp target in loaded map.");
+			}
+			this.setPosition(targetWarp.x, targetWarp.y);
+			this.shouldDraw = true;
+			this.game.unblockMovement();
+			console.log(this.game.mapHandler);
+		}
+
 		// load next map
 		await sleep(1000);
 		this.game.canvas.fadeIn();

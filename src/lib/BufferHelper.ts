@@ -85,7 +85,7 @@ export class BufferHelper {
 				break;
 		}
 	}
-	writeDirection(direction: PrismaDirection) {
+	writeDirection(direction: Direction) {
 		switch (direction) {
 			case 'UP':
 				this.writeByte(1);

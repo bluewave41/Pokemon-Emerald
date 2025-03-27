@@ -9,6 +9,7 @@
 	import { GameEditor, type Tabs } from '$lib/classes/GameEditor.svelte.js';
 	import { createWarp, Warp, type EditorWarpProps } from '$lib/classes/tiles/Warp.js';
 	import type { EditorTile } from '$lib/classes/tiles/EditorTile.js';
+	import type { TileEvents } from '$lib/interfaces/Events.js';
 
 	let { data }: PageProps = $props();
 
@@ -32,10 +33,11 @@
 	};
 
 	const hasEvents = (tile: EditorTile) => {
+		console.log(editor.map.events, tile);
 		return editor.map.events.some((event) => event.x === tile.x && event.y === tile.y);
 	};
 
-	const createEvent = (event: Events) => {
+	const createEvent = (event: TileEvents) => {
 		const { selectedTile } = editor.options;
 		if (!selectedTile) {
 			return;
@@ -48,9 +50,12 @@
 			case 'sign':
 				break;
 			case 'warp':
-				editor.map.events.push(createWarp(editor.map.events.length + 1, x, y));
+				editor.map.events.push(createWarp(x, y));
 				break;
 		}
+
+		editor.options.selectedEventIndex =
+			editor.map.events.filter((event) => event.x === x && event.y === y).length - 1;
 	};
 
 	async function init() {
@@ -126,6 +131,7 @@
 				break;
 			case 'Events':
 				editor.options.selectedTile = editor.map.getTile(x, y);
+				editor.options.selectedEventIndex = 0;
 				break;
 		}
 
@@ -236,7 +242,7 @@
 						{@const events = editor.map.events.filter(
 							(event) => event.x === selectedTile.x && event.y === selectedTile.y
 						)}
-						{@const selectedEvent = editor.map.events[editor.options.selectedEventIndex]}
+						{@const selectedEvent = events[editor.options.selectedEventIndex]}
 						<div>
 							{#each events as _, index}
 								<button onclick={() => (editor.options.selectedEventIndex = index)}
@@ -249,7 +255,7 @@
 							{#if selectedEvent.kind === 'warp'}
 								<div class="container">
 									<label for="id">ID</label>
-									<input type="text" value={selectedEvent.warpId} disabled />
+									<input type="text" value={selectedEvent.targetWarpId} disabled />
 									<label for="activateDirection">Direction</label>
 									<select name="activateDirection" bind:value={selectedEvent.activateDirection}>
 										<option value="UP">Up</option>

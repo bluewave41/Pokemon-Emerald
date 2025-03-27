@@ -50,7 +50,6 @@ export const mapToBuffer = async (name: MapNames) => {
 				if (!event.Warp || !event.Warp.mapId || !event.Warp.warpId) {
 					throw new Error(`Invalid warp found with ID ${event.id}`);
 				}
-				buffer.writeShort(event.Warp.eventId);
 				buffer.writeDirection(event.Warp?.direction);
 				buffer.writeShort(event.Warp?.mapId);
 				buffer.writeByte(event.Warp?.warpId);

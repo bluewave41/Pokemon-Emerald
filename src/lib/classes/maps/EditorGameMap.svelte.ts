@@ -129,10 +129,9 @@ export class EditorGameMap {
 						kind: 'warp',
 						x,
 						y,
-						warpId: buffer.readByte(),
+						activateDirection: buffer.readDirection(),
 						targetMapId: buffer.readShort(),
-						targetWarpId: buffer.readByte(),
-						activateDirection: buffer.readDirection()
+						targetWarpId: buffer.readByte()
 					});
 					break;
 			}
@@ -149,7 +148,8 @@ export class EditorGameMap {
 			width: this.width,
 			height: this.height,
 			tiles: this.tiles,
-			backgroundTile: this.backgroundTile?.id
+			backgroundTile: this.backgroundTile?.id,
+			events: this.events
 		};
 	}
 }
