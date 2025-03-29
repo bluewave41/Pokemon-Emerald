@@ -1,4 +1,14 @@
+import { adjustPositionForDirection } from '$lib/utils/adjustPositionForDirection';
 import { sleep } from '$lib/utils/sleep';
+import { AnimateTilesBlock } from '../blocks/AnimateTilesBlock';
+import type { Block } from '../blocks/Block';
+import { FadeInBlock } from '../blocks/FadeInBlock';
+import { FadeOutBlock } from '../blocks/FadeOutBlock';
+import { ReverseAnimationsBlock } from '../blocks/ReverseAnimationsBlock';
+import { SleepBlock } from '../blocks/SleepBlock';
+import { StepBlock } from '../blocks/StepBlock';
+import { TogglePlayerVisibilityBlock } from '../blocks/TogglePlayerVisibilityBlock';
+import { WaitForContinueBlock } from '../blocks/WaitForContinueBlock';
 import { Game } from '../Game';
 import GameEvent from '../GameEvent';
 import KeyHandler, { type MovementKeys } from '../KeyHandler';
@@ -120,11 +130,10 @@ export class Player extends Entity {
 			const keyState = KeyHandler.getKeyState(direction);
 			const currentTile = this.getCurrentTile();
 			if (keyState.holdCount > 8) {
-				// this is like a houae warp
+				// this is like a house warp
 				if (currentTile.isWarp() && this.isNewTileOutsideMap(tableEntry.x, tableEntry.y)) {
 					this.game.blockMovement();
-					this.handleWarpOut(false);
-					this.game.canvas.fadeToBlack();
+					this.handleWarpOut();
 				} else if (this.isNewTileOutsideMap(tableEntry.x, tableEntry.y)) {
 					const direction = this.getOutsideMapDirection(tableEntry.x, tableEntry.y);
 					if (this.game.mapHandler.hasMap(direction)) {
@@ -136,28 +145,13 @@ export class Player extends Entity {
 					const newTile = this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
 
 					if (currentTile.isWarp() && this.direction === currentTile.activateDirection) {
+						// fill an array with the door and upper door tile
 						const tiles: Tile[] = [this.getFacingTile()];
 						if (currentTile.type === 'door') {
 							tiles.push(this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y - 1)); //upper door
 						}
-						this.game.blockMovement();
-						tiles.forEach((tile) => (tile.animationOptions.isAnimating = true));
-						GameEvent.once('animationComplete', () => {
-							this.moving = true;
-							this.targetPosition = {
-								x: this.targetPosition.x,
-								y: this.targetPosition.y - Game.getAdjustedTileSize()
-							};
-							requestAnimationFrame((time) => {
-								this.counter = 0;
-								this.scriptedMovement(time);
-								this.handleAsyncMovement(tiles);
-							});
-						});
-						// load target
-						// change maps
-						// do backwards
-						// walk out
+
+						this.handleWarp(true, tiles);
 					} else if (keyState.holdCount > 8 && newTile.isPassable()) {
 						this.moving = true;
 						this.position = { x: tableEntry.x, y: tableEntry.y };
@@ -209,12 +203,46 @@ export class Player extends Entity {
 	getCurrentTile() {
 		return this.game.mapHandler.active.getTile(this.position.x, this.position.y);
 	}
-	async handleWarpOut(animated: boolean = false) {
+	async handleWarp(startAnimating: boolean, tiles?: Tile[]) {
 		const currentTile = this.getCurrentTile() as Warp;
 		this.game.blockMovement();
-		this.game.canvas.fadeToBlack();
-		await GameEvent.waitForOnce('fadedOut');
-		// load original map
+		if (startAnimating) {
+			if (!tiles) {
+				throw new Error("Can't animate an empty tile array.");
+			}
+
+			const blocks = [
+				new AnimateTilesBlock(tiles, 'forwards'),
+				new StepBlock(currentTile.activateDirection),
+				new TogglePlayerVisibilityBlock(),
+				new AnimateTilesBlock(tiles, 'backwards'),
+				new SleepBlock(300),
+				new FadeOutBlock()
+			];
+
+			await this.handleBlocks(blocks);
+
+			const map = await this.game.mapHandler.fetchMapById(currentTile.targetMapId);
+			const targetWarp: Warp = map.tiles
+				.flat()
+				.find((tile) => tile.isWarp() && tile.targetWarpId === currentTile.targetWarpId);
+			if (!targetWarp) {
+				throw new Error(`Couldn't find target warp.`);
+			}
+			this.game.mapHandler.setInterior(map);
+			this.setPosition(targetWarp.x, targetWarp.y);
+			await this.handleBlocks([new TogglePlayerVisibilityBlock(), new FadeInBlock()]);
+			this.game.unblockMovement();
+		}
+	}
+	async handleWarpOut() {
+		const currentTile = this.getCurrentTile() as Warp;
+		this.game.blockMovement();
+
+		const blocks = [new FadeOutBlock()];
+
+		await this.handleBlocks(blocks);
+
 		const map = await this.game.mapHandler.fetchMapById(currentTile.targetMapId);
 		const targetWarp: Warp = map.tiles
 			.flat()
@@ -222,14 +250,32 @@ export class Player extends Entity {
 		if (!targetWarp) {
 			throw new Error(`Couldn't find target warp.`);
 		}
-		this.game.mapHandler.setActive(map);
-		const { x, y } = targetWarp.getWarpOutSpot();
-		const targetTile = this.game.mapHandler.active.getTile(x, y);
-		targetTile.playReversed();
-		this.setPosition(x, y);
-		this.game.canvas.fadeIn();
-		await GameEvent.waitForOnce('fadedIn');
+		this.game.mapHandler.setInterior(map);
+		const adjustedPostion = adjustPositionForDirection(
+			new Position(targetWarp.x, targetWarp.y),
+			targetWarp.activateDirection
+		);
+		// this sets the player to the wrong position
+		this.setPosition(adjustedPostion.x, adjustedPostion.y);
+
+		// get the tile we're on and the one above it
+		const tiles = [
+			this.game.mapHandler.active.getTile(adjustedPostion.x, adjustedPostion.y),
+			this.game.mapHandler.active.getTile(adjustedPostion.x, adjustedPostion.y - 1)
+		];
+		await this.handleBlocks([
+			new ReverseAnimationsBlock(tiles),
+			new FadeInBlock(),
+			new StepBlock(currentTile.activateDirection),
+			new AnimateTilesBlock(tiles, 'backwards')
+		]);
+		this.position = { x: targetWarp.x, y: targetWarp.y };
 		this.game.unblockMovement();
+	}
+	async handleBlocks(blocks: Block[]) {
+		for (const block of blocks) {
+			await block.run(this.game);
+		}
 	}
 	async handleAsyncMovement(tiles: Tile[]) {
 		const currentTile = this.getCurrentTile();
@@ -256,26 +302,36 @@ export class Player extends Entity {
 			this.setPosition(targetWarp.x, targetWarp.y);
 			this.shouldDraw = true;
 			this.game.unblockMovement();
-			console.log(this.game.mapHandler);
 		}
 
 		// load next map
 		await sleep(1000);
 		this.game.canvas.fadeIn();
 	}
-	scriptedMovement(currentFrameTime: number) {
-		if (!this.moving) {
-			return;
-		}
-		GameEvent.once('movementFinished', () => {
-			this.moving = false;
-			GameEvent.dispatchEvent(new CustomEvent('scriptedMovementComplete'));
-			return;
+	async scriptedMovement() {
+		let lastFrame = this.game.lastFrameTime;
+
+		return new Promise<void>((resolve) => {
+			const step = (time: number) => {
+				if (!this.moving) {
+					return resolve();
+				}
+				if (
+					this.subPosition.x === this.targetPosition.x &&
+					this.subPosition.y === this.targetPosition.y
+				) {
+					return resolve();
+				}
+				this.tick(time);
+				this.move(lastFrame, time);
+				lastFrame = time;
+				requestAnimationFrame(step);
+			};
+
+			requestAnimationFrame(step);
 		});
-		this.tick(currentFrameTime);
-		this.move(this.game.lastFrameTime, currentFrameTime);
-		requestAnimationFrame((time) => this.scriptedMovement(time));
 	}
+
 	move(lastFrameTime: number, currentFrameTime: number) {
 		if (!this.moving) {
 			return;

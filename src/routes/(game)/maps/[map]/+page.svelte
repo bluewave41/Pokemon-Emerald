@@ -33,7 +33,6 @@
 	};
 
 	const hasEvents = (tile: EditorTile) => {
-		console.log(editor.map.events, tile);
 		return editor.map.events.some((event) => event.x === tile.x && event.y === tile.y);
 	};
 

@@ -79,6 +79,13 @@ export class Tile {
 	isWarp(): this is Warp {
 		return this.kind === 'warp';
 	}
+	playForward() {
+		this.animationOptions = {
+			isAnimating: true,
+			direction: 'forwards',
+			sequenceIndex: 0
+		};
+	}
 	playReversed() {
 		this.animationOptions = {
 			isAnimating: true,
@@ -111,6 +118,9 @@ export class Tile {
 				}
 			}
 		}
+	}
+	setReversed() {
+		this.animationOptions.sequenceIndex = this.tileSprites.images.length - 1;
 	}
 	handle(game: Game) {
 		void game;

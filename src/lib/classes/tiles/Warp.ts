@@ -51,7 +51,7 @@ export class Warp extends Tile {
 	targetMapId: number;
 	targetWarpId: number;
 	type: WarpType = 'door';
-	activateDirection: Direction | null = null;
+	activateDirection: Direction;
 
 	constructor(tile: Tile, activateDirection: Direction, targetMapId: number, targetWarpId: number) {
 		super(tile.x, tile.y, tile.id, tile.overlay, tile.permissions, tile.activatedAnimation);
