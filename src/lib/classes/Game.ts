@@ -34,10 +34,14 @@ export class Game {
 			this.mapHandler.setActive(this.mapHandler.up);
 			this.mapHandler.setDown(curr);
 			this.mapHandler.up = null;
-			this.player.position = { x: this.player.position.x, y: this.mapHandler.active.height };
+			this.player.setPosition(this.player.position.x, this.mapHandler.active.height - 1);
 			this.player.targetPosition = {
 				x: this.player.subPosition.x,
-				y: this.mapHandler.active.height * Game.getAdjustedTileSize()
+				y: this.player.subPosition.y + Game.getAdjustedTileSize()
+			};
+			this.player.subPosition = {
+				x: this.player.subPosition.x,
+				y: this.player.subPosition.y + Game.getAdjustedTileSize()
 			};
 		}
 		if (direction === 'LEFT' && this.mapHandler.left) {
@@ -64,10 +68,14 @@ export class Game {
 			this.mapHandler.setActive(this.mapHandler.down);
 			this.mapHandler.setUp(curr);
 			this.mapHandler.down = null;
-			this.player.position = { x: this.player.position.x, y: -1 };
+			this.player.setPosition(this.player.position.x, 0);
 			this.player.targetPosition = {
 				x: this.player.subPosition.x,
-				y: -1 * Game.getAdjustedTileSize()
+				y: this.player.subPosition.y - Game.getAdjustedTileSize()
+			};
+			this.player.subPosition = {
+				x: this.player.subPosition.x,
+				y: this.player.subPosition.y - Game.getAdjustedTileSize()
 			};
 		}
 
@@ -172,6 +180,7 @@ export class Game {
 		return this.#canvas;
 	}
 	blockMovement() {
+		this.player.moving = false;
 		this.canPlayerMove = false;
 	}
 	unblockMovement() {

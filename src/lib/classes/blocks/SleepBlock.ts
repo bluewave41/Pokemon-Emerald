@@ -9,5 +9,6 @@ export class SleepBlock extends Block {
 	}
 	async run() {
 		await sleep(this.time);
+		return 1;
 	}
 }

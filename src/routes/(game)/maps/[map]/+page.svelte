@@ -274,6 +274,12 @@
 									</select>
 									<label for="warpId">Target Warp</label>
 									<input type="number" name="warpId" bind:value={selectedEvent.targetWarpId} />
+									<label for="warpType">Warp Type</label>
+									<select name="warpType" bind:value={selectedEvent.type}>
+										<option value="DOOR">Door</option>
+										<option value="CAVE">Cave</option>
+										<option value="STAIRS">Stairs</option>
+									</select>
 								</div>
 							{/if}
 						</div>

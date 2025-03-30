@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { mapNamesSchema } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
 import { gameEditorMapSchema } from '$lib/classes/maps/GameMap';
-import type { EditorWarpProps, WarpProps } from '$lib/classes/tiles/Warp';
+import type { EditorWarpProps } from '$lib/classes/tiles/Warp';
 
 const removeImageBackground = async (background: string, top: string) => {
 	if (background === top) {
@@ -195,6 +195,8 @@ export const actions = {
 
 		const warps: EditorWarpProps[] = map.events.filter((event) => event.kind === 'warp');
 
+		console.log(warps);
+
 		for (let i = 0; i < warps.length; i++) {
 			const warp = warps[i];
 			await prisma.event.create({
@@ -205,10 +207,10 @@ export const actions = {
 					y: warp.y,
 					Warp: {
 						create: {
-							type: 'DOOR',
 							mapId: warp.targetMapId,
 							warpId: warp.targetWarpId,
-							direction: warp.activateDirection
+							direction: warp.activateDirection,
+							type: warp.type
 						}
 					}
 				}

@@ -1,4 +1,4 @@
-import type { Direction, EventType } from '@prisma/client';
+import type { Direction, EventType, WarpType } from '@prisma/client';
 
 export class BufferHelper {
 	#buffer: Buffer;
@@ -55,6 +55,19 @@ export class BufferHelper {
 				throw new Error(`Invalid direction received from buffer: ${b}`);
 		}
 	}
+	readWarpType(): WarpType {
+		const b = this.readByte();
+		switch (b) {
+			case 1:
+				return 'DOOR';
+			case 2:
+				return 'CAVE';
+			case 3:
+				return 'STAIRS';
+			default:
+				throw new Error(`Invalid warp type received from buffer: ${b}`);
+		}
+	}
 	writeByte(b: number) {
 		this.#buffer.writeUInt8(b, this.#index++);
 	}
@@ -98,6 +111,19 @@ export class BufferHelper {
 				break;
 			case 'DOWN':
 				this.writeByte(4);
+				break;
+		}
+	}
+	writeWarpType(type: WarpType) {
+		switch (type) {
+			case 'DOOR':
+				this.writeByte(1);
+				break;
+			case 'CAVE':
+				this.writeByte(2);
+				break;
+			case 'STAIRS':
+				this.writeByte(3);
 				break;
 		}
 	}

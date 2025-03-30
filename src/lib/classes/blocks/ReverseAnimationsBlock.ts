@@ -9,5 +9,6 @@ export class ReverseAnimationsBlock extends Block {
 	}
 	async run() {
 		this.tiles.forEach((tile) => tile.setReversed());
+		return 1;
 	}
 }

@@ -1,4 +1,5 @@
 import prisma from '$lib/prisma';
+import { Prisma, WarpType } from '@prisma/client';
 import { error } from '@sveltejs/kit';
 import { Jimp } from 'jimp';
 import { z } from 'zod';
@@ -55,28 +56,36 @@ export const actions = {
 	update: async ({ request }) => {
 		const schema = zfd.formData({
 			tile: zfd.numeric(),
-			sequence: zfd.text(),
-			delay: zfd.numeric(),
-			activated: zfd.text()
+			sequence: zfd.text().optional(),
+			delay: zfd.numeric().optional(),
+			activated: zfd.text().optional(),
+			warpType: z.nativeEnum(WarpType)
 		});
 
-		const data = await request.formData();
-		console.log(data);
-
-		const result = await schema.safeParseAsync(data);
+		const result = await schema.safeParseAsync(await request.formData());
 		if (result.error) {
 			console.log(result.error);
 			return error(400);
 		}
 
-		const { tile, sequence, delay, activated } = result.data;
+		const { tile, sequence, delay, activated, warpType } = result.data;
+
+		const data: Partial<Prisma.TileUpdateInput> = {};
+		if (sequence) {
+			data.sequence = sequence.split(',').map((el) => parseInt(el));
+		}
+		if (delay) {
+			data.delay = delay;
+		}
+		if (activated) {
+			data.activatedAnimation = activated === 'true';
+		}
+		if (warpType) {
+			data.warpType = warpType;
+		}
 
 		await prisma.tile.update({
-			data: {
-				sequence: sequence.split(',').map((el) => parseInt(el)),
-				delay,
-				activatedAnimation: activated === 'true'
-			},
+			data,
 			where: {
 				id: tile
 			}

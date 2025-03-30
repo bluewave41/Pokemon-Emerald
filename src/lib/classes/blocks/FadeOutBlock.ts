@@ -9,5 +9,6 @@ export class FadeOutBlock extends Block {
 	async run(game: Game) {
 		game.canvas.fadeToBlack();
 		await GameEvent.waitForOnce('fadedOut');
+		return 1;
 	}
 }

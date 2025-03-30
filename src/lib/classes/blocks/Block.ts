@@ -9,7 +9,7 @@ export type BlockEvents =
 
 export class Block {
 	constructor() {}
-	async run(game: Game) {
+	async run(game: Game): Promise<number> {
 		void game;
 		throw new Error('Run must be supplied by block type.');
 	}

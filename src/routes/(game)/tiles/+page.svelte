@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import TileGrid from '$lib/components/TileGrid.svelte';
-	import type { Tile } from '@prisma/client';
-	import type { PageData } from './$types.js';
+	import type { Prisma } from '@prisma/client';
 
 	let { data } = $props();
-	let selectedTile: PageData['tiles'][0] | Tile | null = $state(null);
+	let selectedTile: Prisma.TileGetPayload<{ include: { TileFrame: true } }> | null = $state(null);
 	let form: HTMLFormElement;
 </script>
 
@@ -27,6 +26,35 @@
 				<div>
 					<label for="animated">Animated</label>
 					<input type="checkbox" name="animated" bind:checked={selectedTile.animated} />
+
+					<form action="?/update" method="POST" use:enhance>
+						<input type="text" hidden name="tile" bind:value={selectedTile.id} />
+						{#if selectedTile.TileFrame.length}
+							<p>{selectedTile.TileFrame.length} frames.</p>
+							{#each selectedTile.TileFrame as frame, index}
+								<div class="row">
+									<img class="img" src={frame.data} alt="Tile" />
+									<p>{index + 1}</p>
+								</div>
+							{/each}
+							<div class="col-container">
+								<label for="sequence">Sequence</label>
+								<input type="text" name="sequence" bind:value={selectedTile.sequence} />
+								<label for="delay">Delay</label>
+								<input type="delay" name="delay" bind:value={selectedTile.delay} />
+								<div>
+									<label for="activated">Activated</label>
+									<input type="checkbox" bind:checked={selectedTile.activatedAnimation} />
+								</div>
+								<input
+									type="hidden"
+									name="activated"
+									bind:value={selectedTile.activatedAnimation}
+								/>
+							</div>
+							<button type="submit">Update</button>
+						{/if}
+					</form>
 					{#if selectedTile.animated}
 						<form
 							action="?/upload"
@@ -38,34 +66,6 @@
 							<input type="text" hidden name="tile" bind:value={selectedTile.id} />
 							<input type="file" multiple name="files" onchange={() => form.submit()} />
 						</form>
-						{#if 'TileFrame' in selectedTile}
-							<p>{selectedTile.TileFrame.length} frames.</p>
-							{#each selectedTile.TileFrame as frame, index}
-								<div class="row">
-									<img class="img" src={frame.data} alt="Tile" />
-									<p>{index + 1}</p>
-								</div>
-							{/each}
-							<form action="?/update" method="POST" use:enhance>
-								<div class="col-container">
-									<input type="text" hidden name="tile" bind:value={selectedTile.id} />
-									<label for="sequence">Sequence</label>
-									<input type="text" name="sequence" bind:value={selectedTile.sequence} />
-									<label for="delay">Delay</label>
-									<input type="delay" name="delay" bind:value={selectedTile.delay} />
-									<div>
-										<label for="activated">Activated</label>
-										<input type="checkbox" bind:checked={selectedTile.activatedAnimation} />
-									</div>
-									<input
-										type="hidden"
-										name="activated"
-										bind:value={selectedTile.activatedAnimation}
-									/>
-								</div>
-								<button type="submit">Update</button>
-							</form>
-						{/if}
 					{/if}
 				</div>
 			{/if}

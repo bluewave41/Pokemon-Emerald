@@ -53,6 +53,7 @@ export const mapToBuffer = async (name: MapNames) => {
 				buffer.writeDirection(event.Warp?.direction);
 				buffer.writeShort(event.Warp?.mapId);
 				buffer.writeByte(event.Warp?.warpId);
+				buffer.writeWarpType(event.Warp.type);
 				break;
 		}
 	}

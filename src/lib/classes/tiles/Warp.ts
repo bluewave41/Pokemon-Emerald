@@ -1,14 +1,13 @@
 import { z } from 'zod';
 import { Tile, tileSchema } from './Tile';
-import { Direction } from '@prisma/client';
+import { Direction, WarpType } from '@prisma/client';
 import { tileEventKindSchema } from '$lib/interfaces/Events';
-
-type WarpType = 'door' | 'cave';
 
 export const createWarp = (x: number, y: number): EditorWarpProps => ({
 	kind: 'warp',
 	x,
 	y,
+	type: null,
 	targetMapId: null,
 	targetWarpId: null,
 	activateDirection: null
@@ -24,6 +23,7 @@ export const editorWarpSchema = z.object({
 	kind: tileEventKindSchema,
 	x: z.number(),
 	y: z.number(),
+	type: z.nativeEnum(WarpType),
 	targetMapId: z.number().nullable(),
 	targetWarpId: z.number().nullable(),
 	activateDirection: z.nativeEnum(Direction)
@@ -33,6 +33,7 @@ export interface EditorWarpProps {
 	kind: 'warp';
 	x: number;
 	y: number;
+	type: WarpType | null;
 	targetMapId: number | null;
 	targetWarpId: number | null;
 	activateDirection: Direction | null;
@@ -50,15 +51,22 @@ export interface WarpProps {
 export class Warp extends Tile {
 	targetMapId: number;
 	targetWarpId: number;
-	type: WarpType = 'door';
+	type: WarpType;
 	activateDirection: Direction;
 
-	constructor(tile: Tile, activateDirection: Direction, targetMapId: number, targetWarpId: number) {
+	constructor(
+		tile: Tile,
+		activateDirection: Direction,
+		targetMapId: number,
+		targetWarpId: number,
+		type: WarpType
+	) {
 		super(tile.x, tile.y, tile.id, tile.overlay, tile.permissions, tile.activatedAnimation);
 		this.kind = 'warp';
 		this.activateDirection = activateDirection;
 		this.targetMapId = targetMapId;
 		this.targetWarpId = targetWarpId;
+		this.type = type;
 	}
 	getWarpOutSpot() {
 		switch (this.activateDirection) {

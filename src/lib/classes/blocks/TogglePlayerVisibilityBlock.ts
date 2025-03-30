@@ -7,5 +7,6 @@ export class TogglePlayerVisibilityBlock extends Block {
 	}
 	async run(game: Game) {
 		game.player.shouldDraw = !game.player.shouldDraw;
+		return 1;
 	}
 }

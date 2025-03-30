@@ -5,6 +5,7 @@ import { Game } from '../Game';
 export class StepBlock extends Block {
 	direction: Direction;
 	count: number;
+
 	constructor(direction: Direction, count?: number) {
 		super();
 		this.direction = direction;
@@ -39,5 +40,6 @@ export class StepBlock extends Block {
 		game.player.moving = true;
 		game.player.counter = 0;
 		await game.player.scriptedMovement();
+		return 1;
 	}
 }

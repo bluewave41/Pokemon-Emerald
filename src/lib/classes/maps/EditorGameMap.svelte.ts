@@ -131,7 +131,8 @@ export class EditorGameMap {
 						y,
 						activateDirection: buffer.readDirection(),
 						targetMapId: buffer.readShort(),
-						targetWarpId: buffer.readByte()
+						targetWarpId: buffer.readByte(),
+						type: buffer.readWarpType()
 					});
 					break;
 			}

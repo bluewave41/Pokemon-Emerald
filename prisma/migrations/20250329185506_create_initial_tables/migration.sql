@@ -5,7 +5,7 @@ CREATE TYPE "EventType" AS ENUM ('SIGN', 'WARP');
 CREATE TYPE "Direction" AS ENUM ('UP', 'DOWN', 'LEFT', 'RIGHT');
 
 -- CreateEnum
-CREATE TYPE "WarpType" AS ENUM ('DOOR', 'CAVE');
+CREATE TYPE "WarpType" AS ENUM ('DOOR', 'CAVE', 'STAIRS');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -39,6 +39,7 @@ CREATE TABLE "Tile" (
     "sequence" INTEGER[] DEFAULT ARRAY[]::INTEGER[],
     "delay" INTEGER,
     "activatedAnimation" BOOLEAN,
+    "warpType" "WarpType",
 
     CONSTRAINT "Tile_pkey" PRIMARY KEY ("id")
 );

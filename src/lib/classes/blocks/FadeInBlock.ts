@@ -9,5 +9,6 @@ export class FadeInBlock extends Block {
 	async run(game: Game) {
 		game.canvas.fadeIn();
 		await GameEvent.waitForOnce('fadedIn');
+		return 1;
 	}
 }

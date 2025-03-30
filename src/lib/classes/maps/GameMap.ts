@@ -133,7 +133,8 @@ export class GameMap {
 						map[y][x],
 						buffer.readDirection(),
 						buffer.readShort(),
-						buffer.readByte()
+						buffer.readByte(),
+						buffer.readWarpType()
 					);
 					break;
 			}
