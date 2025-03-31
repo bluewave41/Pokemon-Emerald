@@ -58,8 +58,7 @@ export const actions = {
 			tile: zfd.numeric(),
 			sequence: zfd.text().optional(),
 			delay: zfd.numeric().optional(),
-			activated: zfd.text().optional(),
-			warpType: z.nativeEnum(WarpType)
+			activated: zfd.text().optional()
 		});
 
 		const result = await schema.safeParseAsync(await request.formData());
@@ -68,7 +67,7 @@ export const actions = {
 			return error(400);
 		}
 
-		const { tile, sequence, delay, activated, warpType } = result.data;
+		const { tile, sequence, delay, activated } = result.data;
 
 		const data: Partial<Prisma.TileUpdateInput> = {};
 		if (sequence) {
@@ -79,9 +78,6 @@ export const actions = {
 		}
 		if (activated) {
 			data.activatedAnimation = activated === 'true';
-		}
-		if (warpType) {
-			data.warpType = warpType;
 		}
 
 		await prisma.tile.update({

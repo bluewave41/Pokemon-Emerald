@@ -165,6 +165,10 @@ export class Game {
 		if (this.activeTextBox !== null) {
 			this.#canvas.showMessageBox(this.activeTextBox, currentFrameTime);
 		}
+
+		for (const element of this.#canvas.elements) {
+			//element.draw(game);
+		}
 	}
 	drawMap(map: GameMap, x: number, y: number) {
 		map.drawBaseLayer(this.#canvas, x, y);
@@ -178,6 +182,12 @@ export class Game {
 			throw new Error('Game has no canvas.');
 		}
 		return this.#canvas;
+	}
+	getActiveCoordinates() {
+		return {
+			x: this.mapHandler.left?.width ?? 0,
+			y: this.mapHandler.up?.height ?? 0
+		};
 	}
 	blockMovement() {
 		this.player.moving = false;

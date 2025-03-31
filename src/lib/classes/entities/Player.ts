@@ -127,6 +127,7 @@ export class Player extends Entity {
 		const direction = KeyHandler.getPrioritizedKey();
 		if (direction !== null) {
 			const tableEntry = moveTable[direction];
+			this.direction = tableEntry.direction as Direction;
 			const keyState = KeyHandler.getKeyState(direction);
 			const currentTile = this.getCurrentTile();
 			if (keyState.holdCount > 8) {
@@ -152,8 +153,6 @@ export class Player extends Entity {
 					this.handleWarp();
 				}
 			}
-			// we should always turn to face the direction
-			this.direction = tableEntry.direction as Direction;
 		}
 	}
 	isNewTileOutsideMap(x: number, y: number) {

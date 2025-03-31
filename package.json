@@ -12,7 +12,9 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"reset": "docker-compose down --volumes && docker-compose up -d && timeout /t 4 /nobreak && pnpm prisma migrate dev"
+		"reset": "docker-compose down --volumes && docker-compose up -d && timeout /t 4 /nobreak && pnpm prisma migrate dev && pnpm seed",
+		"create:seed": "tsx src/tools/seed.ts",
+		"seed": "bash ./prisma/seed.sh"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
@@ -43,7 +45,6 @@
 	},
 	"packageManager": "pnpm@8.15.4+sha256.cea6d0bdf2de3a0549582da3983c70c92ffc577ff4410cbf190817ddc35137c2",
 	"dependencies": {
-		"@lucia-auth/adapter-prisma": "^4.0.1",
 		"argon2": "^0.41.1",
 		"axios": "^1.7.9",
 		"buffer": "^6.0.3",

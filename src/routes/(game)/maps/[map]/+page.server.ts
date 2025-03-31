@@ -195,8 +195,6 @@ export const actions = {
 
 		const warps: EditorWarpProps[] = map.events.filter((event) => event.kind === 'warp');
 
-		console.log(warps);
-
 		for (let i = 0; i < warps.length; i++) {
 			const warp = warps[i];
 			await prisma.event.create({

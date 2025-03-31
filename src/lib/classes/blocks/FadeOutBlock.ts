@@ -1,5 +1,5 @@
 import type { Game } from '../Game';
-import GameEvent from '../GameEvent';
+import { Rect } from '../ui/Rect';
 import { Block } from './Block';
 
 export class FadeOutBlock extends Block {
@@ -7,8 +7,8 @@ export class FadeOutBlock extends Block {
 		super();
 	}
 	async run(game: Game) {
-		game.canvas.fadeToBlack();
-		await GameEvent.waitForOnce('fadedOut');
+		game.canvas.addElement(new Rect());
+		//await GameEvent.waitForOnce('fadedOut');
 		return 1;
 	}
 }

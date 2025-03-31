@@ -131,6 +131,7 @@ export class GameMap {
 				case 'warp':
 					map[y][x] = new Warp(
 						map[y][x],
+						buffer.readByte(),
 						buffer.readDirection(),
 						buffer.readShort(),
 						buffer.readByte(),

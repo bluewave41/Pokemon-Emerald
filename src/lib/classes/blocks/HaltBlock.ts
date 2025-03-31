@@ -5,7 +5,6 @@ export class HaltBlock extends Block {
 		super();
 	}
 	async run() {
-		console.log('halt');
 		return 0;
 	}
 }

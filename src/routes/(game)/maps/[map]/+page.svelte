@@ -49,7 +49,7 @@
 			case 'sign':
 				break;
 			case 'warp':
-				editor.map.events.push(createWarp(x, y));
+				editor.map.events.push(createWarp(x, y, editor.map.events.length + 1));
 				break;
 		}
 
@@ -254,7 +254,7 @@
 							{#if selectedEvent.kind === 'warp'}
 								<div class="container">
 									<label for="id">ID</label>
-									<input type="text" value={selectedEvent.targetWarpId} disabled />
+									<input type="text" value={selectedEvent.warpId} disabled />
 									<label for="activateDirection">Direction</label>
 									<select name="activateDirection" bind:value={selectedEvent.activateDirection}>
 										<option value="UP">Up</option>

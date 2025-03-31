@@ -3,10 +3,11 @@ import { Tile, tileSchema } from './Tile';
 import { Direction, WarpType } from '@prisma/client';
 import { tileEventKindSchema } from '$lib/interfaces/Events';
 
-export const createWarp = (x: number, y: number): EditorWarpProps => ({
+export const createWarp = (x: number, y: number, warpId: number): EditorWarpProps => ({
 	kind: 'warp',
 	x,
 	y,
+	warpId,
 	type: null,
 	targetMapId: null,
 	targetWarpId: null,
@@ -33,6 +34,7 @@ export interface EditorWarpProps {
 	kind: 'warp';
 	x: number;
 	y: number;
+	warpId: number;
 	type: WarpType | null;
 	targetMapId: number | null;
 	targetWarpId: number | null;
@@ -49,6 +51,7 @@ export interface WarpProps {
 }
 
 export class Warp extends Tile {
+	warpId: number;
 	targetMapId: number;
 	targetWarpId: number;
 	type: WarpType;
@@ -56,6 +59,7 @@ export class Warp extends Tile {
 
 	constructor(
 		tile: Tile,
+		warpId: number,
 		activateDirection: Direction,
 		targetMapId: number,
 		targetWarpId: number,
@@ -63,6 +67,7 @@ export class Warp extends Tile {
 	) {
 		super(tile.x, tile.y, tile.id, tile.overlay, tile.permissions, tile.activatedAnimation);
 		this.kind = 'warp';
+		this.warpId = warpId;
 		this.activateDirection = activateDirection;
 		this.targetMapId = targetMapId;
 		this.targetWarpId = targetWarpId;

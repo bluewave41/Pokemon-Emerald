@@ -129,6 +129,7 @@ export class EditorGameMap {
 						kind: 'warp',
 						x,
 						y,
+						warpId: buffer.readByte(),
 						activateDirection: buffer.readDirection(),
 						targetMapId: buffer.readShort(),
 						targetWarpId: buffer.readByte(),

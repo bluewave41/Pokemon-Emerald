@@ -2,6 +2,7 @@ import { AdjustedRect } from './AdjustedRect';
 import { Game, type MessageBox } from './Game';
 import GameEvent from './GameEvent';
 import KeyHandler from './KeyHandler';
+import type { UIElement } from './ui/UIElement';
 
 interface DrawOptions {
 	color?: string;
@@ -11,6 +12,7 @@ export class Canvas {
 	canvas: HTMLCanvasElement;
 	context: CanvasRenderingContext2D;
 	#alpha: number = 1;
+	elements: UIElement[] = [];
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
@@ -19,6 +21,9 @@ export class Canvas {
 			throw new Error('Canvas context is null!');
 		}
 		this.context = context;
+	}
+	addElement(element: UIElement) {
+		this.elements.push(element);
 	}
 	reset() {
 		this.context.resetTransform();
