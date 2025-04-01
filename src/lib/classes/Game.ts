@@ -166,9 +166,23 @@ export class Game {
 			this.#canvas.showMessageBox(this.activeTextBox, currentFrameTime);
 		}
 
-		for (const element of this.#canvas.elements) {
-			//element.draw(game);
+		this.#canvas.context.save();
+
+		// draw UI elements
+		this.#canvas.context.resetTransform();
+
+		const elements = this.#canvas.elements.getElements();
+
+		for (let i = 0; i < elements.length; i++) {
+			const element = elements[i];
+			const retVal = element.draw(0, 0, this.#canvas);
+			if (retVal === 1) {
+				elements.splice(i, 1);
+				i--;
+			}
 		}
+
+		this.#canvas.context.restore();
 	}
 	drawMap(map: GameMap, x: number, y: number) {
 		map.drawBaseLayer(this.#canvas, x, y);

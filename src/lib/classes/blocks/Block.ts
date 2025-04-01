@@ -8,7 +8,10 @@ export type BlockEvents =
 	| 'continue';
 
 export class Block {
-	constructor() {}
+	id: string = '';
+	constructor(id: string) {
+		this.id = id;
+	}
 	async run(game: Game): Promise<number> {
 		void game;
 		throw new Error('Run must be supplied by block type.');

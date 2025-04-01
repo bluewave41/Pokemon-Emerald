@@ -9,7 +9,7 @@ export class AnimateTilesBlock extends Block {
 	direction: AnimationDirection;
 
 	constructor(tiles: Tile[], direction: AnimationDirection) {
-		super();
+		super('animate');
 		this.tiles = tiles;
 		this.direction = direction;
 	}
