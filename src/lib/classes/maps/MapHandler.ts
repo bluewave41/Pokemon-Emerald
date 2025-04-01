@@ -42,12 +42,13 @@ export class MapHandler {
 		}
 		return null;
 	}
-	setInterior(map: GameMap) {
+	handleWarpTo(map: GameMap) {
 		this.active = map;
 		this.up = null;
 		this.left = null;
 		this.right = null;
 		this.down = null;
+		this.connect();
 	}
 	setActive(map: GameMap) {
 		this.active = map;

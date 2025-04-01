@@ -252,7 +252,7 @@ export class Player extends Entity {
 					new Position(targetWarp.x, targetWarp.y),
 					targetWarp.activateDirection
 				);
-		this.game.mapHandler.setInterior(map);
+		this.game.mapHandler.handleWarpTo(map);
 		this.setPosition(targetPosition.x, targetPosition.y);
 
 		// now that we've loaded the new map do we need to animate the exit tiles?
