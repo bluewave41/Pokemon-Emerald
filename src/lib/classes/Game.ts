@@ -5,11 +5,6 @@ import KeyHandler from './KeyHandler';
 import { MapHandler } from './maps/MapHandler';
 import type { Direction } from '@prisma/client';
 
-export interface MessageBox {
-	text: string;
-	startFrame: number;
-}
-
 export class Game {
 	mapHandler: MapHandler;
 	#canvas: Canvas;
@@ -18,7 +13,6 @@ export class Game {
 	static tileSize: number = 16;
 	static zoom: number = 2;
 	lastFrameTime: number = 0;
-	activeTextBox: MessageBox | null = null;
 	canPlayerMove: boolean = true;
 
 	constructor(canvas: HTMLCanvasElement, map: GameMap) {
@@ -162,10 +156,6 @@ export class Game {
 
 		this.lastFrameTime = currentFrameTime;
 
-		if (this.activeTextBox !== null) {
-			this.#canvas.showMessageBox(this.activeTextBox, currentFrameTime);
-		}
-
 		this.#canvas.context.save();
 
 		// draw UI elements
@@ -175,7 +165,7 @@ export class Game {
 
 		for (let i = 0; i < elements.length; i++) {
 			const element = elements[i];
-			const retVal = element.draw(0, 0, this.#canvas);
+			const retVal = element.draw(0, 0, this);
 			if (retVal === 1) {
 				elements.splice(i, 1);
 				i--;

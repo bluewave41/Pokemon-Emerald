@@ -3,7 +3,7 @@ import { mapNamesSchema, type MapNames } from '$lib/interfaces/MapNames';
 import { z } from 'zod';
 import type { Canvas } from '../Canvas';
 import { tileSchema } from '../tiles/Tile';
-import { signSchema } from '../tiles/Sign';
+import { signSchema, type EditorSignProps } from '../tiles/Sign';
 import { warpSchema, type EditorWarpProps } from '../tiles/Warp';
 import { EditorTile } from '../tiles/EditorTile';
 import type { MapEvents } from '$lib/interfaces/Events';
@@ -118,12 +118,21 @@ export class EditorGameMap {
 		}
 
 		const warps: EditorWarpProps[] = [];
+		const signs: EditorSignProps[] = [];
 
 		while (buffer.hasMore()) {
 			const eventId = buffer.readEventId();
 			const x = buffer.readByte();
 			const y = buffer.readByte();
 			switch (eventId) {
+				case 'sign':
+					signs.push({
+						kind: 'sign',
+						x,
+						y,
+						text: buffer.readString()
+					});
+					break;
 				case 'warp':
 					warps.push({
 						kind: 'warp',
@@ -139,7 +148,7 @@ export class EditorGameMap {
 			}
 		}
 
-		return new EditorGameMap(id, name, width, height, map, backgroundTile, warps);
+		return new EditorGameMap(id, name, width, height, map, backgroundTile, [...warps, ...signs]);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];

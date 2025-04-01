@@ -5,7 +5,6 @@ import SpriteBank, { type SpriteInfo } from '../SpriteBank';
 import type { Warp } from './Warp';
 import type { Sign } from './Sign';
 import GameEvent from '../GameEvent';
-import type { WarpType } from '@prisma/client';
 
 export const tileSchema = z.object({
 	x: z.number(),

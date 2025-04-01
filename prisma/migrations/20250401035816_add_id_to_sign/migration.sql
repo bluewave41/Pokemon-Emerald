@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Sign" ADD COLUMN     "id" SERIAL NOT NULL,
+ADD CONSTRAINT "Sign_pkey" PRIMARY KEY ("id");

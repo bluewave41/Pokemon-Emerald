@@ -13,9 +13,9 @@
 <div class="content">
 	<h2>Banks</h2>
 
-	<div>
+	<div class="content">
 		{#each data.banks as { name }}
-			- <a class="bank" href={`/sprites/${name}`}>{name}</a>
+			<div>- <a class="bank" href={`/sprites/${name}`}>{name}</a></div>
 		{/each}
 	</div>
 </div>

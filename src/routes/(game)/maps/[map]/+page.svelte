@@ -10,6 +10,7 @@
 	import { createWarp, Warp, type EditorWarpProps } from '$lib/classes/tiles/Warp.js';
 	import type { EditorTile } from '$lib/classes/tiles/EditorTile.js';
 	import type { TileEvents } from '$lib/interfaces/Events.js';
+	import { createSign } from '$lib/classes/tiles/Sign.js';
 
 	let { data }: PageProps = $props();
 
@@ -47,6 +48,7 @@
 			case 'none':
 				break;
 			case 'sign':
+				editor.map.events.push(createSign(x, y, ''));
 				break;
 			case 'warp':
 				editor.map.events.push(createWarp(x, y, editor.map.events.length + 1));
@@ -237,6 +239,7 @@
 					<p>X: {editor.options.selectedTile?.x}</p>
 					<p>Y: {editor.options.selectedTile?.y}</p>
 					<button onclick={() => createEvent('warp')}>Create warp</button>
+					<button onclick={() => createEvent('sign')}>Create Sign</button>
 					{#if hasEvents(selectedTile)}
 						{@const events = editor.map.events.filter(
 							(event) => event.x === selectedTile.x && event.y === selectedTile.y
@@ -281,6 +284,10 @@
 										<option value="STAIRS">Stairs</option>
 									</select>
 								</div>
+							{/if}
+							{#if selectedEvent.kind === 'sign'}
+								<label for="text">Text</label>
+								<input type="text" name="text" bind:value={selectedEvent.text} />
 							{/if}
 						</div>
 					{/if}

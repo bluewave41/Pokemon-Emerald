@@ -1,6 +1,6 @@
 import { AdjustedRect } from './AdjustedRect';
 import { ElementQueue } from './ElementQueue';
-import { Game, type MessageBox } from './Game';
+import { Game } from './Game';
 import GameEvent from './GameEvent';
 import KeyHandler from './KeyHandler';
 
@@ -61,11 +61,15 @@ export class Canvas {
 		const rect = new AdjustedRect(x, y);
 		this.context.translate(rect.x, rect.y);
 	}
-	showMessageBox(message: MessageBox, currentFrameTime: number) {
-		const delay = KeyHandler.getActiveKeyState('z').down ? 25 : 50; // Adjust delay to control the speed of the scrolling text (in milliseconds).
-		const elapsedTime = currentFrameTime - message.startFrame; // Time elapsed since the message started
+	showMessageBox(text: string, startFrameTime: number, currentFrameTime: number) {
+		const delay = 50; // Adjust delay to control the speed of the scrolling text (in milliseconds).
+		const elapsedTime = currentFrameTime - startFrameTime; // Time elapsed since the message started
 		const lengthToShow = Math.floor(elapsedTime / delay); // Determine how many characters to show based on elapsed time
-		const textToShow = message.text.slice(0, lengthToShow); // Slice the message up to the calculated length
+		const textToShow = text.slice(0, lengthToShow); // Slice the message up to the calculated length
+
+		if (lengthToShow >= text.length) {
+			GameEvent.dispatchEvent(new CustomEvent('signComplete'));
+		}
 
 		const pieces = textToShow.split('\\n');
 		const gap = 5;

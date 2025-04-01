@@ -4,7 +4,7 @@ import { Block } from './Block';
 export class ReverseAnimationsBlock extends Block {
 	tiles: Tile[];
 	constructor(tiles: Tile[]) {
-		super();
+		super('reverseAnimation');
 		this.tiles = tiles;
 	}
 	async run() {

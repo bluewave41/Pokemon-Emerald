@@ -5,7 +5,8 @@ export type BlockEvents =
 	| 'fadedOut'
 	| 'scriptedMovementComplete'
 	| 'animationComplete'
-	| 'continue';
+	| 'continue'
+	| 'signComplete';
 
 export class Block {
 	id: string = '';

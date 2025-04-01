@@ -18,6 +18,7 @@ import type { Warp } from '../tiles/Warp';
 import { Entity } from './Entity';
 import type { Direction } from '@prisma/client';
 import { getOppositeDirection } from '$lib/utils/getOppositeDirection';
+import type { SignRect } from '../ui/SignRect';
 
 export class Player extends Entity {
 	targetPosition: Position;
@@ -64,10 +65,18 @@ export class Player extends Entity {
 		const activeKey = KeyHandler.getActiveKeyState('z');
 
 		if (activeKey.down && activeKey.initial) {
-			if (this.game.activeTextBox) {
-				this.game.activeTextBox = null;
+			const tile = this.getFacingTile();
+			if (tile.kind === 'sign') {
+				const sign = this.game.canvas.elements.getElement('sign') as SignRect;
+				if (sign) {
+					if (sign.finished) {
+						this.game.canvas.elements.removeElement('sign');
+						this.game.unblockMovement();
+					}
+				} else {
+					tile.activate(this.game);
+				}
 			} else {
-				const tile = this.getFacingTile();
 				tile.activate(this.game);
 			}
 		}

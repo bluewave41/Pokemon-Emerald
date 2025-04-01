@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { Canvas } from '../Canvas';
 import { Tile, tileSchema } from '../tiles/Tile';
 import type { AnyTile } from '$lib/interfaces/AnyTile';
-import { Sign } from '../tiles/Sign';
+import { editorSignSchema, Sign } from '../tiles/Sign';
 import { editorWarpSchema, Warp } from '../tiles/Warp';
 
 export const gameMapSchema = z.object({
@@ -13,7 +13,7 @@ export const gameMapSchema = z.object({
 	height: z.number(),
 	tiles: tileSchema.array().array(),
 	backgroundTile: z.number().optional(),
-	events: editorWarpSchema.array()
+	events: z.union([editorWarpSchema, editorSignSchema]).array()
 });
 
 export const gameEditorMapSchema = gameMapSchema.extend({

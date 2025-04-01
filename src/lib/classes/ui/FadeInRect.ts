@@ -1,4 +1,4 @@
-import type { Canvas } from '../Canvas';
+import type { Game } from '../Game';
 import GameEvent from '../GameEvent';
 import { UIElement } from './UIElement';
 
@@ -8,10 +8,15 @@ export class FadeInRect extends UIElement {
 	constructor() {
 		super('fadeOut');
 	}
-	draw(x: number, y: number, canvas: Canvas) {
+	draw(x: number, y: number, game: Game) {
 		this.#progress -= 0.05;
-		canvas.context.fillStyle = `rgba(0, 0, 0, ${this.#progress})`;
-		canvas.context.fillRect(x, y, canvas.context.canvas.width, canvas.context.canvas.height);
+		game.canvas.context.fillStyle = `rgba(0, 0, 0, ${this.#progress})`;
+		game.canvas.context.fillRect(
+			x,
+			y,
+			game.canvas.context.canvas.width,
+			game.canvas.context.canvas.height
+		);
 
 		if (this.#progress <= 0) {
 			GameEvent.dispatchEvent(new CustomEvent('fadedIn'));

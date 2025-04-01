@@ -8,6 +8,7 @@ import { mapNamesSchema } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
 import { gameEditorMapSchema } from '$lib/classes/maps/GameMap';
 import type { EditorWarpProps } from '$lib/classes/tiles/Warp';
+import type { EditorSignProps } from '$lib/classes/tiles/Sign';
 
 const removeImageBackground = async (background: string, top: string) => {
 	if (background === top) {
@@ -194,6 +195,7 @@ export const actions = {
 		});
 
 		const warps: EditorWarpProps[] = map.events.filter((event) => event.kind === 'warp');
+		const signs: EditorSignProps[] = map.events.filter((event) => event.kind === 'sign');
 
 		for (let i = 0; i < warps.length; i++) {
 			const warp = warps[i];
@@ -215,24 +217,21 @@ export const actions = {
 			});
 		}
 
-		/*const signEvents: SignProps[] = map.tiles
-			.flat()
-			.filter((tile): tile is SignProps => tile.kind === 'sign');
-
-		for (const event of signEvents) {
+		for (let i = 0; i < signs.length; i++) {
+			const sign = signs[i];
 			await prisma.event.create({
 				data: {
 					mapId: updated.id,
 					type: 'SIGN',
-					x: event.x,
-					y: event.y,
-					sign: {
+					x: sign.x,
+					y: sign.y,
+					Sign: {
 						create: {
-							text: event.text
+							text: sign.text
 						}
 					}
 				}
 			});
-		}*/
+		}
 	}
 };

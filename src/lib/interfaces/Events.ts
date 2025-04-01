@@ -1,3 +1,4 @@
+import type { EditorSignProps } from '$lib/classes/tiles/Sign';
 import type { EditorWarpProps } from '$lib/classes/tiles/Warp';
 import type { Direction } from '@prisma/client';
 import { z } from 'zod';
@@ -20,7 +21,7 @@ export class StepEvent extends Event {
 export type EventBlocks = 'up' | 'down' | 'left' | 'right';
 
 export type TileEvents = 'none' | 'sign' | 'warp';
-export type MapEvents = EditorWarpProps;
+export type MapEvents = EditorWarpProps | EditorSignProps;
 
 export const tileEventKindSchema = z.union([
 	z.literal('none'),

@@ -85,6 +85,7 @@ model Event {
 }
 
 model Sign {
+  id      Int    @id @default(autoincrement())
   eventId Int    @unique
   text    String
 

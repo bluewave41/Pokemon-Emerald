@@ -10,6 +10,7 @@ async function main() {
 	await handleBasicTable('mapTile', '06_map_tiles.sql');
 	await handleBasicTable('event', '07_events.sql');
 	await handleBasicTable('warp', '07_warps.sql');
+	await handleBasicTable('sign', '08_signs.sql');
 }
 
 main();
