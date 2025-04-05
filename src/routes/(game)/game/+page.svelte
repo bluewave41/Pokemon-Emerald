@@ -13,10 +13,11 @@
 	async function init() {
 		if (canvasRef) {
 			await SpriteBank.readMap(data.images);
-			const gameMap = GameMap.readMap(Buffer.from(data.map, 'base64'));
+			const gameMap = GameMap.readMap(0, 0, Buffer.from(data.map, 'base64'));
 
 			//player
 			await SpriteBank.readBank('player', data.player);
+			await SpriteBank.readBank('npc-fat', data.npc);
 
 			game = new Game(canvasRef, gameMap);
 

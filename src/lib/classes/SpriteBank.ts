@@ -13,7 +13,8 @@ export interface SpriteInfo {
 class InternalSpriteBank {
 	tiles: Record<number, SpriteInfo> = {};
 	sprites: Record<BankNames, Record<string, HTMLImageElement>> = {
-		player: {}
+		player: {},
+		'npc-fat': {}
 	};
 
 	constructor() {}

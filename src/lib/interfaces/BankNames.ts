@@ -1,1 +1,1 @@
-export type BankNames = 'player';
+export type BankNames = 'player' | 'npc-fat';

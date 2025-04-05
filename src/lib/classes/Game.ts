@@ -28,49 +28,43 @@ export class Game {
 			this.mapHandler.setActive(this.mapHandler.up);
 			this.mapHandler.setDown(curr);
 			this.mapHandler.up = null;
-			this.player.setPosition(this.player.position.x, this.mapHandler.active.height - 1);
-			this.player.targetPosition = {
-				x: this.player.subPosition.x,
-				y: this.player.subPosition.y + Game.getAdjustedTileSize()
-			};
-			this.player.subPosition = {
-				x: this.player.subPosition.x,
-				y: this.player.subPosition.y + Game.getAdjustedTileSize()
-			};
+			this.player.coords.setCurrent(
+				this.player.coords.current.x,
+				this.mapHandler.active.height - 1
+			);
+			this.player.coords.setTarget(
+				this.player.coords.sub.x,
+				this.mapHandler.active.height * Game.getAdjustedTileSize()
+			);
+			this.player.coords.setSub(
+				this.player.coords.sub.x,
+				this.mapHandler.active.height * Game.getAdjustedTileSize()
+			);
 		}
 		if (direction === 'LEFT' && this.mapHandler.left) {
 			this.mapHandler.setActive(this.mapHandler.left);
 			this.mapHandler.setRight(curr);
 			this.mapHandler.left = null;
-			this.player.position = { x: this.mapHandler.active.width, y: this.player.position.y };
-			this.player.targetPosition = {
-				x: this.mapHandler.active.width * Game.getAdjustedTileSize(),
-				y: this.player.subPosition.y
-			};
+			this.player.coords.setCurrent(this.mapHandler.active.width, this.player.coords.current.y);
+			this.player.coords.setTarget(
+				this.mapHandler.active.width * Game.getAdjustedTileSize(),
+				this.player.coords.sub.y
+			);
 		}
 		if (direction === 'RIGHT' && this.mapHandler.right) {
 			this.mapHandler.setActive(this.mapHandler.right);
 			this.mapHandler.setLeft(curr);
 			this.mapHandler.right = null;
-			this.player.position = { x: -1, y: this.player.position.y };
-			this.player.targetPosition = {
-				x: -1 * Game.getAdjustedTileSize(),
-				y: this.player.subPosition.y
-			};
+			this.player.coords.setCurrent(-1, this.player.coords.current.y);
+			this.player.coords.setTarget(-1 * Game.getAdjustedTileSize(), this.player.coords.sub.y);
 		}
 		if (direction === 'DOWN' && this.mapHandler.down) {
 			this.mapHandler.setActive(this.mapHandler.down);
 			this.mapHandler.setUp(curr);
 			this.mapHandler.down = null;
-			this.player.setPosition(this.player.position.x, 0);
-			this.player.targetPosition = {
-				x: this.player.subPosition.x,
-				y: this.player.subPosition.y - Game.getAdjustedTileSize()
-			};
-			this.player.subPosition = {
-				x: this.player.subPosition.x,
-				y: this.player.subPosition.y - Game.getAdjustedTileSize()
-			};
+			this.player.coords.setCurrent(this.player.coords.current.x, 0);
+			this.player.coords.setTarget(this.player.coords.sub.x, -1 * Game.getAdjustedTileSize());
+			this.player.coords.setSub(this.player.coords.sub.x, -1 * Game.getAdjustedTileSize());
 		}
 
 		this.mapHandler.connect();
@@ -79,12 +73,12 @@ export class Game {
 		this.#canvas.reset();
 		this.viewport.pos = {
 			x: -(
-				this.player.subPosition.x / Game.getAdjustedTileSize() -
+				this.player.coords.sub.x / Game.getAdjustedTileSize() -
 				this.viewport.width / 2 +
 				(this.mapHandler?.left?.width ?? 0)
 			),
 			y: -(
-				this.player.subPosition.y / Game.getAdjustedTileSize() -
+				this.player.coords.sub.y / Game.getAdjustedTileSize() -
 				this.viewport.height / 2 +
 				(this.mapHandler.up?.height ?? 0)
 			),
@@ -95,33 +89,22 @@ export class Game {
 		this.#canvas.translate(this.viewport.pos.x, this.viewport.pos.y);
 
 		if (this.mapHandler.up) {
-			this.drawMap(this.mapHandler.up, this.mapHandler.left?.width ?? 0, 0);
+			this.drawMap(currentFrameTime, this.mapHandler.up);
+			//this.drawMap(currentFrameTime, this.mapHandler.up, this.mapHandler.left?.width ?? 0, 0);
 		}
 
 		if (this.mapHandler.left) {
-			this.drawMap(this.mapHandler.left, 0, this.mapHandler.up?.height ?? 0);
+			this.drawMap(currentFrameTime, this.mapHandler.left);
 		}
 
-		this.drawMap(
-			this.mapHandler.active,
-			this.mapHandler.left?.width ?? 0,
-			this.mapHandler.up?.height ?? 0
-		);
+		this.drawMap(currentFrameTime, this.mapHandler.active);
 
 		if (this.mapHandler.right) {
-			this.drawMap(
-				this.mapHandler.right,
-				(this.mapHandler.left?.width ?? 0) + this.mapHandler.active.width,
-				this.mapHandler.up?.height ?? 0
-			);
+			this.drawMap(currentFrameTime, this.mapHandler.right);
 		}
 
 		if (this.mapHandler.down) {
-			this.drawMap(
-				this.mapHandler.down,
-				this.mapHandler.left?.width ?? 0,
-				(this.mapHandler.up?.height ?? 0) + this.mapHandler.active.height
-			);
+			this.drawMap(currentFrameTime, this.mapHandler.down);
 		}
 
 		this.player.tick(currentFrameTime);
@@ -174,9 +157,9 @@ export class Game {
 
 		this.#canvas.context.restore();
 	}
-	drawMap(map: GameMap, x: number, y: number) {
-		map.drawBaseLayer(this.#canvas, x, y);
-		map.tick(this, this.#canvas, x, y);
+	drawMap(currentFrameTime: number, map: GameMap) {
+		map.drawBaseLayer(this.#canvas);
+		map.tick(currentFrameTime, this.#canvas);
 	}
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;

@@ -93,10 +93,10 @@ export class Tile {
 			sequenceIndex: this.tileSprites.images.length - 1
 		};
 	}
-	tick(game: { lastFrameTime: number }) {
+	tick(currentFrameTime: number) {
 		if ((this.tileSprites.delay && !this.activatedAnimation) || this.animationOptions.isAnimating) {
-			if (this.lastFrame + this.tileSprites.delay < game.lastFrameTime) {
-				this.lastFrame = game.lastFrameTime;
+			if (this.lastFrame + this.tileSprites.delay < currentFrameTime) {
+				this.lastFrame = currentFrameTime;
 				this.animationOptions.sequenceIndex +=
 					this.animationOptions.direction === 'forwards' ? 1 : -1;
 

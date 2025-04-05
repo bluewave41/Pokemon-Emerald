@@ -6,6 +6,8 @@ import { Tile, tileSchema } from '../tiles/Tile';
 import type { AnyTile } from '$lib/interfaces/AnyTile';
 import { editorSignSchema, Sign } from '../tiles/Sign';
 import { editorWarpSchema, Warp } from '../tiles/Warp';
+import type { Entity } from '../entities/Entity';
+import { NPC } from '../entities/NPC';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
@@ -27,17 +29,23 @@ export interface GameMapType {
 	height: number;
 	tiles: AnyTile[][];
 	backgroundTile: number;
+	entities: Entity[];
 }
 
 export class GameMap {
+	absoluteX: number;
+	absoluteY: number;
 	id: number;
 	name: MapNames;
 	width: number;
 	height: number;
 	tiles: AnyTile[][];
 	backgroundTile: Tile;
+	entities: Entity[] = [];
 
 	constructor(
+		absoluteX: number,
+		absoluteY: number,
 		id: number,
 		name: MapNames,
 		width: number,
@@ -45,34 +53,41 @@ export class GameMap {
 		tiles: AnyTile[][],
 		backgroundTile: Tile
 	) {
+		this.absoluteX = absoluteX;
+		this.absoluteY = absoluteY;
 		this.id = id;
 		this.name = name;
 		this.width = width;
 		this.height = height;
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
+		this.entities.push(new NPC('npc-fat', 14, 11, this));
 	}
-	drawBaseLayer(canvas: Canvas, x: number, y: number) {
+	drawBaseLayer(canvas: Canvas) {
 		if (!this.backgroundTile) {
 			return;
 		}
 		for (let loopY = 0; loopY < this.height; loopY++) {
 			for (let loopX = 0; loopX < this.width; loopX++) {
-				canvas.drawTile(this.backgroundTile.getActiveSprite(), loopX + x, loopY + y);
+				canvas.drawTile(
+					this.backgroundTile.getActiveSprite(),
+					loopX + this.absoluteX,
+					loopY + this.absoluteY
+				);
 			}
 		}
 	}
-	drawTopLayer(canvas: Canvas, x: number, y: number) {
+	drawTopLayer(canvas: Canvas) {
 		const tiles = this.tiles.flat().filter((tile) => tile.overlay);
 		for (const tile of tiles) {
-			canvas.drawTile(tile.getActiveSprite(), tile.x + x, tile.y + y);
+			canvas.drawTile(tile.getActiveSprite(), tile.x + this.absoluteX, tile.y + this.absoluteY);
 		}
 	}
-	tick(game: { lastFrameTime: number }, canvas: Canvas, x: number, y: number) {
+	tick(currentFrameTime: number, canvas: Canvas) {
 		for (let loopY = 0; loopY < this.height; loopY++) {
 			for (let loopX = 0; loopX < this.width; loopX++) {
 				const tile = this.tiles[loopY][loopX];
-				tile.tick(game);
+				tile.tick(currentFrameTime);
 
 				if (tile.id === this.backgroundTile?.id) {
 					continue;
@@ -80,11 +95,18 @@ export class GameMap {
 				if (tile.overlay) {
 					continue;
 				}
-				canvas.drawTile(tile.getActiveSprite(), loopX + x, loopY + y);
+				canvas.drawTile(tile.getActiveSprite(), loopX + this.absoluteX, loopY + this.absoluteY);
 			}
 		}
+		for (const entity of this.entities) {
+			entity.tick(currentFrameTime, canvas);
+		}
 	}
-	static readMap(mapBuffer: Buffer) {
+	setAbsolutePosition(x: number, y: number) {
+		this.absoluteX = x;
+		this.absoluteY = y;
+	}
+	static readMap(absoluteX: number, absoluteY: number, mapBuffer: Buffer) {
 		const buffer = new BufferHelper(mapBuffer);
 
 		buffer.readByte(); // version
@@ -141,7 +163,7 @@ export class GameMap {
 			}
 		}
 
-		return new GameMap(id, name, width, height, map, backgroundTile);
+		return new GameMap(absoluteX, absoluteY, id, name, width, height, map, backgroundTile);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];

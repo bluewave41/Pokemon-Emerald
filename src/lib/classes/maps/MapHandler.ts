@@ -27,18 +27,19 @@ export class MapHandler {
 		if (connections.DOWN) {
 			this.down = await this.fetchMapByName(connections.DOWN);
 		}
+		this.reorient();
 	}
 	async fetchMapById(id: number) {
 		const response = await axios.get(`/maps/id?id=${id}`);
 		if (response.status === 200) {
-			return GameMap.readMap(Buffer.from(response.data.map, 'base64'));
+			return GameMap.readMap(0, 0, Buffer.from(response.data.map, 'base64'));
 		}
 		throw new Error(`Failed to get map with ID: ${id}`);
 	}
 	async fetchMapByName(name: MapNames) {
 		const response = await axios.get(`/maps/name?name=${name}`);
 		if (response.status === 200) {
-			return GameMap.readMap(Buffer.from(response.data.map, 'base64'));
+			return GameMap.readMap(0, 0, Buffer.from(response.data.map, 'base64'));
 		}
 		return null;
 	}
@@ -52,18 +53,36 @@ export class MapHandler {
 	}
 	setActive(map: GameMap) {
 		this.active = map;
+		this.reorient();
 	}
 	setUp(map: GameMap) {
 		this.up = map;
+		this.reorient();
 	}
 	setDown(map: GameMap) {
 		this.down = map;
+		this.reorient();
 	}
 	setLeft(map: GameMap) {
 		this.left = map;
+		this.reorient();
 	}
 	setRight(map: GameMap) {
 		this.right = map;
+		this.reorient();
+	}
+	reorient() {
+		this.up?.setAbsolutePosition(this.left?.width ?? 0, 0);
+		this.left?.setAbsolutePosition(0, this.up?.height ?? 0);
+		this.active.setAbsolutePosition(this.left?.width ?? 0, this.up?.height ?? 0);
+		this.right?.setAbsolutePosition(
+			(this.left?.width ?? 0) + this.active.width,
+			this.up?.height ?? 0
+		);
+		this.down?.setAbsolutePosition(
+			this.left?.width ?? 0,
+			(this.up?.height ?? 0) + this.active.height
+		);
 	}
 	hasMap(direction: Direction) {
 		switch (direction) {

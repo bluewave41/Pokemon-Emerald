@@ -7,32 +7,32 @@ export class StepBlock extends Block {
 	count: number;
 
 	constructor(direction: Direction, count?: number) {
-		super();
+		super('step');
 		this.direction = direction;
 		this.count = count ?? 1;
 	}
 	async run(game: Game) {
 		const directionTable = {
 			UP: {
-				x: game.player.subPosition.x,
-				y: game.player.subPosition.y - Game.getAdjustedTileSize()
+				x: game.player.coords.sub.x,
+				y: game.player.coords.sub.y - Game.getAdjustedTileSize()
 			},
 			LEFT: {
-				x: game.player.subPosition.x - Game.getAdjustedTileSize(),
-				y: game.player.subPosition.y
+				x: game.player.coords.sub.x - Game.getAdjustedTileSize(),
+				y: game.player.coords.sub.y
 			},
 			RIGHT: {
-				x: game.player.subPosition.x + Game.getAdjustedTileSize(),
-				y: game.player.subPosition.y
+				x: game.player.coords.sub.x + Game.getAdjustedTileSize(),
+				y: game.player.coords.sub.y
 			},
 			DOWN: {
-				x: game.player.subPosition.x,
-				y: game.player.subPosition.y + Game.getAdjustedTileSize()
+				x: game.player.coords.sub.x,
+				y: game.player.coords.sub.y + Game.getAdjustedTileSize()
 			}
 		};
 
 		const { x, y } = directionTable[this.direction];
-		game.player.targetPosition = {
+		game.player.coords.target = {
 			x,
 			y
 		};

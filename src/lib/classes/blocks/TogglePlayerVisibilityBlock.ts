@@ -3,7 +3,7 @@ import { Block } from './Block';
 
 export class TogglePlayerVisibilityBlock extends Block {
 	constructor() {
-		super();
+		super('visibility');
 	}
 	async run(game: Game) {
 		game.player.shouldDraw = !game.player.shouldDraw;

@@ -4,7 +4,7 @@ import { Block } from './Block';
 export class SleepBlock extends Block {
 	time: number;
 	constructor(time: number) {
-		super();
+		super('sleep');
 		this.time = time;
 	}
 	async run() {

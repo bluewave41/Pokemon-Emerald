@@ -15,14 +15,14 @@ import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
 import type { Tile } from '../tiles/Tile';
 import type { Warp } from '../tiles/Warp';
-import { Entity } from './Entity';
 import type { Direction } from '@prisma/client';
 import { getOppositeDirection } from '$lib/utils/getOppositeDirection';
 import type { SignRect } from '../ui/SignRect';
+import { Coords } from '../Coords';
 
-export class Player extends Entity {
-	targetPosition: Position;
-	subPosition: Position;
+export class Player {
+	coords: Coords;
+	game: Game;
 	direction: Direction;
 	moving: boolean = false;
 	speed: number = Game.getAdjustedTileSize() * 3;
@@ -31,21 +31,10 @@ export class Player extends Entity {
 	shouldDraw: boolean = true;
 
 	constructor(x: number, y: number, game: Game, direction: Direction) {
-		super(x, y, game);
-		this.targetPosition = new Position(
-			x * Game.getAdjustedTileSize(),
-			y * Game.getAdjustedTileSize()
-		);
-		this.subPosition = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
+		this.coords = new Coords(x, y);
+		this.game = game;
+		this.coords = new Coords(x, y);
 		this.direction = direction;
-	}
-	setPosition(x: number, y: number) {
-		this.position = new Position(x, y);
-		this.subPosition = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
-		this.targetPosition = new Position(
-			x * Game.getAdjustedTileSize(),
-			y * Game.getAdjustedTileSize()
-		);
 	}
 	tick(currentFrameTime: number) {
 		const direction = this.direction.toLowerCase();
@@ -55,8 +44,8 @@ export class Player extends Entity {
 		if (this.shouldDraw) {
 			this.game.canvas.drawAbsoluteImage(
 				sprite,
-				Math.round(this.subPosition.x) + 1 + this.game.viewport.pos.xOffset,
-				Math.round(this.subPosition.y + (this.counter < 10 ? 1 : 0)) -
+				Math.round(this.coords.sub.x) + 1 + this.game.viewport.pos.xOffset,
+				Math.round(this.coords.sub.y + (this.counter < 10 ? 1 : 0)) -
 					10 +
 					this.game.viewport.pos.yOffset
 			);
@@ -104,31 +93,31 @@ export class Player extends Entity {
 			}
 		> = {
 			ArrowUp: {
-				x: this.position.x,
-				y: this.position.y - 1,
-				targetX: this.targetPosition.x,
-				targetY: this.targetPosition.y - Game.getAdjustedTileSize(),
+				x: this.coords.current.x,
+				y: this.coords.current.y - 1,
+				targetX: this.coords.target.x,
+				targetY: this.coords.target.y - Game.getAdjustedTileSize(),
 				direction: 'UP'
 			},
 			ArrowDown: {
-				x: this.position.x,
-				y: this.position.y + 1,
-				targetX: this.targetPosition.x,
-				targetY: this.targetPosition.y + Game.getAdjustedTileSize(),
+				x: this.coords.current.x,
+				y: this.coords.current.y + 1,
+				targetX: this.coords.target.x,
+				targetY: this.coords.target.y + Game.getAdjustedTileSize(),
 				direction: 'DOWN'
 			},
 			ArrowLeft: {
-				x: this.position.x - 1,
-				y: this.position.y,
-				targetX: this.targetPosition.x - Game.getAdjustedTileSize(),
-				targetY: this.targetPosition.y,
+				x: this.coords.current.x - 1,
+				y: this.coords.current.y,
+				targetX: this.coords.target.x - Game.getAdjustedTileSize(),
+				targetY: this.coords.target.y,
 				direction: 'LEFT'
 			},
 			ArrowRight: {
-				x: this.position.x + 1,
-				y: this.position.y,
-				targetX: this.targetPosition.x + Game.getAdjustedTileSize(),
-				targetY: this.targetPosition.y,
+				x: this.coords.current.x + 1,
+				y: this.coords.current.y,
+				targetX: this.coords.target.x + Game.getAdjustedTileSize(),
+				targetY: this.coords.target.y,
 				direction: 'RIGHT'
 			}
 		};
@@ -152,8 +141,8 @@ export class Player extends Entity {
 
 					if (newTile.isPassable()) {
 						this.moving = true;
-						this.position = { x: tableEntry.x, y: tableEntry.y };
-						this.targetPosition = { x: tableEntry.targetX, y: tableEntry.targetY };
+						this.coords.current = { x: tableEntry.x, y: tableEntry.y };
+						this.coords.target = { x: tableEntry.targetX, y: tableEntry.targetY };
 						this.counter = 0;
 					}
 				}
@@ -187,7 +176,7 @@ export class Player extends Entity {
 	}
 	getFacingTile() {
 		const map = this.game.mapHandler.active;
-		const pos = this.position;
+		const pos = this.coords.current;
 		if (this.direction === 'LEFT') {
 			return map.getTile(pos.x - 1, pos.y);
 		} else if (this.direction === 'RIGHT') {
@@ -210,7 +199,7 @@ export class Player extends Entity {
 		}
 	}
 	getCurrentTile() {
-		return this.game.mapHandler.active.getTile(this.position.x, this.position.y);
+		return this.game.mapHandler.active.getTile(this.coords.current.x, this.coords.current.y);
 	}
 	async handleWarp() {
 		this.game.blockMovement();
@@ -262,7 +251,7 @@ export class Player extends Entity {
 					targetWarp.activateDirection
 				);
 		this.game.mapHandler.handleWarpTo(map);
-		this.setPosition(targetPosition.x, targetPosition.y);
+		this.coords.setCoords(targetPosition.x, targetPosition.y);
 
 		// now that we've loaded the new map do we need to animate the exit tiles?
 		tiles = [];
@@ -281,7 +270,7 @@ export class Player extends Entity {
 
 		// restart event execution
 		await blockQueue.handleBlocks();
-		this.position = { x: targetWarp.x, y: targetWarp.y };
+		this.coords.current = { x: targetPosition.x, y: targetPosition.y };
 		this.game.unblockMovement();
 	}
 	async scriptedMovement() {
@@ -293,8 +282,8 @@ export class Player extends Entity {
 					return resolve();
 				}
 				if (
-					this.subPosition.x === this.targetPosition.x &&
-					this.subPosition.y === this.targetPosition.y
+					this.coords.sub.x === this.coords.target.x &&
+					this.coords.sub.y === this.coords.target.y
 				) {
 					return resolve();
 				}
@@ -321,24 +310,21 @@ export class Player extends Entity {
 		const moveY = this.speed * deltaTime;
 
 		if (this.direction === 'RIGHT') {
-			this.subPosition.x = Math.round(Math.min(this.subPosition.x + moveX, this.targetPosition.x));
+			this.coords.sub.x = Math.round(Math.min(this.coords.sub.x + moveX, this.coords.target.x));
 		} else if (this.direction === 'LEFT') {
-			this.subPosition.x = Math.round(Math.max(this.subPosition.x - moveX, this.targetPosition.x));
+			this.coords.sub.x = Math.round(Math.max(this.coords.sub.x - moveX, this.coords.target.x));
 		} else if (this.direction === 'DOWN') {
-			this.subPosition.y = Math.round(Math.min(this.subPosition.y + moveY, this.targetPosition.y));
+			this.coords.sub.y = Math.round(Math.min(this.coords.sub.y + moveY, this.coords.target.y));
 		} else if (this.direction === 'UP') {
-			this.subPosition.y = Math.round(Math.max(this.subPosition.y - moveY, this.targetPosition.y));
+			this.coords.sub.y = Math.round(Math.max(this.coords.sub.y - moveY, this.coords.target.y));
 		}
 
-		if (
-			this.subPosition.x === this.targetPosition.x &&
-			this.subPosition.y === this.targetPosition.y
-		) {
+		if (this.coords.sub.x === this.coords.target.x && this.coords.sub.y === this.coords.target.y) {
 			this.moving = false;
 			this.walkFrame = this.walkFrame === 1 ? 2 : 1;
-			this.position = new Position(
-				this.targetPosition.x / Game.getAdjustedTileSize(),
-				this.targetPosition.y / Game.getAdjustedTileSize()
+			this.coords.setCurrent(
+				this.coords.target.x / Game.getAdjustedTileSize(),
+				this.coords.target.y / Game.getAdjustedTileSize()
 			);
 			GameEvent.dispatchEvent(new CustomEvent('movementFinished'));
 		}
