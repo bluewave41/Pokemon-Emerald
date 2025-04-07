@@ -19,8 +19,9 @@ import type { Direction } from '@prisma/client';
 import { getOppositeDirection } from '$lib/utils/getOppositeDirection';
 import type { SignRect } from '../ui/SignRect';
 import { Coords } from '../Coords';
+import { Entity } from './Entity';
 
-export class Player {
+export class Player extends Entity {
 	coords: Coords;
 	game: Game;
 	direction: Direction;
@@ -31,6 +32,7 @@ export class Player {
 	shouldDraw: boolean = true;
 
 	constructor(x: number, y: number, game: Game, direction: Direction) {
+		super(x, y, game.mapHandler.active);
 		this.coords = new Coords(x, y);
 		this.game = game;
 		this.coords = new Coords(x, y);
@@ -40,6 +42,7 @@ export class Player {
 		const direction = this.direction.toLowerCase();
 		// we should always draw the Player
 		const walkSprite = this.moving && this.counter < 10 ? direction + this.walkFrame : direction;
+
 		const sprite = SpriteBank.getSprite('player', walkSprite);
 		if (this.shouldDraw) {
 			this.game.canvas.drawAbsoluteImage(
@@ -139,7 +142,10 @@ export class Player {
 				} else {
 					const newTile = this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
 
-					if (newTile.isPassable()) {
+					if (
+						newTile.isPassable() &&
+						!this.game.mapHandler.active.isTileOccupied(newTile.x, newTile.y)
+					) {
 						this.moving = true;
 						this.coords.current = { x: tableEntry.x, y: tableEntry.y };
 						this.coords.target = { x: tableEntry.targetX, y: tableEntry.targetY };

@@ -10,7 +10,6 @@ interface DrawOptions {
 export class Canvas {
 	canvas: HTMLCanvasElement;
 	context: CanvasRenderingContext2D;
-	#alpha: number = 1;
 	elements: ElementQueue = new ElementQueue();
 
 	constructor(canvas: HTMLCanvasElement) {

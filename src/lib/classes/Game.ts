@@ -4,6 +4,7 @@ import { GameMap } from './maps/GameMap';
 import KeyHandler from './KeyHandler';
 import { MapHandler } from './maps/MapHandler';
 import type { Direction } from '@prisma/client';
+import { NPC } from './entities/NPC';
 
 export class Game {
 	mapHandler: MapHandler;
@@ -21,6 +22,8 @@ export class Game {
 		this.player = new Player(10, 10, this, 'DOWN');
 		this.#canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.#canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
+		this.mapHandler.active.entities.push(this.player);
+		this.mapHandler.active.entities.push(new NPC('npc-fat', 14, 11, this.mapHandler.active));
 	}
 	changeMap(direction: Direction) {
 		const curr = this.mapHandler.active;
@@ -97,6 +100,7 @@ export class Game {
 			this.drawMap(currentFrameTime, this.mapHandler.left);
 		}
 
+		// don't draw active entities so we can do z sorting
 		this.drawMap(currentFrameTime, this.mapHandler.active);
 
 		if (this.mapHandler.right) {
@@ -107,32 +111,26 @@ export class Game {
 			this.drawMap(currentFrameTime, this.mapHandler.down);
 		}
 
-		this.player.tick(currentFrameTime);
+		const entities = [...this.mapHandler.active.entities].sort(
+			(a, b) => a.coords.current.y - b.coords.current.y
+		);
+
+		for (const entity of entities) {
+			entity.tick(currentFrameTime, this.canvas);
+		}
 
 		if (this.mapHandler.up) {
-			this.mapHandler.up.drawTopLayer(this.#canvas, this.mapHandler.left?.width ?? 0, 0);
+			this.mapHandler.up.drawTopLayer(this.#canvas);
 		}
 		if (this.mapHandler.left) {
-			this.mapHandler.left.drawTopLayer(this.#canvas, 0, this.mapHandler.up?.height ?? 0);
+			this.mapHandler.left.drawTopLayer(this.#canvas);
 		}
-		this.mapHandler.active.drawTopLayer(
-			this.#canvas,
-			this.mapHandler.left?.width ?? 0,
-			this.mapHandler.up?.height ?? 0
-		);
+		this.mapHandler.active.drawTopLayer(this.#canvas);
 		if (this.mapHandler.right) {
-			this.mapHandler.right.drawTopLayer(
-				this.#canvas,
-				(this.mapHandler.left?.width ?? 0) + this.mapHandler.active.width,
-				this.mapHandler.up?.height ?? 0
-			);
+			this.mapHandler.right.drawTopLayer(this.#canvas);
 		}
 		if (this.mapHandler.down) {
-			this.mapHandler.down.drawTopLayer(
-				this.#canvas,
-				this.mapHandler.left?.width ?? 0,
-				(this.mapHandler.up?.height ?? 0) + this.mapHandler.active.height
-			);
+			this.mapHandler.down.drawTopLayer(this.#canvas);
 		}
 
 		KeyHandler.tick();

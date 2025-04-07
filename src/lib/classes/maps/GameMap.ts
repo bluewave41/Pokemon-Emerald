@@ -7,7 +7,7 @@ import type { AnyTile } from '$lib/interfaces/AnyTile';
 import { editorSignSchema, Sign } from '../tiles/Sign';
 import { editorWarpSchema, Warp } from '../tiles/Warp';
 import type { Entity } from '../entities/Entity';
-import { NPC } from '../entities/NPC';
+import { Game } from '../Game';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
@@ -61,7 +61,6 @@ export class GameMap {
 		this.height = height;
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
-		this.entities.push(new NPC('npc-fat', 14, 11, this));
 	}
 	drawBaseLayer(canvas: Canvas) {
 		if (!this.backgroundTile) {
@@ -98,9 +97,19 @@ export class GameMap {
 				canvas.drawTile(tile.getActiveSprite(), loopX + this.absoluteX, loopY + this.absoluteY);
 			}
 		}
-		for (const entity of this.entities) {
-			entity.tick(currentFrameTime, canvas);
-		}
+
+		//for (const entity of this.entities) {
+		//	entity.tick(currentFrameTime, canvas);
+		//}
+	}
+	isTileOccupied(x: number, y: number) {
+		const entity = this.entities.find(
+			(entity) =>
+				(entity.coords.current.x === x && entity.coords.current.y === y) ||
+				(entity.coords.target.x === x * Game.getAdjustedTileSize() &&
+					entity.coords.target.y === y * Game.getAdjustedTileSize())
+		);
+		return entity;
 	}
 	setAbsolutePosition(x: number, y: number) {
 		this.absoluteX = x;
