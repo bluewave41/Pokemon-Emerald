@@ -1,5 +1,5 @@
 import prisma from '$lib/prisma';
-import { Prisma, WarpType } from '@prisma/client';
+import { Direction, Prisma } from '@prisma/client';
 import { error } from '@sveltejs/kit';
 import { Jimp } from 'jimp';
 import { z } from 'zod';
@@ -58,7 +58,8 @@ export const actions = {
 			tile: zfd.numeric(),
 			sequence: zfd.text().optional(),
 			delay: zfd.numeric().optional(),
-			activated: zfd.text().optional()
+			activated: zfd.text().optional(),
+			jumpDirection: zfd.text().optional()
 		});
 
 		const result = await schema.safeParseAsync(await request.formData());
@@ -67,7 +68,9 @@ export const actions = {
 			return error(400);
 		}
 
-		const { tile, sequence, delay, activated } = result.data;
+		const { tile, sequence, delay, activated, jumpDirection } = result.data;
+
+		console.log(jumpDirection);
 
 		const data: Partial<Prisma.TileUpdateInput> = {};
 		if (sequence) {
@@ -78,6 +81,9 @@ export const actions = {
 		}
 		if (activated) {
 			data.activatedAnimation = activated === 'true';
+		}
+		if (jumpDirection) {
+			data.jumpDirection = jumpDirection as Direction;
 		}
 
 		await prisma.tile.update({

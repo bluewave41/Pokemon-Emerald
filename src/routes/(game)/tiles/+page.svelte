@@ -26,8 +26,15 @@
 				<div>
 					<label for="animated">Animated</label>
 					<input type="checkbox" name="animated" bind:checked={selectedTile.animated} />
-
 					<form action="?/update" method="POST" use:enhance>
+						<label for="jumpDirection">Jump direction</label>
+						<select name="jumpDirection" bind:value={selectedTile.jumpDirection}>
+							<option value="">None</option>
+							<option value="UP">Up</option>
+							<option value="LEFT">Left</option>
+							<option value="RIGHT">Right</option>
+							<option value="DOWN">Down</option>
+						</select>
 						<input type="text" hidden name="tile" bind:value={selectedTile.id} />
 						{#if selectedTile.TileFrame.length}
 							<p>{selectedTile.TileFrame.length} frames.</p>
@@ -52,8 +59,8 @@
 									bind:value={selectedTile.activatedAnimation}
 								/>
 							</div>
-							<button type="submit">Update</button>
 						{/if}
+						<button type="submit">Update</button>
 					</form>
 					{#if selectedTile.animated}
 						<form

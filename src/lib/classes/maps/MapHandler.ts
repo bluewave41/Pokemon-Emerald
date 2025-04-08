@@ -1,8 +1,7 @@
 import axios from 'axios';
-import Connections from './Connections';
 import { GameMap } from './GameMap';
 import { Buffer } from 'buffer';
-import type { MapNames } from '$lib/interfaces/MapNames';
+import { GameMapResources, type MapNames } from '$lib/interfaces/MapNames';
 import type { Direction } from '@prisma/client';
 
 export class MapHandler {
@@ -17,7 +16,10 @@ export class MapHandler {
 		this.connect();
 	}
 	async connect() {
-		const connections = Connections[this.active.name];
+		const connections = GameMapResources[this.active.name].connections;
+		if (!connections) {
+			return;
+		}
 		if (connections.UP) {
 			this.up = await this.fetchMapByName(connections.UP);
 		}
@@ -52,24 +54,20 @@ export class MapHandler {
 		this.connect();
 	}
 	setActive(map: GameMap) {
+		map.entities = [...this.active.entities];
 		this.active = map;
-		this.reorient();
 	}
 	setUp(map: GameMap) {
 		this.up = map;
-		this.reorient();
 	}
 	setDown(map: GameMap) {
 		this.down = map;
-		this.reorient();
 	}
 	setLeft(map: GameMap) {
 		this.left = map;
-		this.reorient();
 	}
 	setRight(map: GameMap) {
 		this.right = map;
-		this.reorient();
 	}
 	reorient() {
 		this.up?.setAbsolutePosition(this.left?.width ?? 0, 0);

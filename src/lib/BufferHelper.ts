@@ -40,9 +40,11 @@ export class BufferHelper {
 				return 'warp';
 		}
 	}
-	readDirection(): Direction {
+	readDirection(): Direction | null {
 		const b = this.readByte();
 		switch (b) {
+			case 0:
+				return null;
 			case 1:
 				return 'UP';
 			case 2:
@@ -98,7 +100,7 @@ export class BufferHelper {
 				break;
 		}
 	}
-	writeDirection(direction: Direction) {
+	writeDirection(direction: Direction | null) {
 		switch (direction) {
 			case 'UP':
 				this.writeByte(1);
@@ -111,6 +113,9 @@ export class BufferHelper {
 				break;
 			case 'DOWN':
 				this.writeByte(4);
+				break;
+			case null:
+				this.writeByte(0);
 				break;
 		}
 	}

@@ -5,6 +5,7 @@ import SpriteBank, { type SpriteInfo } from '../SpriteBank';
 import type { Warp } from './Warp';
 import type { Sign } from './Sign';
 import GameEvent from '../GameEvent';
+import type { Direction } from '@prisma/client';
 
 export const tileSchema = z.object({
 	x: z.number(),
@@ -38,6 +39,7 @@ export class Tile {
 	permissions: number;
 	tileSprites: SpriteInfo;
 	lastFrame: number = 0;
+	jumpable: Direction | null;
 	activatedAnimation: boolean;
 	animationOptions: {
 		isAnimating: boolean;
@@ -55,6 +57,7 @@ export class Tile {
 		id: number,
 		overlay: boolean,
 		permissions: number,
+		jumpable: Direction | null,
 		activatedAnimation?: boolean
 	) {
 		this.x = x;
@@ -64,6 +67,7 @@ export class Tile {
 		this.overlay = overlay;
 		this.permissions = permissions;
 		this.tileSprites = SpriteBank.getTile(this.id);
+		this.jumpable = jumpable;
 		this.activatedAnimation = activatedAnimation ?? false;
 		this.animationOptions.isAnimating = this.activatedAnimation ? false : true;
 	}

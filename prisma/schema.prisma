@@ -34,16 +34,17 @@ model Map {
 }
 
 model Tile {
-  id                 Int       @id @default(autoincrement())
-  hash               String    @unique @db.Char(32)
+  id                 Int        @id @default(autoincrement())
+  hash               String     @unique @db.Char(32)
   original           String
   data               String
-  overlay            Boolean   @default(false)
-  animated           Boolean   @default(false)
-  sequence           Int[]     @default([])
+  overlay            Boolean    @default(false)
+  animated           Boolean    @default(false)
+  sequence           Int[]      @default([])
   delay              Int?
   activatedAnimation Boolean?
   warpType           WarpType?
+  jumpDirection      Direction?
 
   MapTile   MapTile[]
   Maps      Map[]

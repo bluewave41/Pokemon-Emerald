@@ -31,6 +31,7 @@ export class Game {
 			this.mapHandler.setActive(this.mapHandler.up);
 			this.mapHandler.setDown(curr);
 			this.mapHandler.up = null;
+			this.mapHandler.reorient();
 			this.player.coords.setCurrent(
 				this.player.coords.current.x,
 				this.mapHandler.active.height - 1
@@ -48,6 +49,7 @@ export class Game {
 			this.mapHandler.setActive(this.mapHandler.left);
 			this.mapHandler.setRight(curr);
 			this.mapHandler.left = null;
+			this.mapHandler.reorient();
 			this.player.coords.setCurrent(this.mapHandler.active.width, this.player.coords.current.y);
 			this.player.coords.setTarget(
 				this.mapHandler.active.width * Game.getAdjustedTileSize(),
@@ -58,6 +60,7 @@ export class Game {
 			this.mapHandler.setActive(this.mapHandler.right);
 			this.mapHandler.setLeft(curr);
 			this.mapHandler.right = null;
+			this.mapHandler.reorient();
 			this.player.coords.setCurrent(-1, this.player.coords.current.y);
 			this.player.coords.setTarget(-1 * Game.getAdjustedTileSize(), this.player.coords.sub.y);
 		}
@@ -65,6 +68,7 @@ export class Game {
 			this.mapHandler.setActive(this.mapHandler.down);
 			this.mapHandler.setUp(curr);
 			this.mapHandler.down = null;
+			this.mapHandler.reorient();
 			this.player.coords.setCurrent(this.player.coords.current.x, 0);
 			this.player.coords.setTarget(this.player.coords.sub.x, -1 * Game.getAdjustedTileSize());
 			this.player.coords.setSub(this.player.coords.sub.x, -1 * Game.getAdjustedTileSize());

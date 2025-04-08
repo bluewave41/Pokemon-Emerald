@@ -46,13 +46,60 @@ export class Canvas {
 		const rect = new AdjustedRect(x, y);
 		this.context.drawImage(image, rect.x, rect.y, rect.width, rect.height);
 	}
-	drawAbsoluteImage(image: HTMLImageElement, x: number, y: number) {
+	drawAbsoluteImage(
+		image: HTMLImageElement,
+		x: number,
+		y: number,
+		offsetX: number = 0,
+		offsetY: number = 0
+	) {
 		this.context.drawImage(
 			image,
-			x,
-			y,
+			x - offsetX,
+			y - offsetY,
 			Game.getAdjustedTileSize() - 2,
 			Game.getAdjustedTileSize() + 8
+		);
+	}
+	drawLine(x: number, y: number, toX: number, toY: number) {
+		this.context.fillStyle = 'black';
+		this.context.lineWidth = 3;
+		this.context.beginPath();
+		this.context.moveTo(x, y);
+		this.context.lineTo(toX, toY);
+		this.context.stroke();
+	}
+	drawShadow(x: number, y: number) {
+		const mult = Game.getAdjustedTileSize() / 16;
+		this.drawLine(
+			x + 2 * mult,
+			y + Game.getAdjustedTileSize(),
+			x + Game.getAdjustedTileSize() - 2 * mult,
+			y + Game.getAdjustedTileSize()
+		);
+		this.drawLine(
+			x + 1 * mult,
+			y - 1 + Game.getAdjustedTileSize(),
+			x + Game.getAdjustedTileSize() - 1 * mult,
+			y - 1 + Game.getAdjustedTileSize()
+		);
+		this.drawLine(
+			x + 0 * mult,
+			y - 2 + Game.getAdjustedTileSize(),
+			x + Game.getAdjustedTileSize() - 0 * mult,
+			y - 2 + Game.getAdjustedTileSize()
+		);
+		this.drawLine(
+			x + 1 * mult,
+			y - 3 + Game.getAdjustedTileSize(),
+			x + Game.getAdjustedTileSize() - 1 * mult,
+			y - 3 + Game.getAdjustedTileSize()
+		);
+		this.drawLine(
+			x + 2 * mult,
+			y - 4 + Game.getAdjustedTileSize(),
+			x + Game.getAdjustedTileSize() - 2 * mult,
+			y - 4 + Game.getAdjustedTileSize()
 		);
 	}
 	translate(x: number, y: number) {

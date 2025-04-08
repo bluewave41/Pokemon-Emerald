@@ -20,16 +20,20 @@ import { getOppositeDirection } from '$lib/utils/getOppositeDirection';
 import type { SignRect } from '../ui/SignRect';
 import { Coords } from '../Coords';
 import { Entity } from './Entity';
+import { AdjustedRect } from '../AdjustedRect';
 
 export class Player extends Entity {
 	coords: Coords;
 	game: Game;
 	direction: Direction;
 	moving: boolean = false;
+	jumping: boolean = false;
 	speed: number = Game.getAdjustedTileSize() * 3;
 	walkFrame: number = 1;
 	counter: number = 0;
 	shouldDraw: boolean = true;
+	offsetX: number = 0;
+	offsetY: number = 0;
 
 	constructor(x: number, y: number, game: Game, direction: Direction) {
 		super(x, y, game.mapHandler.active);
@@ -41,7 +45,10 @@ export class Player extends Entity {
 	tick(currentFrameTime: number) {
 		const direction = this.direction.toLowerCase();
 		// we should always draw the Player
-		const walkSprite = this.moving && this.counter < 10 ? direction + this.walkFrame : direction;
+		const walkSprite =
+			(this.moving || this.jumping) && (this.counter < 10 || this.counter > 23)
+				? direction + this.walkFrame
+				: direction;
 
 		const sprite = SpriteBank.getSprite('player', walkSprite);
 		if (this.shouldDraw) {
@@ -50,8 +57,17 @@ export class Player extends Entity {
 				Math.round(this.coords.sub.x) + 1 + this.game.viewport.pos.xOffset,
 				Math.round(this.coords.sub.y + (this.counter < 10 ? 1 : 0)) -
 					10 +
-					this.game.viewport.pos.yOffset
+					this.game.viewport.pos.yOffset,
+				this.offsetX,
+				this.offsetY
 			);
+			if (this.jumping) {
+				const rect = new AdjustedRect(
+					this.game.mapHandler.active.absoluteX,
+					this.game.mapHandler.active.absoluteY
+				);
+				this.game.canvas.drawShadow(rect.x + this.coords.sub.x, rect.y + this.coords.sub.y);
+			}
 		}
 
 		const activeKey = KeyHandler.getActiveKeyState('z');
@@ -78,7 +94,7 @@ export class Player extends Entity {
 			return;
 		}
 
-		if (!this.moving) {
+		if (!this.moving && !this.jumping) {
 			this.updateDirection();
 		} else if (this.game.canPlayerMove) {
 			this.move(this.game.lastFrameTime, currentFrameTime);
@@ -127,28 +143,41 @@ export class Player extends Entity {
 
 		const direction = KeyHandler.getPrioritizedKey();
 		if (direction !== null) {
-			const tableEntry = moveTable[direction];
-			this.direction = tableEntry.direction as Direction;
+			const move = moveTable[direction];
+			this.direction = move.direction as Direction;
 			const keyState = KeyHandler.getKeyState(direction);
 			const currentTile = this.getCurrentTile();
 			if (keyState.holdCount > 8) {
-				if (this.isNewTileOutsideMap(tableEntry.x, tableEntry.y) && !currentTile.isWarp()) {
-					const direction = this.getOutsideMapDirection(tableEntry.x, tableEntry.y);
+				if (this.isNewTileOutsideMap(move.x, move.y) && !currentTile.isWarp()) {
+					const direction = this.getOutsideMapDirection(move.x, move.y);
 					if (this.game.mapHandler.hasMap(direction)) {
 						this.game.changeMap(direction);
 					}
-				} else if (currentTile.isWarp() && tableEntry.direction === currentTile.activateDirection) {
+				} else if (currentTile.isWarp() && move.direction === currentTile.activateDirection) {
 					this.handleWarp();
 				} else {
-					const newTile = this.game.mapHandler.active.getTile(tableEntry.x, tableEntry.y);
+					const newTile = this.game.mapHandler.active.getTile(move.x, move.y);
 
-					if (
+					if (newTile.jumpable === this.direction) {
+						const doubledMove = {
+							x: move.x + (move.x - this.coords.current.x),
+							y: move.y + (move.y - this.coords.current.y),
+							targetX: move.targetX + (move.targetX - this.coords.target.x),
+							targetY: move.targetY + (move.targetY - this.coords.target.y),
+							direction: move.direction
+						};
+
+						this.jumping = true;
+						this.coords.current = { x: doubledMove.x, y: doubledMove.y };
+						this.coords.target = { x: doubledMove.targetX, y: doubledMove.targetY };
+						this.counter = 0;
+					} else if (
 						newTile.isPassable() &&
 						!this.game.mapHandler.active.isTileOccupied(newTile.x, newTile.y)
 					) {
 						this.moving = true;
-						this.coords.current = { x: tableEntry.x, y: tableEntry.y };
-						this.coords.target = { x: tableEntry.targetX, y: tableEntry.targetY };
+						this.coords.current = { x: move.x, y: move.y };
+						this.coords.target = { x: move.targetX, y: move.targetY };
 						this.counter = 0;
 					}
 				}
@@ -304,7 +333,7 @@ export class Player extends Entity {
 	}
 
 	move(lastFrameTime: number, currentFrameTime: number) {
-		if (!this.moving) {
+		if (!this.moving && !this.jumping) {
 			return;
 		}
 
@@ -325,8 +354,17 @@ export class Player extends Entity {
 			this.coords.sub.y = Math.round(Math.max(this.coords.sub.y - moveY, this.coords.target.y));
 		}
 
+		if (this.jumping) {
+			if (this.counter < 10) {
+				this.offsetY += 2;
+			} else if (this.counter > 23) {
+				this.offsetY -= 2;
+			}
+		}
+
 		if (this.coords.sub.x === this.coords.target.x && this.coords.sub.y === this.coords.target.y) {
 			this.moving = false;
+			this.jumping = false;
 			this.walkFrame = this.walkFrame === 1 ? 2 : 1;
 			this.coords.setCurrent(
 				this.coords.target.x / Game.getAdjustedTileSize(),
