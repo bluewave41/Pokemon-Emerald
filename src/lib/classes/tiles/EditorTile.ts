@@ -25,15 +25,24 @@ export class EditorTile {
 	id: number;
 	overlay: boolean;
 	permissions: number;
+	jumpable: boolean;
 	tileSprites: SpriteInfo;
 
-	constructor(x: number, y: number, id: number, overlay: boolean, permissions: number) {
+	constructor(
+		x: number,
+		y: number,
+		id: number,
+		overlay: boolean,
+		permissions: number,
+		jumpable: boolean
+	) {
 		this.x = x;
 		this.y = y;
 		this.id = id;
 		this.overlay = overlay;
 		this.permissions = permissions;
 		this.tileSprites = SpriteBank.getTile(this.id);
+		this.jumpable = jumpable;
 	}
 	getActiveSprite() {
 		return this.tileSprites.images[0];

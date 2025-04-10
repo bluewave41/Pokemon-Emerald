@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { Canvas } from '$lib/classes/Canvas.js';
 	import { Game } from '$lib/classes/Game.js';
 	import KeyHandler from '$lib/classes/KeyHandler.js';
 	import { GameMap } from '$lib/classes/maps/GameMap.js';
@@ -12,14 +13,16 @@
 
 	async function init() {
 		if (canvasRef) {
+			const canvas = new Canvas(canvasRef);
 			await SpriteBank.readMap(data.images);
-			const gameMap = GameMap.readMap(0, 0, Buffer.from(data.map, 'base64'));
+			const gameMap = GameMap.readMap(canvas, Buffer.from(data.map, 'base64'));
 
 			//player
 			await SpriteBank.readBank('player', data.player);
 			await SpriteBank.readBank('npc-fat', data.npc);
+			await SpriteBank.readBank('utility', data.utility);
 
-			game = new Game(canvasRef, gameMap);
+			game = new Game(canvas, gameMap);
 
 			const render = (frameTime: number) => {
 				game.tick(frameTime);

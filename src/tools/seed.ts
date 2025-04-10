@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 
 async function main() {
 	await handleBasicTable('spriteBank', '01_spritebanks.sql');
-	await handleBasicTable('sprites', '02_sprites.sql');
+	await handleBasicTable('sprite', '02_sprites.sql');
 	await handleBasicTable('tile', '03_tiles.sql');
 	await handleBasicTable('map', '04_maps.sql');
 	await handleBasicTable('tileFrame', '05_tile_frames.sql');
@@ -11,6 +11,7 @@ async function main() {
 	await handleBasicTable('event', '07_events.sql');
 	await handleBasicTable('warp', '07_warps.sql');
 	await handleBasicTable('sign', '08_signs.sql');
+	await handleBasicTable('script', '09_scripts.sql');
 }
 
 main();

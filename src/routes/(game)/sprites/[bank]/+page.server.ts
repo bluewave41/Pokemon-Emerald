@@ -6,7 +6,7 @@ import prisma from '$lib/prisma';
 import { Jimp } from 'jimp';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const sprites = await prisma.sprites.findMany({
+	const sprites = await prisma.sprite.findMany({
 		where: {
 			bank: {
 				name: params.bank
@@ -47,7 +47,7 @@ export const actions = {
 
 		await prisma.spriteBank.update({
 			data: {
-				Sprites: {
+				sprite: {
 					create: files
 				}
 			},

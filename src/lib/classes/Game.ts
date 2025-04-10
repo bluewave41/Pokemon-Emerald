@@ -5,6 +5,7 @@ import KeyHandler from './KeyHandler';
 import { MapHandler } from './maps/MapHandler';
 import type { Direction } from '@prisma/client';
 import { NPC } from './entities/NPC';
+import SpriteBank from './SpriteBank';
 
 export class Game {
 	mapHandler: MapHandler;
@@ -16,9 +17,9 @@ export class Game {
 	lastFrameTime: number = 0;
 	canPlayerMove: boolean = true;
 
-	constructor(canvas: HTMLCanvasElement, map: GameMap) {
+	constructor(canvas: Canvas, map: GameMap) {
 		this.mapHandler = new MapHandler(map);
-		this.#canvas = new Canvas(canvas);
+		this.#canvas = canvas;
 		this.player = new Player(10, 10, this, 'DOWN');
 		this.#canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.#canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
@@ -97,7 +98,6 @@ export class Game {
 
 		if (this.mapHandler.up) {
 			this.drawMap(currentFrameTime, this.mapHandler.up);
-			//this.drawMap(currentFrameTime, this.mapHandler.up, this.mapHandler.left?.width ?? 0, 0);
 		}
 
 		if (this.mapHandler.left) {
@@ -105,7 +105,7 @@ export class Game {
 		}
 
 		// don't draw active entities so we can do z sorting
-		this.drawMap(currentFrameTime, this.mapHandler.active);
+		this.drawMap(currentFrameTime, this.mapHandler.active, true);
 
 		if (this.mapHandler.right) {
 			this.drawMap(currentFrameTime, this.mapHandler.right);
@@ -159,9 +159,13 @@ export class Game {
 
 		this.#canvas.context.restore();
 	}
-	drawMap(currentFrameTime: number, map: GameMap) {
+	drawMap(currentFrameTime: number, map: GameMap, runScripts?: boolean) {
 		map.drawBaseLayer(this.#canvas);
 		map.tick(currentFrameTime, this.#canvas);
+
+		if (runScripts) {
+			map.tickScripts(this);
+		}
 	}
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;
@@ -184,5 +188,8 @@ export class Game {
 	}
 	unblockMovement() {
 		this.canPlayerMove = true;
+	}
+	executeScript(script: string) {
+		return eval(script);
 	}
 }

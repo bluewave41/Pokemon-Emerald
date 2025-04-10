@@ -233,5 +233,16 @@ export const actions = {
 				}
 			});
 		}
+
+		console.log(map.scripts);
+
+		await prisma.script.createMany({
+			data: map.scripts.map((script) => ({
+				mapId: updated.id,
+				x: script.x,
+				y: script.y,
+				script: script.script
+			}))
+		});
 	}
 };

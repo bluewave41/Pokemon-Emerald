@@ -40,6 +40,7 @@ CREATE TABLE "Tile" (
     "delay" INTEGER,
     "activatedAnimation" BOOLEAN,
     "warpType" "WarpType",
+    "jumpDirection" "Direction",
 
     CONSTRAINT "Tile_pkey" PRIMARY KEY ("id")
 );
@@ -78,8 +79,11 @@ CREATE TABLE "Event" (
 
 -- CreateTable
 CREATE TABLE "Sign" (
+    "id" SERIAL NOT NULL,
     "eventId" INTEGER NOT NULL,
-    "text" TEXT NOT NULL
+    "text" TEXT NOT NULL,
+
+    CONSTRAINT "Sign_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -103,13 +107,24 @@ CREATE TABLE "SpriteBank" (
 );
 
 -- CreateTable
-CREATE TABLE "Sprites" (
+CREATE TABLE "Sprite" (
     "id" SERIAL NOT NULL,
     "bankId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "data" TEXT NOT NULL,
 
-    CONSTRAINT "Sprites_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Sprite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Script" (
+    "id" SERIAL NOT NULL,
+    "mapId" INTEGER NOT NULL,
+    "script" TEXT NOT NULL,
+    "x" INTEGER,
+    "y" INTEGER,
+
+    CONSTRAINT "Script_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -140,7 +155,7 @@ CREATE UNIQUE INDEX "Warp_eventId_key" ON "Warp"("eventId");
 CREATE UNIQUE INDEX "SpriteBank_name_key" ON "SpriteBank"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Sprites_bankId_name_key" ON "Sprites"("bankId", "name");
+CREATE UNIQUE INDEX "Sprite_bankId_name_key" ON "Sprite"("bankId", "name");
 
 -- AddForeignKey
 ALTER TABLE "Map" ADD CONSTRAINT "Map_backgroundTileId_fkey" FOREIGN KEY ("backgroundTileId") REFERENCES "Tile"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -158,7 +173,7 @@ ALTER TABLE "MapTile" ADD CONSTRAINT "MapTile_tileId_fkey" FOREIGN KEY ("tileId"
 ALTER TABLE "Event" ADD CONSTRAINT "Event_mapId_fkey" FOREIGN KEY ("mapId") REFERENCES "Map"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Sign" ADD CONSTRAINT "Sign_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Sign" ADD CONSTRAINT "Sign_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Warp" ADD CONSTRAINT "Warp_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -167,4 +182,7 @@ ALTER TABLE "Warp" ADD CONSTRAINT "Warp_eventId_fkey" FOREIGN KEY ("eventId") RE
 ALTER TABLE "Warp" ADD CONSTRAINT "Warp_mapId_fkey" FOREIGN KEY ("mapId") REFERENCES "Map"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Sprites" ADD CONSTRAINT "Sprites_bankId_fkey" FOREIGN KEY ("bankId") REFERENCES "SpriteBank"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Sprite" ADD CONSTRAINT "Sprite_bankId_fkey" FOREIGN KEY ("bankId") REFERENCES "SpriteBank"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Script" ADD CONSTRAINT "Script_mapId_fkey" FOREIGN KEY ("mapId") REFERENCES "Map"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -9,13 +9,28 @@ import { editorWarpSchema, Warp } from '../tiles/Warp';
 import type { Entity } from '../entities/Entity';
 import { Game } from '../Game';
 
+export type Script = {
+	mapId: number;
+	x: number | null;
+	y: number | null;
+	script: string;
+};
+
+export const scriptSchema = z.object({
+	mapId: z.number(),
+	script: z.string(),
+	x: z.number().nullable(),
+	y: z.number().nullable()
+});
+
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
 	width: z.number(),
 	height: z.number(),
 	tiles: tileSchema.array().array(),
 	backgroundTile: z.number().optional(),
-	events: z.union([editorWarpSchema, editorSignSchema]).array()
+	events: z.union([editorWarpSchema, editorSignSchema]).array(),
+	scripts: scriptSchema.array()
 });
 
 export const gameEditorMapSchema = gameMapSchema.extend({
@@ -30,11 +45,15 @@ export interface GameMapType {
 	tiles: AnyTile[][];
 	backgroundTile: number;
 	entities: Entity[];
+	scripts: Script[];
 }
 
 export class GameMap {
-	absoluteX: number;
-	absoluteY: number;
+	// literal X position on canvas in pixels
+	absoluteX: number = 0;
+	// literal Y position on canvas in pixels
+	absoluteY: number = 0;
+	canvas: Canvas;
 	id: number;
 	name: MapNames;
 	width: number;
@@ -42,25 +61,29 @@ export class GameMap {
 	tiles: AnyTile[][];
 	backgroundTile: Tile;
 	entities: Entity[] = [];
+	scripts: Script[];
 
 	constructor(
-		absoluteX: number,
-		absoluteY: number,
+		canvas: Canvas,
 		id: number,
 		name: MapNames,
 		width: number,
 		height: number,
 		tiles: AnyTile[][],
-		backgroundTile: Tile
+		backgroundTile: Tile,
+		scripts: Script[]
 	) {
-		this.absoluteX = absoluteX;
-		this.absoluteY = absoluteY;
+		this.canvas = canvas;
 		this.id = id;
 		this.name = name;
 		this.width = width;
 		this.height = height;
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
+		this.scripts = scripts;
+	}
+	drawImage(image: HTMLImageElement, x: number, y: number) {
+		this.canvas.drawImage(image, x + this.absoluteX, y + this.absoluteY);
 	}
 	drawBaseLayer(canvas: Canvas) {
 		if (!this.backgroundTile) {
@@ -97,10 +120,11 @@ export class GameMap {
 				canvas.drawTile(tile.getActiveSprite(), loopX + this.absoluteX, loopY + this.absoluteY);
 			}
 		}
-
-		//for (const entity of this.entities) {
-		//	entity.tick(currentFrameTime, canvas);
-		//}
+	}
+	tickScripts(game: Game) {
+		for (const script of this.scripts) {
+			game.executeScript(script.script);
+		}
 	}
 	isTileOccupied(x: number, y: number) {
 		const entity = this.entities.find(
@@ -115,7 +139,7 @@ export class GameMap {
 		this.absoluteX = x;
 		this.absoluteY = y;
 	}
-	static readMap(absoluteX: number, absoluteY: number, mapBuffer: Buffer) {
+	static readMap(canvas: Canvas, mapBuffer: Buffer) {
 		const buffer = new BufferHelper(mapBuffer);
 
 		buffer.readByte(); // version
@@ -152,7 +176,8 @@ export class GameMap {
 			throw new Error('Map is missing a background tile.');
 		}
 
-		while (buffer.hasMore()) {
+		const numOfEvents = buffer.readByte();
+		for (let i = 0; i < numOfEvents; i++) {
 			const eventId = buffer.readEventId();
 			const x = buffer.readByte();
 			const y = buffer.readByte();
@@ -173,7 +198,19 @@ export class GameMap {
 			}
 		}
 
-		return new GameMap(absoluteX, absoluteY, id, name, width, height, map, backgroundTile);
+		const numOfScripts = buffer.readByte();
+		const scripts: Script[] = [];
+		for (let i = 0; i < numOfScripts; i++) {
+			const hasCoordinates = buffer.readBoolean();
+			scripts.push({
+				mapId: buffer.readByte(),
+				script: buffer.readString(),
+				x: hasCoordinates ? buffer.readByte() : null,
+				y: hasCoordinates ? buffer.readByte() : null
+			});
+		}
+
+		return new GameMap(canvas, id, name, width, height, map, backgroundTile, scripts);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];

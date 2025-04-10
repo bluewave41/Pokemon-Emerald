@@ -14,7 +14,9 @@ class InternalSpriteBank {
 	tiles: Record<number, SpriteInfo> = {};
 	sprites: Record<BankNames, Record<string, HTMLImageElement>> = {
 		player: {},
-		'npc-fat': {}
+		'npc-fat': {},
+		mom: {},
+		utility: {}
 	};
 
 	constructor() {}

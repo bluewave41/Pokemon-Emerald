@@ -6,7 +6,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async () => {
 	const { map } = await mapToBuffer('littleroot');
 
-	const player = await prisma.sprites.findMany({
+	const player = await prisma.sprite.findMany({
 		where: {
 			bank: {
 				name: 'player'
@@ -14,10 +14,18 @@ export const load: PageServerLoad = async () => {
 		}
 	});
 
-	const npc = await prisma.sprites.findMany({
+	const npc = await prisma.sprite.findMany({
 		where: {
 			bank: {
 				name: 'npc-fat'
+			}
+		}
+	});
+
+	const utility = await prisma.sprite.findMany({
+		where: {
+			bank: {
+				name: 'utility'
 			}
 		}
 	});
@@ -36,9 +44,17 @@ export const load: PageServerLoad = async () => {
 		npcBuffer.writeString(image.data);
 	}
 
+	const utilityBuffer = new BufferHelper(Buffer.alloc(20000));
+	utilityBuffer.writeByte(utility.length);
+	for (const image of utility) {
+		utilityBuffer.writeString(image.name);
+		utilityBuffer.writeString(image.data);
+	}
+
 	return {
 		map: map.toString('base64'),
 		player: playerBuffer.getUsed().toString('base64'),
-		npc: npcBuffer.getUsed().toString('base64')
+		npc: npcBuffer.getUsed().toString('base64'),
+		utility: utilityBuffer.getUsed().toString('base64')
 	};
 };

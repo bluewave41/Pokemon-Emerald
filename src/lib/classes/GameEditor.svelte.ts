@@ -3,7 +3,7 @@ import { Buffer } from 'buffer';
 import { EditorGameMap } from './maps/EditorGameMap.svelte';
 import type { EditorTile } from './tiles/EditorTile';
 
-export type Tabs = 'Tiles' | 'Permissions' | 'Events' | 'Info';
+export type Tabs = 'Tiles' | 'Permissions' | 'Events' | 'Scripts';
 
 interface Options {
 	activeTab: Tabs;

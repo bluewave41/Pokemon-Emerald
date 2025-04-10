@@ -7,14 +7,14 @@
 	import type { PageProps } from './$types.js';
 	import SpriteBank from '$lib/classes/SpriteBank.js';
 	import { GameEditor, type Tabs } from '$lib/classes/GameEditor.svelte.js';
-	import { createWarp, Warp, type EditorWarpProps } from '$lib/classes/tiles/Warp.js';
-	import type { EditorTile } from '$lib/classes/tiles/EditorTile.js';
+	import { createWarp } from '$lib/classes/tiles/Warp.js';
+	import { EditorTile } from '$lib/classes/tiles/EditorTile.js';
 	import type { TileEvents } from '$lib/interfaces/Events.js';
 	import { createSign } from '$lib/classes/tiles/Sign.js';
 
 	let { data }: PageProps = $props();
 
-	const tabs: Tabs[] = ['Tiles', 'Permissions', 'Events'];
+	const tabs: Tabs[] = ['Tiles', 'Permissions', 'Events', 'Scripts'];
 
 	let canvasRef: HTMLCanvasElement;
 	let topCanvasRef: HTMLCanvasElement;
@@ -32,6 +32,8 @@
 		1: 'red',
 		2: 'green'
 	};
+
+	$inspect(editor.map.scripts);
 
 	const hasEvents = (tile: EditorTile) => {
 		return editor.map.events.some((event) => event.x === tile.x && event.y === tile.y);
@@ -131,6 +133,7 @@
 				editor.map.getTile(x, y).permissions = editor.options.activeColor;
 				break;
 			case 'Events':
+			case 'Scripts':
 				editor.options.selectedTile = editor.map.getTile(x, y);
 				editor.options.selectedEventIndex = 0;
 				break;
@@ -292,6 +295,32 @@
 						</div>
 					{/if}
 				{/if}
+				{#if editor.options.activeTab === 'Scripts'}
+					<div>
+						{#each editor.map.scripts as _, index}
+							<button onclick={() => (editor.options.selectedEventIndex = index)}
+								>{index + 1}</button
+							>
+						{/each}
+					</div>
+					{#if editor.map.scripts.length}
+						<textarea
+							rows="30"
+							cols="30"
+							bind:value={editor.map.scripts[editor.options.selectedEventIndex].script}
+						></textarea>
+					{/if}
+
+					<button
+						onclick={() =>
+							editor.map.scripts.push({
+								mapId: editor.map.id,
+								script: '',
+								x: null,
+								y: null
+							})}>Create Script</button
+					>
+				{/if}
 			</div>
 		</div>
 	{/if}
@@ -326,7 +355,6 @@
 		grid-area: right;
 		gap: 1rem;
 	}
-
 	.col {
 		display: flex;
 		flex-direction: column;

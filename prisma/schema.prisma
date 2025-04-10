@@ -28,9 +28,10 @@ model Map {
   backgroundTileId Int?
   MapTile          MapTile[]
 
-  backgroundTile Tile?   @relation(fields: [backgroundTileId], references: [id])
+  backgroundTile Tile?    @relation(fields: [backgroundTileId], references: [id])
   Events         Event[]
   Warp           Warp[]
+  Scripts        Script[]
 }
 
 model Tile {
@@ -90,7 +91,7 @@ model Sign {
   eventId Int    @unique
   text    String
 
-  event Event @relation(fields: [eventId], references: [id])
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model Warp {
@@ -109,10 +110,10 @@ model SpriteBank {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  Sprites Sprites[]
+  sprite Sprite[]
 }
 
-model Sprites {
+model Sprite {
   id     Int    @id @default(autoincrement())
   bankId Int
   name   String
@@ -121,6 +122,16 @@ model Sprites {
   bank SpriteBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
 
   @@unique([bankId, name])
+}
+
+model Script {
+  id     Int    @id @default(autoincrement())
+  mapId  Int
+  script String
+  x      Int?
+  y      Int?
+  
+  Map    Map    @relation(fields: [mapId], references: [id])
 }
 
 enum EventType {

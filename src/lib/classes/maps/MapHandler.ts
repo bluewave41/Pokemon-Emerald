@@ -34,14 +34,14 @@ export class MapHandler {
 	async fetchMapById(id: number) {
 		const response = await axios.get(`/maps/id?id=${id}`);
 		if (response.status === 200) {
-			return GameMap.readMap(0, 0, Buffer.from(response.data.map, 'base64'));
+			return GameMap.readMap(this.active.canvas, Buffer.from(response.data.map, 'base64'));
 		}
 		throw new Error(`Failed to get map with ID: ${id}`);
 	}
 	async fetchMapByName(name: MapNames) {
 		const response = await axios.get(`/maps/name?name=${name}`);
 		if (response.status === 200) {
-			return GameMap.readMap(0, 0, Buffer.from(response.data.map, 'base64'));
+			return GameMap.readMap(this.active.canvas, Buffer.from(response.data.map, 'base64'));
 		}
 		return null;
 	}

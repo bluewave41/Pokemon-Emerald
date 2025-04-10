@@ -1,6 +1,8 @@
 import { Game } from './Game';
 import { Position } from './Position';
 
+export type CoordType = 'current' | 'target' | 'sub';
+
 export class Coords {
 	current: Position;
 	target: Position;

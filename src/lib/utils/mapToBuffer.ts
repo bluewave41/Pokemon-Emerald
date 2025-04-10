@@ -11,7 +11,8 @@ export const mapToBuffer = async (name: MapNames) => {
 			},
 			Events: {
 				include: { Sign: true, Warp: true }
-			}
+			},
+			Scripts: true
 		},
 		where: {
 			name
@@ -39,6 +40,7 @@ export const mapToBuffer = async (name: MapNames) => {
 		buffer.writeBoolean(tile.tile.activatedAnimation ?? false);
 	}
 
+	buffer.writeByte(map.Events.length);
 	for (const event of map.Events) {
 		buffer.writeEventId(event.type);
 		buffer.writeByte(event.x);
@@ -57,6 +59,17 @@ export const mapToBuffer = async (name: MapNames) => {
 				buffer.writeByte(event.Warp?.warpId);
 				buffer.writeWarpType(event.Warp.type);
 				break;
+		}
+	}
+
+	buffer.writeByte(map.Scripts.length);
+	for (const script of map.Scripts) {
+		buffer.writeBoolean(script.x !== null && script.y !== null);
+		buffer.writeByte(script.mapId);
+		buffer.writeString(script.script);
+		if (script.x && script.y) {
+			buffer.writeByte(script.x);
+			buffer.writeByte(script.y);
 		}
 	}
 

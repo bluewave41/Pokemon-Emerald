@@ -7,6 +7,7 @@ import { signSchema, type EditorSignProps } from '../tiles/Sign';
 import { warpSchema, type EditorWarpProps } from '../tiles/Warp';
 import { EditorTile } from '../tiles/EditorTile';
 import type { MapEvents } from '$lib/interfaces/Events';
+import type { Script } from './GameMap';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
@@ -29,6 +30,7 @@ export interface EditorGameMapType {
 	tiles: EditorTile[][];
 	backgroundTile: EditorTile | null;
 	events: MapEvents[];
+	scripts: string[];
 }
 
 export class EditorGameMap {
@@ -39,6 +41,7 @@ export class EditorGameMap {
 	tiles: EditorTile[][];
 	backgroundTile: EditorTile | null = null;
 	events: MapEvents[] = $state([]);
+	scripts: Script[] = $state([]);
 
 	constructor(
 		id: number,
@@ -47,7 +50,8 @@ export class EditorGameMap {
 		height: number,
 		tiles: EditorTile[][],
 		backgroundTile: EditorTile | null,
-		events: MapEvents[]
+		events: MapEvents[],
+		scripts: Script[]
 	) {
 		this.id = id;
 		this.name = name;
@@ -56,6 +60,7 @@ export class EditorGameMap {
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
 		this.events = events;
+		this.scripts = scripts;
 	}
 	drawBaseLayer(canvas: Canvas, x: number, y: number) {
 		if (!this.backgroundTile) {
@@ -106,7 +111,8 @@ export class EditorGameMap {
 					y,
 					buffer.readByte(),
 					buffer.readBoolean(),
-					buffer.readByte()
+					buffer.readByte(),
+					buffer.readBoolean()
 				);
 				buffer.readBoolean(); //unused animation byte
 				if (!backgroundTile && tile.id === backgroundId) {
@@ -120,7 +126,8 @@ export class EditorGameMap {
 		const warps: EditorWarpProps[] = [];
 		const signs: EditorSignProps[] = [];
 
-		while (buffer.hasMore()) {
+		const numOfEvents = buffer.readByte();
+		for (let i = 0; i < numOfEvents; i++) {
 			const eventId = buffer.readEventId();
 			const x = buffer.readByte();
 			const y = buffer.readByte();
@@ -148,7 +155,28 @@ export class EditorGameMap {
 			}
 		}
 
-		return new EditorGameMap(id, name, width, height, map, backgroundTile, [...warps, ...signs]);
+		const numOfScripts = buffer.readByte();
+		const scripts: Script[] = [];
+		for (let i = 0; i < numOfScripts; i++) {
+			const hasCoordinates = buffer.readBoolean();
+			scripts.push({
+				mapId: buffer.readByte(),
+				script: buffer.readString(),
+				x: hasCoordinates ? buffer.readByte() : null,
+				y: hasCoordinates ? buffer.readByte() : null
+			});
+		}
+
+		return new EditorGameMap(
+			id,
+			name,
+			width,
+			height,
+			map,
+			backgroundTile,
+			[...warps, ...signs],
+			scripts
+		);
 	}
 	getTile(x: number, y: number) {
 		return this.tiles[y][x];
@@ -160,7 +188,8 @@ export class EditorGameMap {
 			height: this.height,
 			tiles: this.tiles,
 			backgroundTile: this.backgroundTile?.id,
-			events: this.events
+			events: this.events,
+			scripts: this.scripts
 		};
 	}
 }
