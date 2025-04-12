@@ -8,6 +8,12 @@ class InternalGameEvent extends EventTarget {
 		};
 		GameEvent.addEventListener(event, handler);
 	}
+	attach(event: BlockEvents, callback: () => void) {
+		const handler = (e: any) => {
+			callback(e);
+		};
+		GameEvent.addEventListener(event, handler);
+	}
 	waitForOnce(event: BlockEvents): Promise<any> {
 		return new Promise((resolve) => {
 			const handler = (e: any) => {

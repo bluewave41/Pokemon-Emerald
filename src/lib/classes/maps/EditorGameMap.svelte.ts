@@ -161,6 +161,7 @@ export class EditorGameMap {
 			const hasCoordinates = buffer.readBoolean();
 			scripts.push({
 				mapId: buffer.readByte(),
+				name: buffer.readString(),
 				script: buffer.readString(),
 				x: hasCoordinates ? buffer.readByte() : null,
 				y: hasCoordinates ? buffer.readByte() : null

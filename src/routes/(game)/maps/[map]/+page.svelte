@@ -304,6 +304,11 @@
 						{/each}
 					</div>
 					{#if editor.map.scripts.length}
+						<input
+							type="text"
+							name="name"
+							bind:value={editor.map.scripts[editor.options.selectedEventIndex].name}
+						/>
 						<textarea
 							rows="30"
 							cols="30"
@@ -315,6 +320,7 @@
 						onclick={() =>
 							editor.map.scripts.push({
 								mapId: editor.map.id,
+								name: '',
 								script: '',
 								x: null,
 								y: null

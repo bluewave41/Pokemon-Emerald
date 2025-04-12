@@ -234,11 +234,16 @@ export const actions = {
 			});
 		}
 
-		console.log(map.scripts);
+		await prisma.script.deleteMany({
+			where: {
+				mapId: updated.id
+			}
+		});
 
 		await prisma.script.createMany({
 			data: map.scripts.map((script) => ({
 				mapId: updated.id,
+				name: script.name,
 				x: script.x,
 				y: script.y,
 				script: script.script

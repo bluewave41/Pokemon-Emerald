@@ -126,12 +126,13 @@ model Sprite {
 
 model Script {
   id     Int    @id @default(autoincrement())
+  name   String
   mapId  Int
   script String
   x      Int?
   y      Int?
-  
-  Map    Map    @relation(fields: [mapId], references: [id])
+
+  Map Map @relation(fields: [mapId], references: [id])
 }
 
 enum EventType {

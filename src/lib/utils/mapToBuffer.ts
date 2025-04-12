@@ -66,6 +66,7 @@ export const mapToBuffer = async (name: MapNames) => {
 	for (const script of map.Scripts) {
 		buffer.writeBoolean(script.x !== null && script.y !== null);
 		buffer.writeByte(script.mapId);
+		buffer.writeString(script.name);
 		buffer.writeString(script.script);
 		if (script.x && script.y) {
 			buffer.writeByte(script.x);

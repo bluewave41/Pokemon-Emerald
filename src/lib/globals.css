@@ -97,6 +97,8 @@ html {
 	color: var(--copy);
 
 	font-family: Inter;
+
+	overflow-x: hidden;
 }
 
 html,

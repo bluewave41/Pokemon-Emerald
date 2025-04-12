@@ -37,6 +37,8 @@ export class Player extends Entity {
 		this.direction = direction;
 	}
 	tick(currentFrameTime: number) {
+		const sub = this.coords.getSub();
+		const target = this.coords.getTarget();
 		const direction = this.direction.toLowerCase();
 		// we should always draw the Player
 		const walkSprite =
@@ -48,10 +50,8 @@ export class Player extends Entity {
 		if (this.shouldDraw) {
 			this.game.canvas.drawAbsoluteImage(
 				sprite,
-				Math.round(this.coords.sub.x) + 1 + this.game.viewport.pos.xOffset,
-				Math.round(this.coords.sub.y + (this.counter < 10 ? 1 : 0)) -
-					10 +
-					this.game.viewport.pos.yOffset,
+				Math.round(sub.x) + 1 + this.game.viewport.pos.xOffset,
+				Math.round(sub.y + (this.counter < 10 ? 1 : 0)) - 10 + this.game.viewport.pos.yOffset,
 				this.offsetX,
 				this.offsetY
 			);
@@ -60,7 +60,7 @@ export class Player extends Entity {
 					this.game.mapHandler.active.absoluteX,
 					this.game.mapHandler.active.absoluteY
 				);
-				this.game.canvas.drawShadow(rect.x + this.coords.sub.x, rect.y + this.coords.sub.y);
+				this.game.canvas.drawShadow(rect.x + sub.x, rect.y + sub.y);
 			}
 		}
 
@@ -85,7 +85,7 @@ export class Player extends Entity {
 
 		if (!this.moving && !this.jumping) {
 			this.updateDirection();
-		} else if (!this.coords.target.equals(this.coords.sub)) {
+		} else if (!target.equals(sub)) {
 			this.move(currentFrameTime, this.game.lastFrameTime);
 		}
 	}
@@ -93,6 +93,8 @@ export class Player extends Entity {
 		if (!this.game.canPlayerMove) {
 			return;
 		}
+		const current = this.coords.getCurrent();
+		const target = this.coords.getTarget();
 		const moveTable: Record<
 			MovementKeys,
 			{
@@ -104,32 +106,32 @@ export class Player extends Entity {
 			}
 		> = {
 			ArrowUp: {
-				x: this.coords.current.x,
-				y: this.coords.current.y - 1,
-				targetX: this.coords.target.x,
-				targetY: this.coords.target.y - Game.getAdjustedTileSize(),
+				x: current.x,
+				y: current.y - 1,
+				targetX: target.x,
+				targetY: target.y - Game.getAdjustedTileSize(),
 				direction: 'UP'
 			},
-			ArrowDown: {
-				x: this.coords.current.x,
-				y: this.coords.current.y + 1,
-				targetX: this.coords.target.x,
-				targetY: this.coords.target.y + Game.getAdjustedTileSize(),
-				direction: 'DOWN'
-			},
 			ArrowLeft: {
-				x: this.coords.current.x - 1,
-				y: this.coords.current.y,
-				targetX: this.coords.target.x - Game.getAdjustedTileSize(),
-				targetY: this.coords.target.y,
+				x: current.x - 1,
+				y: current.y,
+				targetX: target.x - Game.getAdjustedTileSize(),
+				targetY: target.y,
 				direction: 'LEFT'
 			},
 			ArrowRight: {
-				x: this.coords.current.x + 1,
-				y: this.coords.current.y,
-				targetX: this.coords.target.x + Game.getAdjustedTileSize(),
-				targetY: this.coords.target.y,
+				x: current.x + 1,
+				y: current.y,
+				targetX: target.x + Game.getAdjustedTileSize(),
+				targetY: target.y,
 				direction: 'RIGHT'
+			},
+			ArrowDown: {
+				x: current.x,
+				y: current.y + 1,
+				targetX: target.x,
+				targetY: target.y + Game.getAdjustedTileSize(),
+				direction: 'DOWN'
 			}
 		};
 
@@ -151,11 +153,13 @@ export class Player extends Entity {
 					const newTile = this.game.mapHandler.active.getTile(move.x, move.y);
 
 					if (newTile.jumpable === this.direction) {
+						const current = this.coords.getCurrent();
+						const target = this.coords.getTarget();
 						const doubledMove = {
-							x: move.x + (move.x - this.coords.current.x),
-							y: move.y + (move.y - this.coords.current.y),
-							targetX: move.targetX + (move.targetX - this.coords.target.x),
-							targetY: move.targetY + (move.targetY - this.coords.target.y),
+							x: move.x + (move.x - current.x),
+							y: move.y + (move.y - current.y),
+							targetX: move.targetX + (move.targetX - target.x),
+							targetY: move.targetY + (move.targetY - target.y),
 							direction: move.direction
 						};
 
@@ -203,7 +207,7 @@ export class Player extends Entity {
 	}
 	getFacingTile() {
 		const map = this.game.mapHandler.active;
-		const pos = this.coords.current;
+		const pos = this.coords.getCurrent();
 		if (this.direction === 'LEFT') {
 			return map.getTile(pos.x - 1, pos.y);
 		} else if (this.direction === 'RIGHT') {
@@ -226,7 +230,8 @@ export class Player extends Entity {
 		}
 	}
 	getCurrentTile() {
-		return this.game.mapHandler.active.getTile(this.coords.current.x, this.coords.current.y);
+		const current = this.coords.getCurrent();
+		return this.game.mapHandler.active.getTile(current.x, current.y);
 	}
 	async handleWarp() {
 		this.game.blockMovement();
@@ -316,28 +321,57 @@ export class Player extends Entity {
 		this.game.unblockMovement();
 	}
 	walk(direction: Direction) {
+		const sub = this.coords.getSub();
 		switch (direction) {
 			case 'UP':
-				this.coords.setTarget(this.coords.sub.x, this.coords.sub.y - Game.getAdjustedTileSize());
+				this.coords.setTarget(sub.x, sub.y - Game.getAdjustedTileSize());
 				break;
 			case 'LEFT':
-				this.coords.setTarget(this.coords.sub.x - Game.getAdjustedTileSize(), this.coords.sub.y);
+				this.coords.setTarget(sub.x - Game.getAdjustedTileSize(), sub.y);
 				break;
 			case 'RIGHT':
-				this.coords.setTarget(this.coords.sub.x + Game.getAdjustedTileSize(), this.coords.sub.y);
+				this.coords.setTarget(sub.x + Game.getAdjustedTileSize(), sub.y);
 				break;
 			case 'DOWN':
-				this.coords.setTarget(this.coords.sub.x, this.coords.sub.y + Game.getAdjustedTileSize());
+				this.coords.setTarget(sub.x, sub.y + Game.getAdjustedTileSize());
 				break;
 		}
+		this.direction = direction;
 		this.moving = true;
+		this.counter = 0;
+	}
+	jump(direction: Direction) {
+		const sub = this.coords.getSub();
+		switch (direction) {
+			case 'UP':
+				this.coords.setTarget(sub.x, sub.y - Game.getAdjustedTileSize());
+				break;
+			case 'LEFT':
+				this.coords.setTarget(sub.x - Game.getAdjustedTileSize(), sub.y);
+				break;
+			case 'RIGHT':
+				this.coords.setTarget(sub.x + Game.getAdjustedTileSize(), sub.y);
+				break;
+			case 'DOWN':
+				this.coords.setTarget(sub.x, sub.y + Game.getAdjustedTileSize());
+				break;
+		}
+		this.direction = direction;
+		this.jumping = true;
 		this.counter = 0;
 	}
 
 	move(currentFrameTime: number, lastFrameTime: number) {
+		const last = this.coords.getLast().toPixels();
+		const sub = this.coords.getSub();
+		const target = this.coords.getTarget();
 		if (!this.moving && !this.jumping) {
 			return;
 		}
+
+		const numberOfPixelsToMove = (Math.abs(last.x - target.x) + Math.abs(last.y - target.y)) / 2;
+		const start = Math.floor(numberOfPixelsToMove * 0.3);
+		const end = Math.floor(numberOfPixelsToMove * 0.7);
 
 		this.counter++;
 
@@ -347,30 +381,34 @@ export class Player extends Entity {
 		const moveY = this.speed * deltaTime;
 
 		if (this.direction === 'RIGHT') {
-			this.coords.sub.x = Math.round(Math.min(this.coords.sub.x + moveX, this.coords.target.x));
+			sub.x = Math.round(Math.min(sub.x + moveX, target.x));
 		} else if (this.direction === 'LEFT') {
-			this.coords.sub.x = Math.round(Math.max(this.coords.sub.x - moveX, this.coords.target.x));
+			sub.x = Math.round(Math.max(sub.x - moveX, target.x));
 		} else if (this.direction === 'DOWN') {
-			this.coords.sub.y = Math.round(Math.min(this.coords.sub.y + moveY, this.coords.target.y));
+			sub.y = Math.round(Math.min(sub.y + moveY, target.y));
 		} else if (this.direction === 'UP') {
-			this.coords.sub.y = Math.round(Math.max(this.coords.sub.y - moveY, this.coords.target.y));
+			sub.y = Math.round(Math.max(sub.y - moveY, target.y));
 		}
 
 		if (this.jumping) {
-			if (this.counter < 10) {
+			if (this.counter <= start + 1) {
 				this.offsetY += 2;
-			} else if (this.counter > 23) {
+			} else if (this.counter > end) {
 				this.offsetY -= 2;
 			}
 		}
 
-		if (this.coords.sub.x === this.coords.target.x && this.coords.sub.y === this.coords.target.y) {
+		if (sub.equals(target)) {
 			this.moving = false;
 			this.jumping = false;
 			this.walkFrame = this.walkFrame === 1 ? 2 : 1;
+			this.coords.setLast(
+				target.x / Game.getAdjustedTileSize(),
+				target.y / Game.getAdjustedTileSize()
+			);
 			this.coords.setCurrent(
-				this.coords.target.x / Game.getAdjustedTileSize(),
-				this.coords.target.y / Game.getAdjustedTileSize()
+				target.x / Game.getAdjustedTileSize(),
+				target.y / Game.getAdjustedTileSize()
 			);
 			GameEvent.dispatchEvent(new CustomEvent('movementFinished'));
 		}

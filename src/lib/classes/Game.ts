@@ -27,34 +27,31 @@ export class Game {
 		this.mapHandler.active.entities.push(new NPC('npc-fat', 14, 11, this.mapHandler.active));
 	}
 	changeMap(direction: Direction) {
+		const current = this.player.coords.getCurrent();
+		const sub = this.player.coords.getSub();
+
 		const curr = this.mapHandler.active;
 		if (direction === 'UP' && this.mapHandler.up) {
 			this.mapHandler.setActive(this.mapHandler.up);
 			this.mapHandler.setDown(curr);
 			this.mapHandler.up = null;
 			this.mapHandler.reorient();
-			this.player.coords.setCurrent(
-				this.player.coords.current.x,
-				this.mapHandler.active.height - 1
-			);
+			this.player.coords.setCurrent(current.x, this.mapHandler.active.height - 1);
 			this.player.coords.setTarget(
-				this.player.coords.sub.x,
+				sub.x,
 				this.mapHandler.active.height * Game.getAdjustedTileSize()
 			);
-			this.player.coords.setSub(
-				this.player.coords.sub.x,
-				this.mapHandler.active.height * Game.getAdjustedTileSize()
-			);
+			this.player.coords.setSub(sub.x, this.mapHandler.active.height * Game.getAdjustedTileSize());
 		}
 		if (direction === 'LEFT' && this.mapHandler.left) {
 			this.mapHandler.setActive(this.mapHandler.left);
 			this.mapHandler.setRight(curr);
 			this.mapHandler.left = null;
 			this.mapHandler.reorient();
-			this.player.coords.setCurrent(this.mapHandler.active.width, this.player.coords.current.y);
+			this.player.coords.setCurrent(this.mapHandler.active.width, current.y);
 			this.player.coords.setTarget(
 				this.mapHandler.active.width * Game.getAdjustedTileSize(),
-				this.player.coords.sub.y
+				sub.y
 			);
 		}
 		if (direction === 'RIGHT' && this.mapHandler.right) {
@@ -62,31 +59,33 @@ export class Game {
 			this.mapHandler.setLeft(curr);
 			this.mapHandler.right = null;
 			this.mapHandler.reorient();
-			this.player.coords.setCurrent(-1, this.player.coords.current.y);
-			this.player.coords.setTarget(-1 * Game.getAdjustedTileSize(), this.player.coords.sub.y);
+			this.player.coords.setCurrent(-1, current.y);
+			this.player.coords.setTarget(-1 * Game.getAdjustedTileSize(), sub.y);
 		}
 		if (direction === 'DOWN' && this.mapHandler.down) {
 			this.mapHandler.setActive(this.mapHandler.down);
 			this.mapHandler.setUp(curr);
 			this.mapHandler.down = null;
 			this.mapHandler.reorient();
-			this.player.coords.setCurrent(this.player.coords.current.x, 0);
-			this.player.coords.setTarget(this.player.coords.sub.x, -1 * Game.getAdjustedTileSize());
-			this.player.coords.setSub(this.player.coords.sub.x, -1 * Game.getAdjustedTileSize());
+			this.player.coords.setCurrent(current.x, 0);
+			this.player.coords.setTarget(sub.x, -1 * Game.getAdjustedTileSize());
+			this.player.coords.setSub(sub.x, -1 * Game.getAdjustedTileSize());
 		}
 
 		this.mapHandler.connect();
 	}
 	tick(currentFrameTime: number) {
+		const sub = this.player.coords.getSub();
+
 		this.#canvas.reset();
 		this.viewport.pos = {
 			x: -(
-				this.player.coords.sub.x / Game.getAdjustedTileSize() -
+				sub.x / Game.getAdjustedTileSize() -
 				this.viewport.width / 2 +
 				(this.mapHandler?.left?.width ?? 0)
 			),
 			y: -(
-				this.player.coords.sub.y / Game.getAdjustedTileSize() -
+				sub.y / Game.getAdjustedTileSize() -
 				this.viewport.height / 2 +
 				(this.mapHandler.up?.height ?? 0)
 			),
@@ -116,7 +115,7 @@ export class Game {
 		}
 
 		const entities = [...this.mapHandler.active.entities].sort(
-			(a, b) => a.coords.current.y - b.coords.current.y
+			(a, b) => a.coords.getCurrent().y - b.coords.getCurrent().y
 		);
 
 		for (const entity of entities) {

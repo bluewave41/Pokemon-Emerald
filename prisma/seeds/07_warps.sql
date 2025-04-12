@@ -1,4 +1,6 @@
-INSERT INTO "Warp" ("id", "eventId", "mapId", "warpId", "type", "direction") VALUES (2, 2, 1, 1, 'DOOR', 'DOWN');
-INSERT INTO "Warp" ("id", "eventId", "mapId", "warpId", "type", "direction") VALUES (3, 3, 1, 1, 'DOOR', 'DOWN');
 INSERT INTO "Warp" ("id", "eventId", "mapId", "warpId", "type", "direction") VALUES (12, 20, 2, 1, 'DOOR', 'UP');
+INSERT INTO "Warp" ("id", "eventId", "mapId", "warpId", "type", "direction") VALUES (13, 22, 1, 1, 'DOOR', 'DOWN');
+INSERT INTO "Warp" ("id", "eventId", "mapId", "warpId", "type", "direction") VALUES (14, 23, 1, 1, 'DOOR', 'DOWN');
+INSERT INTO "Warp" ("id", "eventId", "mapId", "warpId", "type", "direction") VALUES (15, 24, 3, 3, 'STAIRS', 'UP');
+INSERT INTO "Warp" ("id", "eventId", "mapId", "warpId", "type", "direction") VALUES (16, 25, 2, 3, 'STAIRS', 'UP');
 SELECT setval('public."Warp_id_seq"', (SELECT MAX(id) FROM "Warp"));

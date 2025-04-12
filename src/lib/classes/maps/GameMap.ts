@@ -11,6 +11,7 @@ import { Game } from '../Game';
 
 export type Script = {
 	mapId: number;
+	name: string;
 	x: number | null;
 	y: number | null;
 	script: string;
@@ -18,6 +19,7 @@ export type Script = {
 
 export const scriptSchema = z.object({
 	mapId: z.number(),
+	name: z.string(),
 	script: z.string(),
 	x: z.number().nullable(),
 	y: z.number().nullable()
@@ -46,6 +48,7 @@ export interface GameMapType {
 	backgroundTile: number;
 	entities: Entity[];
 	scripts: Script[];
+	activeScripts: Script[];
 }
 
 export class GameMap {
@@ -62,6 +65,7 @@ export class GameMap {
 	backgroundTile: Tile;
 	entities: Entity[] = [];
 	scripts: Script[];
+	activeScripts: Script[] = [];
 
 	constructor(
 		canvas: Canvas,
@@ -122,17 +126,19 @@ export class GameMap {
 		}
 	}
 	tickScripts(game: Game) {
-		for (const script of this.scripts) {
+		for (const script of this.activeScripts) {
 			game.executeScript(script.script);
 		}
 	}
 	isTileOccupied(x: number, y: number) {
-		const entity = this.entities.find(
-			(entity) =>
-				(entity.coords.current.x === x && entity.coords.current.y === y) ||
-				(entity.coords.target.x === x * Game.getAdjustedTileSize() &&
-					entity.coords.target.y === y * Game.getAdjustedTileSize())
-		);
+		const entity = this.entities.find((entity) => {
+			const current = entity.coords.getCurrent();
+			const target = entity.coords.getTarget();
+			return (
+				(current.x === x && current.y === y) ||
+				(target.x === x * Game.getAdjustedTileSize() && target.y === y * Game.getAdjustedTileSize())
+			);
+		});
 		return entity;
 	}
 	setAbsolutePosition(x: number, y: number) {
@@ -204,6 +210,7 @@ export class GameMap {
 			const hasCoordinates = buffer.readBoolean();
 			scripts.push({
 				mapId: buffer.readByte(),
+				name: buffer.readString(),
 				script: buffer.readString(),
 				x: hasCoordinates ? buffer.readByte() : null,
 				y: hasCoordinates ? buffer.readByte() : null
