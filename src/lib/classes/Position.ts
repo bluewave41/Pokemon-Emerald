@@ -6,4 +6,7 @@ export class Position {
 		this.x = x;
 		this.y = y;
 	}
+	equals(position: Position) {
+		return this.x === position.x && this.y === position.y;
+	}
 }

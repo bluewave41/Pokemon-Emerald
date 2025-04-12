@@ -46,7 +46,7 @@ export class MapHandler {
 		return null;
 	}
 	handleWarpTo(map: GameMap) {
-		this.active = map;
+		this.setActive(map);
 		this.up = null;
 		this.left = null;
 		this.right = null;

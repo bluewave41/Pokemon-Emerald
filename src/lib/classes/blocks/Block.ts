@@ -3,7 +3,7 @@ import type { Game } from '../Game';
 export type BlockEvents =
 	| 'fadedIn'
 	| 'fadedOut'
-	| 'scriptedMovementComplete'
+	| 'movementFinished'
 	| 'animationComplete'
 	| 'continue'
 	| 'signComplete';

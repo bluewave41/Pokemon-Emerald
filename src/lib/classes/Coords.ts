@@ -19,12 +19,15 @@ export class Coords {
 		this.sub = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 	}
 	setCurrent(x: number, y: number) {
-		this.current = new Position(x, y);
+		this.current.x = x;
+		this.current.y = y;
 	}
 	setTarget(x: number, y: number) {
-		this.target = new Position(x, y);
+		this.target.x = x;
+		this.target.y = y;
 	}
 	setSub(x: number, y: number) {
-		this.sub = new Position(x, y);
+		this.sub.x = x;
+		this.sub.y = y;
 	}
 }
