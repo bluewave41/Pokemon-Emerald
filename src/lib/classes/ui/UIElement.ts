@@ -5,10 +5,9 @@ export class UIElement {
 	constructor(id: string) {
 		this.id = id;
 	}
-	draw(x: number, y: number, game: Game): number {
+	draw(x: number, y: number, game: Game) {
 		void x;
 		void y;
 		void game;
-		return 0;
 	}
 }

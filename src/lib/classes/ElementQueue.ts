@@ -1,3 +1,4 @@
+import GameEvent from './GameEvent';
 import type { UIElement } from './ui/UIElement';
 
 export class ElementQueue {
@@ -16,6 +17,11 @@ export class ElementQueue {
 	removeElement(id: string) {
 		const index = this.elements.findLastIndex((el) => el.id === id);
 		this.elements.splice(index, 1);
+	}
+	continueText() {
+		const index = this.elements.findLastIndex((el) => el.id === 'textbox');
+		this.elements.splice(index, 1);
+		GameEvent.dispatchEvent(new CustomEvent('continueText'));
 	}
 	getElements() {
 		return this.elements;

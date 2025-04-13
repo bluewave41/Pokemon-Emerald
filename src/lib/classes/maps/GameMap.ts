@@ -127,7 +127,7 @@ export class GameMap {
 	}
 	tickScripts(game: Game) {
 		for (const script of this.activeScripts) {
-			game.executeScript(script.script);
+			game.executeScript(script);
 		}
 	}
 	isTileOccupied(x: number, y: number) {

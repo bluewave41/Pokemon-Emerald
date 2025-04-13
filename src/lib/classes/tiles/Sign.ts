@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Game } from '../Game';
 import { Tile, tileSchema, type BaseTileProps } from './Tile';
 import { tileEventKindSchema } from '$lib/interfaces/Events';
-import { SignRect } from '../ui/SignRect';
+import { TextRect } from '../ui/TextRect';
 
 export const createSign = (x: number, y: number, text: string): EditorSignProps => ({
 	kind: 'sign',
@@ -44,6 +44,6 @@ export class Sign extends Tile {
 	}
 	activate(game: Game) {
 		game.blockMovement();
-		game.canvas.elements.addElement(new SignRect(this.text, game.lastFrameTime));
+		game.canvas.elements.addElement(new TextRect(this.text, game.lastFrameTime));
 	}
 }

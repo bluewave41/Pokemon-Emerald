@@ -17,6 +17,7 @@ export class Coords {
 		this.#sub = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 	}
 	setCoords(x: number, y: number) {
+		this.#last = new Position(x, y);
 		this.#current = new Position(x, y);
 		this.#target = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 		this.#sub = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());

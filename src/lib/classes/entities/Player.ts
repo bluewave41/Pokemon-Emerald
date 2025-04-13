@@ -6,9 +6,9 @@ import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
 import type { Tile } from '../tiles/Tile';
 import type { Warp } from '../tiles/Warp';
-import type { Direction } from '@prisma/client';
+import { WarpType, type Direction } from '@prisma/client';
 import { getOppositeDirection } from '$lib/utils/getOppositeDirection';
-import type { SignRect } from '../ui/SignRect';
+import type { TextRect } from '../ui/TextRect';
 import { Coords } from '../Coords';
 import { Entity } from './Entity';
 import { AdjustedRect } from '../AdjustedRect';
@@ -25,7 +25,6 @@ export class Player extends Entity {
 	speed: number = Game.getAdjustedTileSize() * 3;
 	walkFrame: number = 1;
 	counter: number = 0;
-	shouldDraw: boolean = true;
 	offsetX: number = 0;
 	offsetY: number = 0;
 
@@ -36,22 +35,27 @@ export class Player extends Entity {
 		this.coords = new Coords(x, y);
 		this.direction = direction;
 	}
-	tick(currentFrameTime: number) {
+	tick(currentFrameTime: number, lastFrameTime: number) {
 		const sub = this.coords.getSub();
 		const target = this.coords.getTarget();
 		const direction = this.direction.toLowerCase();
 		// we should always draw the Player
+
 		const walkSprite =
-			(this.moving || this.jumping) && (this.counter < 10 || this.counter > 23)
+			((this.moving || this.jumping) && this.counter < 10) ||
+			this.counter > 22 ||
+			(!this.moving && this.counter !== 0)
 				? direction + this.walkFrame
 				: direction;
 
 		const sprite = SpriteBank.getSprite('player', walkSprite);
-		if (this.shouldDraw) {
-			this.game.canvas.drawAbsoluteImage(
+		if (this.visible) {
+			this.game.canvas.drawCharacter(
 				sprite,
 				Math.round(sub.x) + 1 + this.game.viewport.pos.xOffset,
-				Math.round(sub.y + (this.counter < 10 ? 1 : 0)) - 10 + this.game.viewport.pos.yOffset,
+				Math.round(sub.y + (this.counter > 0 && this.counter < 10 ? 1 : 0)) -
+					10 +
+					this.game.viewport.pos.yOffset,
 				this.offsetX,
 				this.offsetY
 			);
@@ -69,7 +73,7 @@ export class Player extends Entity {
 		if (activeKey.down && activeKey.initial) {
 			const tile = this.getFacingTile();
 			if (tile.kind === 'sign') {
-				const sign = this.game.canvas.elements.getElement('sign') as SignRect;
+				const sign = this.game.canvas.elements.getElement('sign') as TextRect;
 				if (sign) {
 					if (sign.finished) {
 						this.game.canvas.elements.removeElement('sign');
@@ -86,7 +90,15 @@ export class Player extends Entity {
 		if (!this.moving && !this.jumping) {
 			this.updateDirection();
 		} else if (!target.equals(sub)) {
-			this.move(currentFrameTime, this.game.lastFrameTime);
+			this.move(currentFrameTime, lastFrameTime);
+		}
+
+		if (!this.moving && !this.jumping && this.counter !== 0) {
+			this.counter++;
+			if (this.counter > 5) {
+				this.counter = 0;
+				this.walkFrame = this.walkFrame === 1 ? 2 : 1;
+			}
 		}
 	}
 	updateDirection() {
@@ -141,7 +153,7 @@ export class Player extends Entity {
 			this.direction = move.direction as Direction;
 			const keyState = KeyHandler.getKeyState(direction);
 			const currentTile = this.getCurrentTile();
-			if (keyState.holdCount > 8) {
+			if (keyState.holdCount > 10) {
 				if (this.isNewTileOutsideMap(move.x, move.y) && !currentTile.isWarp()) {
 					const direction = this.getOutsideMapDirection(move.x, move.y);
 					if (this.game.mapHandler.hasMap(direction)) {
@@ -180,6 +192,8 @@ export class Player extends Entity {
 			} else {
 				if (currentTile.isWarp() && this.direction === currentTile.activateDirection) {
 					this.handleWarp();
+				} else if (this.counter === 0 && keyState.holdCount < 5) {
+					this.counter = 1;
 				}
 			}
 		}
@@ -253,57 +267,42 @@ export class Player extends Entity {
 		if (isDoorWarp) {
 			tiles.forEach((tile) => tile.playForward());
 			await GameEvent.waitForOnce('animationComplete');
-			this.walk(currentTile.activateDirection);
-			await GameEvent.waitForOnce('movementFinished');
-			this.shouldDraw = false;
+			await this.walk(currentTile.activateDirection);
+			this.setVisible(false);
 			tiles.forEach((tile) => tile.playReversed());
 			await GameEvent.waitForOnce('animationComplete');
 			await sleep(300);
 		} else if (isStairsWarp) {
-			this.walk(currentTile.activateDirection);
-			await GameEvent.waitForOnce('movementFinished');
-			this.shouldDraw = false;
+			await this.walk(currentTile.activateDirection);
+			this.setVisible(false);
 		}
 
 		this.game.canvas.elements.addElement(new FadeOutRect());
 		await GameEvent.waitForOnce('fadedOut');
 
-		const map = await this.game.mapHandler.fetchMapById(currentTile.targetMapId);
-		const targetWarp: Warp = map.tiles
-			.flat()
-			.find((tile) => tile.isWarp() && tile.targetWarpId === currentTile.targetWarpId);
-
-		if (!targetWarp) {
-			throw new Error(`Couldn't find target warp.`);
-		}
-
-		const targetPosition = tiles.length
-			? targetWarp
-			: adjustPositionForDirection(
-					new Position(targetWarp.x, targetWarp.y),
-					targetWarp.activateDirection
-				);
-		this.game.mapHandler.handleWarpTo(map);
-		this.coords.setCoords(targetPosition.x, targetPosition.y);
+		const targetWarp = await this.game.loadMapById(
+			currentTile.targetMapId,
+			currentTile.targetWarpId,
+			isDoorWarp ? WarpType.DOOR : WarpType.STAIRS
+		);
 
 		// now that we've loaded the new map do we need to animate the exit tiles?
 		tiles = [];
-		const tileAboveWarp = map.getTile(targetWarp.x, targetWarp.y - 1);
+		const tileAboveWarp = this.game.mapHandler.active.getTile(targetWarp.x, targetWarp.y - 1);
 		if (tileAboveWarp.tileSprites.images.length !== 1) {
-			tiles = [tileAboveWarp, map.getTile(targetWarp.x, targetWarp.y - 2)];
+			tiles = [tileAboveWarp, this.game.mapHandler.active.getTile(targetWarp.x, targetWarp.y - 2)];
 		}
 
 		this.game.canvas.elements.removeElement('fadedOut');
 		this.game.canvas.elements.addElement(new FadeInRect());
 
 		if (tiles.length !== 0) {
-			this.shouldDraw = false;
+			this.setVisible(false);
 			tiles.forEach((tile) => tile.setReversed());
 			await GameEvent.waitForOnce('fadedIn');
 			await sleep(150);
-			this.shouldDraw = true;
-			this.walk(currentTile.activateDirection);
-			await GameEvent.waitForOnce('movementFinished');
+			this.setVisible(true);
+			await this.walk(currentTile.activateDirection);
 			tiles.forEach((tile) => tile.playReversed());
 			await GameEvent.waitForOnce('animationComplete');
 		}
@@ -312,7 +311,7 @@ export class Player extends Entity {
 			this.direction = getOppositeDirection(this.direction);
 		}
 
-		this.shouldDraw = true;
+		this.setVisible(true);
 
 		if (isStairsWarp) {
 			this.walk(getOppositeDirection(currentTile.activateDirection));
@@ -320,7 +319,7 @@ export class Player extends Entity {
 
 		this.game.unblockMovement();
 	}
-	walk(direction: Direction) {
+	async walk(direction: Direction) {
 		const sub = this.coords.getSub();
 		switch (direction) {
 			case 'UP':
@@ -339,6 +338,8 @@ export class Player extends Entity {
 		this.direction = direction;
 		this.moving = true;
 		this.counter = 0;
+
+		await GameEvent.waitForOnce('movementFinished');
 	}
 	jump(direction: Direction) {
 		const sub = this.coords.getSub();
@@ -365,6 +366,7 @@ export class Player extends Entity {
 		const last = this.coords.getLast().toPixels();
 		const sub = this.coords.getSub();
 		const target = this.coords.getTarget();
+
 		if (!this.moving && !this.jumping) {
 			return;
 		}
@@ -402,6 +404,7 @@ export class Player extends Entity {
 			this.moving = false;
 			this.jumping = false;
 			this.walkFrame = this.walkFrame === 1 ? 2 : 1;
+			this.counter = 0;
 			this.coords.setLast(
 				target.x / Game.getAdjustedTileSize(),
 				target.y / Game.getAdjustedTileSize()

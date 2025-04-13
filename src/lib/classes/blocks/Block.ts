@@ -3,6 +3,7 @@ import type { Game } from '../Game';
 export type BlockEvents =
 	| 'fadedIn'
 	| 'fadedOut'
+	| 'npcMovementFinished'
 	| 'movementFinished'
 	| 'animationComplete'
 	| 'continue'

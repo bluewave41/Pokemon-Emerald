@@ -11,6 +11,12 @@
 	let { data } = $props();
 	let canvasRef: HTMLCanvasElement;
 	let game: Game | null = $state(null);
+	let status = $state(0);
+
+	GameEvent.attach('rerender', () => {
+		status++;
+		console.log('render');
+	});
 
 	async function init() {
 		if (canvasRef) {
@@ -20,8 +26,10 @@
 
 			//player
 			await SpriteBank.readBank('player', data.player);
+			await SpriteBank.readBank('mom', data.mom);
 			await SpriteBank.readBank('npc-fat', data.npc);
 			await SpriteBank.readBank('utility', data.utility);
+			await SpriteBank.readBank('misc', data.misc);
 
 			game = new Game(canvas, gameMap);
 
@@ -46,6 +54,8 @@
 	const onKeyUp = (e: KeyboardEvent) => {
 		KeyHandler.keyUp(e.key);
 	};
+
+	console.log('here');
 </script>
 
 <h1>{page.params.map}</h1>
@@ -61,7 +71,13 @@
 		const input = e.target as HTMLInputElement;
 		if (e.key === 'Enter') {
 			try {
-				game?.executeScript(input.value);
+				game?.executeScript({
+					name: 'console',
+					mapId: game.mapHandler.active.id,
+					script: input.value,
+					x: null,
+					y: null
+				});
 			} catch (e) {
 				console.log(e);
 			} finally {
@@ -71,17 +87,19 @@
 	}}
 />
 
-{#if game}
-	{#each game.mapHandler.active.scripts as script}
-		<button
-			onclick={() => {
-				game?.mapHandler.active.activeScripts.push(script);
-			}}
-		>
-			{script.name}
-		</button>
-	{/each}
-{/if}
+{#key status}
+	{#if game}
+		{#each game.mapHandler.active.scripts as script}
+			<button
+				onclick={() => {
+					game?.executeScript(script);
+				}}
+			>
+				{script.name}
+			</button>
+		{/each}
+	{/if}
+{/key}
 
 <style>
 	.container {

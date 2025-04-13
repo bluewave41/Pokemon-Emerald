@@ -1,15 +1,25 @@
 import { Canvas } from './Canvas';
 import { Player } from './entities/Player';
-import { GameMap } from './maps/GameMap';
+import { GameMap, type Script } from './maps/GameMap';
 import KeyHandler from './KeyHandler';
 import { MapHandler } from './maps/MapHandler';
-import type { Direction } from '@prisma/client';
+import { WarpType, type Direction } from '@prisma/client';
 import { NPC } from './entities/NPC';
+import GameEvent from './GameEvent';
+import { TextRect } from './ui/TextRect';
+import type { Warp } from './tiles/Warp';
+import { adjustPositionForDirection } from '$lib/utils/adjustPositionForDirection';
+import { Position } from './Position';
+// these need to be included in the global state so scripts can use them
+import { FadeInRect } from './ui/FadeInRect';
 import SpriteBank from './SpriteBank';
+import { Sprite } from './entities/Sprite';
+import { FadeOutRect } from './ui/FadeOutRect';
+import { sleep } from '$lib/utils/sleep';
 
 export class Game {
 	mapHandler: MapHandler;
-	#canvas: Canvas;
+	canvas: Canvas;
 	player: Player;
 	viewport = { width: 15, height: 11, pos: { x: 0, y: 0, xOffset: 0, yOffset: 0 } };
 	static tileSize: number = 16;
@@ -19,12 +29,36 @@ export class Game {
 
 	constructor(canvas: Canvas, map: GameMap) {
 		this.mapHandler = new MapHandler(map);
-		this.#canvas = canvas;
+		this.canvas = canvas;
 		this.player = new Player(10, 10, this, 'DOWN');
-		this.#canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
-		this.#canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
+		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
+		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 		this.mapHandler.active.entities.push(this.player);
 		this.mapHandler.active.entities.push(new NPC('npc-fat', 14, 11, this.mapHandler.active));
+	}
+	async loadMapById(mapId: number, warpId: number, warpType: WarpType) {
+		const map = await this.mapHandler.fetchMapById(mapId);
+
+		const targetWarp: Warp = map.tiles
+			.flat()
+			.find((tile) => tile.isWarp() && tile.targetWarpId === warpId);
+
+		if (!targetWarp) {
+			throw new Error(`Couldn't find target warp.`);
+		}
+
+		const targetPosition =
+			warpType === 'DOOR'
+				? targetWarp
+				: adjustPositionForDirection(
+						new Position(targetWarp.x, targetWarp.y),
+						targetWarp.activateDirection
+					);
+		this.mapHandler.handleWarpTo(map);
+		this.player.coords.setCoords(targetPosition.x, targetPosition.y);
+
+		GameEvent.dispatchEvent(new CustomEvent('rerender'));
+		return targetWarp;
 	}
 	changeMap(direction: Direction) {
 		const current = this.player.coords.getCurrent();
@@ -77,7 +111,7 @@ export class Game {
 	tick(currentFrameTime: number) {
 		const sub = this.player.coords.getSub();
 
-		this.#canvas.reset();
+		this.canvas.reset();
 		this.viewport.pos = {
 			x: -(
 				sub.x / Game.getAdjustedTileSize() -
@@ -93,7 +127,7 @@ export class Game {
 			yOffset: (this.mapHandler.up?.height ?? 0) * Game.getAdjustedTileSize()
 		};
 
-		this.#canvas.translate(this.viewport.pos.x, this.viewport.pos.y);
+		this.canvas.translate(this.viewport.pos.x, this.viewport.pos.y);
 
 		if (this.mapHandler.up) {
 			this.drawMap(currentFrameTime, this.mapHandler.up);
@@ -114,66 +148,58 @@ export class Game {
 			this.drawMap(currentFrameTime, this.mapHandler.down);
 		}
 
-		const entities = [...this.mapHandler.active.entities].sort(
-			(a, b) => a.coords.getCurrent().y - b.coords.getCurrent().y
+		const entities = this.mapHandler.active.entities.sort((a, b) =>
+			a.priority !== b.priority
+				? a.priority - b.priority
+				: a.coords.getCurrent().y - b.coords.getCurrent().y
 		);
 
 		for (const entity of entities) {
-			entity.tick(currentFrameTime, this.canvas);
+			entity.tick(currentFrameTime, this.lastFrameTime, this.canvas);
 		}
 
 		if (this.mapHandler.up) {
-			this.mapHandler.up.drawTopLayer(this.#canvas);
+			this.mapHandler.up.drawTopLayer(this.canvas);
 		}
 		if (this.mapHandler.left) {
-			this.mapHandler.left.drawTopLayer(this.#canvas);
+			this.mapHandler.left.drawTopLayer(this.canvas);
 		}
-		this.mapHandler.active.drawTopLayer(this.#canvas);
+		this.mapHandler.active.drawTopLayer(this.canvas);
 		if (this.mapHandler.right) {
-			this.mapHandler.right.drawTopLayer(this.#canvas);
+			this.mapHandler.right.drawTopLayer(this.canvas);
 		}
 		if (this.mapHandler.down) {
-			this.mapHandler.down.drawTopLayer(this.#canvas);
+			this.mapHandler.down.drawTopLayer(this.canvas);
 		}
 
 		KeyHandler.tick();
 
 		this.lastFrameTime = currentFrameTime;
 
-		this.#canvas.context.save();
+		this.canvas.context.save();
 
 		// draw UI elements
-		this.#canvas.context.resetTransform();
+		this.canvas.context.resetTransform();
 
-		const elements = this.#canvas.elements.getElements();
+		const elements = this.canvas.elements.getElements();
 
 		for (let i = 0; i < elements.length; i++) {
 			const element = elements[i];
-			const retVal = element.draw(0, 0, this);
-			if (retVal === 1) {
-				elements.splice(i, 1);
-				i--;
-			}
+			element.draw(0, 0, this);
 		}
 
-		this.#canvas.context.restore();
+		this.canvas.context.restore();
 	}
 	drawMap(currentFrameTime: number, map: GameMap, runScripts?: boolean) {
-		map.drawBaseLayer(this.#canvas);
-		map.tick(currentFrameTime, this.#canvas);
+		map.drawBaseLayer(this.canvas);
+		map.tick(currentFrameTime, this.canvas);
 
-		if (runScripts) {
-			map.tickScripts(this);
-		}
+		//if (runScripts) {
+		//	map.tickScripts(this);
+		//}
 	}
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;
-	}
-	get canvas() {
-		if (!this.#canvas) {
-			throw new Error('Game has no canvas.');
-		}
-		return this.#canvas;
 	}
 	getActiveCoordinates() {
 		return {
@@ -188,7 +214,14 @@ export class Game {
 	unblockMovement() {
 		this.canPlayerMove = true;
 	}
-	executeScript(script: string) {
-		return eval(script);
+	async executeScript(script: Script) {
+		eval(`(async () => { ${script.script} })()`);
+	}
+	async showMessageBox(text: string) {
+		this.canvas.elements.addElement(new TextRect(text, this.lastFrameTime));
+		await GameEvent.waitForOnce('continueText');
+	}
+	get activeMap() {
+		return this.mapHandler.active;
 	}
 }

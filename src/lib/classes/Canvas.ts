@@ -2,6 +2,7 @@ import { AdjustedRect } from './AdjustedRect';
 import { ElementQueue } from './ElementQueue';
 import { Game } from './Game';
 import GameEvent from './GameEvent';
+import SpriteBank from './SpriteBank';
 
 interface DrawOptions {
 	color?: string;
@@ -25,7 +26,6 @@ export class Canvas {
 		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
 	drawText(text: string, x: number, y: number) {
-		this.context.font = '22pt "pokemon"';
 		this.context.fillStyle = '#303030';
 		const metrics = this.context.measureText(text);
 		const fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
@@ -47,7 +47,7 @@ export class Canvas {
 		const rect = new AdjustedRect(x, y);
 		this.context.drawImage(image, rect.x, rect.y, image.width * mult, image.height * mult);
 	}
-	drawAbsoluteImage(
+	drawCharacter(
 		image: HTMLImageElement,
 		x: number,
 		y: number,
@@ -61,6 +61,9 @@ export class Canvas {
 			Game.getAdjustedTileSize() - 2,
 			Game.getAdjustedTileSize() + 8
 		);
+	}
+	drawAbsoluteImage(image: HTMLImageElement, x: number, y: number) {
+		this.context.drawImage(image, x, y);
 	}
 	drawLine(x: number, y: number, toX: number, toY: number) {
 		this.context.fillStyle = 'black';
@@ -108,16 +111,22 @@ export class Canvas {
 		this.context.translate(rect.x, rect.y);
 	}
 	showMessageBox(text: string, startFrameTime: number, currentFrameTime: number) {
-		const delay = 50; // Adjust delay to control the speed of the scrolling text (in milliseconds).
+		this.context.font = '24pt "pokemon"';
+		//const delay = 50; // Adjust delay to control the speed of the scrolling text (in milliseconds).
+		const delay = 10;
 		const elapsedTime = currentFrameTime - startFrameTime; // Time elapsed since the message started
 		const lengthToShow = Math.floor(elapsedTime / delay); // Determine how many characters to show based on elapsed time
 		const textToShow = text.slice(0, lengthToShow); // Slice the message up to the calculated length
 
 		if (lengthToShow >= text.length) {
+			// this runs way too many times
 			GameEvent.dispatchEvent(new CustomEvent('signComplete'));
 		}
 
-		const pieces = textToShow.split('\\n');
+		const pieces = textToShow.split('/');
+
+		const metrics = this.context.measureText(pieces.at(-1));
+
 		const gap = 5;
 		const size = 80;
 		const rectOffset = 2;
@@ -134,8 +143,16 @@ export class Canvas {
 		this.context.fillRect(gap, this.canvas.height - gap - size, this.canvas.width - gap * 2, size);
 
 		for (const piece of pieces) {
-			this.drawText(piece.replaceAll('\\', ''), x + gap + textOffset, y + textOffset / 3);
+			this.drawText(piece, x + gap + textOffset, y + textOffset / 3);
 			y += 32;
+		}
+
+		if (lengthToShow >= text.length) {
+			this.drawAbsoluteImage(
+				SpriteBank.getSprite('utility', 'pointer'),
+				x + gap + textOffset + metrics.width,
+				y - 11
+			);
 		}
 	}
 	get width() {

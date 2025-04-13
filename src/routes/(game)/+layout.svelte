@@ -25,6 +25,7 @@
 	.right {
 		display: flex;
 		flex-direction: column;
+		align-items: center;
 		flex: 80%;
 	}
 </style>
