@@ -17,7 +17,8 @@ class InternalSpriteBank {
 		'npc-fat': {},
 		mom: {},
 		utility: {},
-		misc: {}
+		misc: {},
+		vigoroth: {}
 	};
 
 	constructor() {}

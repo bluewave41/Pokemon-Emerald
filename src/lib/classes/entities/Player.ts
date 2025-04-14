@@ -1,8 +1,6 @@
-import { adjustPositionForDirection } from '$lib/utils/adjustPositionForDirection';
 import { Game } from '../Game';
 import GameEvent from '../GameEvent';
 import KeyHandler, { type MovementKeys } from '../KeyHandler';
-import { Position } from '../Position';
 import SpriteBank from '../SpriteBank';
 import type { Tile } from '../tiles/Tile';
 import type { Warp } from '../tiles/Warp';
@@ -15,6 +13,7 @@ import { AdjustedRect } from '../AdjustedRect';
 import { sleep } from '$lib/utils/sleep';
 import { FadeOutRect } from '../ui/FadeOutRect';
 import { FadeInRect } from '../ui/FadeInRect';
+import { GridPosition, ScreenPosition } from '../Position';
 
 export class Player extends Entity {
 	coords: Coords;
@@ -50,12 +49,10 @@ export class Player extends Entity {
 
 		const sprite = SpriteBank.getSprite('player', walkSprite);
 		if (this.visible) {
-			this.game.canvas.drawCharacter(
+			this.game.canvas.drawSprite(
 				sprite,
-				Math.round(sub.x) + 1 + this.game.viewport.pos.xOffset,
-				Math.round(sub.y + (this.counter > 0 && this.counter < 10 ? 1 : 0)) -
-					10 +
-					this.game.viewport.pos.yOffset,
+				Math.round(sub.x) + this.game.viewport.pos.xOffset,
+				Math.round(sub.y) + this.game.viewport.pos.yOffset,
 				this.offsetX,
 				this.offsetY
 			);
@@ -177,15 +174,15 @@ export class Player extends Entity {
 
 						this.jumping = true;
 						this.coords.setCurrent(doubledMove.x, doubledMove.y);
-						this.coords.setTarget(doubledMove.targetX, doubledMove.targetY);
+						this.coords.setTarget(new ScreenPosition(doubledMove.targetX, doubledMove.targetY));
 						this.counter = 0;
 					} else if (
 						newTile.isPassable() &&
-						!this.game.mapHandler.active.isTileOccupied(newTile.x, newTile.y)
+						!this.game.mapHandler.active.isTileOccupied(new GridPosition(newTile.x, newTile.y))
 					) {
 						this.moving = true;
 						this.coords.setCurrent(move.x, move.y);
-						this.coords.setTarget(move.targetX, move.targetY);
+						this.coords.setTarget(new ScreenPosition(move.targetX, move.targetY));
 						this.counter = 0;
 					}
 				}
@@ -323,16 +320,16 @@ export class Player extends Entity {
 		const sub = this.coords.getSub();
 		switch (direction) {
 			case 'UP':
-				this.coords.setTarget(sub.x, sub.y - Game.getAdjustedTileSize());
+				this.coords.setTarget(new ScreenPosition(sub.x, sub.y - Game.getAdjustedTileSize()));
 				break;
 			case 'LEFT':
-				this.coords.setTarget(sub.x - Game.getAdjustedTileSize(), sub.y);
+				this.coords.setTarget(new ScreenPosition(sub.x - Game.getAdjustedTileSize(), sub.y));
 				break;
 			case 'RIGHT':
-				this.coords.setTarget(sub.x + Game.getAdjustedTileSize(), sub.y);
+				this.coords.setTarget(new ScreenPosition(sub.x + Game.getAdjustedTileSize(), sub.y));
 				break;
 			case 'DOWN':
-				this.coords.setTarget(sub.x, sub.y + Game.getAdjustedTileSize());
+				this.coords.setTarget(new ScreenPosition(sub.x, sub.y + Game.getAdjustedTileSize()));
 				break;
 		}
 		this.direction = direction;
@@ -345,16 +342,16 @@ export class Player extends Entity {
 		const sub = this.coords.getSub();
 		switch (direction) {
 			case 'UP':
-				this.coords.setTarget(sub.x, sub.y - Game.getAdjustedTileSize());
+				this.coords.setTarget(new ScreenPosition(sub.x, sub.y - Game.getAdjustedTileSize()));
 				break;
 			case 'LEFT':
-				this.coords.setTarget(sub.x - Game.getAdjustedTileSize(), sub.y);
+				this.coords.setTarget(new ScreenPosition(sub.x - Game.getAdjustedTileSize(), sub.y));
 				break;
 			case 'RIGHT':
-				this.coords.setTarget(sub.x + Game.getAdjustedTileSize(), sub.y);
+				this.coords.setTarget(new ScreenPosition(sub.x + Game.getAdjustedTileSize(), sub.y));
 				break;
 			case 'DOWN':
-				this.coords.setTarget(sub.x, sub.y + Game.getAdjustedTileSize());
+				this.coords.setTarget(new ScreenPosition(sub.x, sub.y + Game.getAdjustedTileSize()));
 				break;
 		}
 		this.direction = direction;
@@ -363,7 +360,7 @@ export class Player extends Entity {
 	}
 
 	move(currentFrameTime: number, lastFrameTime: number) {
-		const last = this.coords.getLast().toPixels();
+		const last = this.coords.getLast().toScreen();
 		const sub = this.coords.getSub();
 		const target = this.coords.getTarget();
 

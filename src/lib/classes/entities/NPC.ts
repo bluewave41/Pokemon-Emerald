@@ -5,12 +5,12 @@ import type { Canvas } from '../Canvas';
 import type { BankNames } from '$lib/interfaces/BankNames';
 import { Game } from '../Game';
 import { getRandomDirection } from '$lib/utils/getRandomDirection';
-import { Position } from '../Position';
+import { GridPosition, ScreenPosition } from '../Position';
 import type { GameMap } from '../maps/GameMap';
 import GameEvent from '../GameEvent';
 
 export class NPC extends Entity {
-	home: Position;
+	home: GridPosition;
 	id: BankNames;
 	moving: boolean = false;
 	counter: number = 0;
@@ -19,33 +19,52 @@ export class NPC extends Entity {
 	speed: number = Game.getAdjustedTileSize() * 3;
 	scripted: boolean;
 	shouldDraw: boolean = true;
+	path: Direction[] = [];
+	pathIndex: number = 0;
 
-	constructor(id: BankNames, x: number, y: number, map: GameMap, scripted?: boolean) {
+	constructor(
+		id: BankNames,
+		x: number,
+		y: number,
+		direction: Direction,
+		map: GameMap,
+		scripted?: boolean
+	) {
 		super(x, y, map);
+		this.direction = direction;
 		const current = this.coords.getCurrent();
-		this.home = new Position(current.x, current.y);
+		this.home = new GridPosition(current.x, current.y);
 		this.id = id;
 		this.scripted = scripted ?? false;
+	}
+	setPath(directions: Direction[]) {
+		this.path = directions;
+		return this;
 	}
 	setVisible(visible: boolean) {
 		this.shouldDraw = visible;
 	}
 	tick(currentFrameTime: number, lastFrameTime: number, canvas: Canvas) {
 		const current = this.coords.getCurrent();
-		const sub = this.coords.getSub();
 		const target = this.coords.getTarget();
 		const direction = this.direction.toLocaleLowerCase();
-		const walkSprite = this.moving && this.counter < 10 ? direction + this.walkFrame : direction;
+		const walkSprite = this.moving
+			? direction + (this.counter % 20 < 10 ? this.walkFrame : '')
+			: direction;
 
 		const sprite = SpriteBank.getSprite(this.id, walkSprite);
 
 		if (this.shouldDraw) {
-			canvas.drawCharacter(
+			const sub = this.coords.getSub();
+			const xOffset = sprite.width - 15;
+			const yOffset = sprite.height - 21 + sprite.height - 21;
+
+			canvas.drawSprite(
 				sprite,
-				Math.round(sub.x) + 1 + this.map.absoluteX * Game.getAdjustedTileSize(),
-				Math.round(sub.y + (this.counter < 10 ? 1 : 0)) -
-					10 +
-					this.map.absoluteY * Game.getAdjustedTileSize()
+				Math.round(sub.x) + this.map.absoluteX * Game.getAdjustedTileSize(),
+				Math.round(sub.y) + this.map.absoluteY * Game.getAdjustedTileSize(),
+				xOffset,
+				yOffset
 			);
 		}
 
@@ -54,69 +73,83 @@ export class NPC extends Entity {
 		if (this.moving) {
 			return;
 		}
+
+		// random timer to move around
 		if (!this.scripted && currentFrameTime - lastFrameTime >= 3000) {
 			const newDirection = getRandomDirection();
 			const shouldMove = Math.random() <= 0.5;
 			if (shouldMove) {
-				const moveTable: Record<
-					Direction,
-					{ x: number; y: number; targetX: number; targetY: number }
-				> = {
+				const moveTable: Record<Direction, { pos: GridPosition; target: ScreenPosition }> = {
 					UP: {
-						x: current.x,
-						y: current.y - 1,
-						targetX: target.x,
-						targetY: target.y - Game.getAdjustedTileSize()
+						pos: current.up(),
+						target: target.up()
 					},
 					LEFT: {
-						x: current.x - 1,
-						y: current.y,
-						targetX: target.x - Game.getAdjustedTileSize(),
-						targetY: target.y
+						pos: current.left(),
+						target: target.left()
 					},
 					RIGHT: {
-						x: current.x + 1,
-						y: current.y,
-						targetX: target.x + Game.getAdjustedTileSize(),
-						targetY: target.y
+						pos: current.right(),
+						target: target.right()
 					},
 					DOWN: {
-						x: current.x,
-						y: current.y + 1,
-						targetX: target.x,
-						targetY: target.y + Game.getAdjustedTileSize()
+						pos: current.down(),
+						target: target.down()
 					}
 				};
 				const moveTarget = moveTable[newDirection];
 				// keep contained within home area
 				if (
-					!this.map.isTileOccupied(moveTarget.x, moveTarget.y) &&
-					moveTarget.x >= this.home.x - 2 &&
-					moveTarget.x <= this.home.x + 2 &&
-					moveTarget.y >= this.home.y - 2 &&
-					moveTarget.y <= this.home.y + 2
+					!this.map.isTileOccupied(moveTarget.pos) &&
+					moveTarget.pos.x >= this.home.x - 2 &&
+					moveTarget.pos.x <= this.home.x + 2 &&
+					moveTarget.pos.y >= this.home.y - 2 &&
+					moveTarget.pos.y <= this.home.y + 2
 				) {
 					this.moving = true;
-					this.coords.setTarget(moveTarget.targetX, moveTarget.targetY);
+					this.coords.setTarget(moveTarget.target);
 				}
 			}
 			this.direction = newDirection;
+		} else {
+			if (this.path.length) {
+				this.moving = true;
+				const step = this.path[this.pathIndex++];
+				if (this.pathIndex === this.path.length) {
+					this.pathIndex = 0;
+				}
+				this.direction = step;
+				switch (step) {
+					case 'UP':
+						this.coords.setTarget(this.coords.getCurrent().up().toScreen());
+						break;
+					case 'LEFT':
+						this.coords.setTarget(this.coords.getCurrent().left().toScreen());
+						break;
+					case 'RIGHT':
+						this.coords.setTarget(this.coords.getCurrent().right().toScreen());
+						break;
+					case 'DOWN':
+						this.coords.setTarget(this.coords.getCurrent().down().toScreen());
+						break;
+				}
+			}
 		}
 	}
 	async walk(direction: Direction) {
 		const sub = this.coords.getSub();
 		switch (direction) {
 			case 'UP':
-				this.coords.setTarget(sub.x, sub.y - Game.getAdjustedTileSize());
+				this.coords.setTarget(new ScreenPosition(sub.x, sub.y - Game.getAdjustedTileSize()));
 				break;
 			case 'LEFT':
-				this.coords.setTarget(sub.x - Game.getAdjustedTileSize(), sub.y);
+				this.coords.setTarget(new ScreenPosition(sub.x - Game.getAdjustedTileSize(), sub.y));
 				break;
 			case 'RIGHT':
-				this.coords.setTarget(sub.x + Game.getAdjustedTileSize(), sub.y);
+				this.coords.setTarget(new ScreenPosition(sub.x + Game.getAdjustedTileSize(), sub.y));
 				break;
 			case 'DOWN':
-				this.coords.setTarget(sub.x, sub.y + Game.getAdjustedTileSize());
+				this.coords.setTarget(new ScreenPosition(sub.x, sub.y + Game.getAdjustedTileSize()));
 				break;
 		}
 		this.direction = direction;
@@ -126,14 +159,20 @@ export class NPC extends Entity {
 		await GameEvent.waitForOnce('npcMovementFinished');
 	}
 	move(currentFrameTime: number, lastFrameTime: number) {
+		const target = this.coords.getTarget();
 		if (!this.moving) {
 			return;
 		}
 
 		const sub = this.coords.getSub();
-		const target = this.coords.getTarget();
 
 		this.counter++;
+
+		const targetTile = target.toGrid();
+		const tile = this.map.getTile(targetTile.x, targetTile.y);
+		if (!tile.isPassable() || this.map.isTileOccupied(target.toGrid())) {
+			return;
+		}
 
 		const deltaTime = (currentFrameTime - lastFrameTime) / 1000; // in seconds
 

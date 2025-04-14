@@ -10,6 +10,7 @@ export const load: PageServerLoad = async () => {
 	const mom = await writeSpriteBuffer('mom');
 	const utility = await writeSpriteBuffer('utility');
 	const misc = await writeSpriteBuffer('misc');
+	const vigoroth = await writeSpriteBuffer('vigoroth');
 
 	return {
 		map: map.toString('base64'),
@@ -17,6 +18,7 @@ export const load: PageServerLoad = async () => {
 		mom: mom.toString('base64'),
 		npc: npcFat.toString('base64'),
 		utility: utility.toString('base64'),
-		misc: misc.toString('base64')
+		misc: misc.toString('base64'),
+		vigoroth: vigoroth.toString('base64')
 	};
 };

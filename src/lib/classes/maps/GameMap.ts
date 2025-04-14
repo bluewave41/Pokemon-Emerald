@@ -8,6 +8,7 @@ import { editorSignSchema, Sign } from '../tiles/Sign';
 import { editorWarpSchema, Warp } from '../tiles/Warp';
 import type { Entity } from '../entities/Entity';
 import { Game } from '../Game';
+import type { GridPosition, Position } from '../Position';
 
 export type Script = {
 	mapId: number;
@@ -87,7 +88,10 @@ export class GameMap {
 		this.scripts = scripts;
 	}
 	drawImage(image: HTMLImageElement, x: number, y: number) {
-		this.canvas.drawImage(image, x + this.absoluteX, y + this.absoluteY);
+		const xDiff = image.width - 16; //10
+		const yDiff = image.height - 3; //27
+
+		this.canvas.drawImage(image, x + this.absoluteX, y + this.absoluteY, xDiff, yDiff);
 	}
 	drawBaseLayer(canvas: Canvas) {
 		if (!this.backgroundTile) {
@@ -130,16 +134,10 @@ export class GameMap {
 			game.executeScript(script);
 		}
 	}
-	isTileOccupied(x: number, y: number) {
-		const entity = this.entities.find((entity) => {
-			const current = entity.coords.getCurrent();
-			const target = entity.coords.getTarget();
-			return (
-				(current.x === x && current.y === y) ||
-				(target.x === x * Game.getAdjustedTileSize() && target.y === y * Game.getAdjustedTileSize())
-			);
+	isTileOccupied(position: Position<GridPosition>) {
+		return this.entities.some((entity) => {
+			return position.equals(entity.coords.getCurrent());
 		});
-		return entity;
 	}
 	setAbsolutePosition(x: number, y: number) {
 		this.absoluteX = x;

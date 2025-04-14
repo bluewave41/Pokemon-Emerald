@@ -42,24 +42,45 @@ export class Canvas {
 		const rect = new AdjustedRect(x, y);
 		this.context.fillRect(rect.x, rect.y, rect.width, rect.height);
 	}
-	drawImage(image: HTMLImageElement, x: number, y: number) {
-		const mult = Game.getAdjustedTileSize() / 16;
-		const rect = new AdjustedRect(x, y);
-		this.context.drawImage(image, rect.x, rect.y, image.width * mult, image.height * mult);
-	}
-	drawCharacter(
+	drawImage(
 		image: HTMLImageElement,
 		x: number,
 		y: number,
-		offsetX: number = 0,
-		offsetY: number = 0
+		xOffset: number = 0,
+		yOffset: number = 0
 	) {
+		const mult = Game.getAdjustedTileSize() / 16;
+		const rect = new AdjustedRect(x, y);
 		this.context.drawImage(
 			image,
-			x - offsetX,
-			y - offsetY,
-			Game.getAdjustedTileSize() - 2,
-			Game.getAdjustedTileSize() + 8
+			rect.x - xOffset,
+			rect.y - yOffset,
+			image.width * mult,
+			image.height * mult
+		);
+	}
+	/**
+	 * Draws an image to the canvas
+	 * @param image Image to draw
+	 * @param x literal X coordinates
+	 * @param y  literal Y coordinates
+	 * @param offsetX X amount to offset drawing by
+	 * @param offsetY Y amount to offset drawing by
+	 */
+	drawSprite(
+		image: HTMLImageElement,
+		x: number,
+		y: number,
+		xOffset: number = 0,
+		yOffset: number = 0
+	) {
+		const mult = Game.getAdjustedTileSize() / 16;
+		this.context.drawImage(
+			image,
+			x - xOffset,
+			y - yOffset - 12,
+			image.width * mult,
+			image.height * mult
 		);
 	}
 	drawAbsoluteImage(image: HTMLImageElement, x: number, y: number) {

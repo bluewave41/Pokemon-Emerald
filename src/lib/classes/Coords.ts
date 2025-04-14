@@ -1,26 +1,29 @@
 import { Game } from './Game';
-import { Position } from './Position';
+import { GridPosition, ScreenPosition } from './Position';
 
 export class Coords {
-	#last: Position;
-	// square position of the player
-	#current: Position;
-	// pixel position of the target square
-	#target: Position;
-	// sub pixel position of the player
-	#sub: Position;
+	#last: GridPosition;
+	#current: GridPosition;
+	#target: ScreenPosition;
+	#sub: ScreenPosition;
 
 	constructor(x: number, y: number) {
-		this.#current = new Position(x, y);
-		this.#last = new Position(x, y);
-		this.#target = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
-		this.#sub = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
+		this.#current = new GridPosition(x, y);
+		this.#last = new GridPosition(x, y);
+		this.#target = new ScreenPosition(
+			x * Game.getAdjustedTileSize(),
+			y * Game.getAdjustedTileSize()
+		);
+		this.#sub = new ScreenPosition(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 	}
 	setCoords(x: number, y: number) {
-		this.#last = new Position(x, y);
-		this.#current = new Position(x, y);
-		this.#target = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
-		this.#sub = new Position(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
+		this.#last = new GridPosition(x, y);
+		this.#current = new GridPosition(x, y);
+		this.#target = new ScreenPosition(
+			x * Game.getAdjustedTileSize(),
+			y * Game.getAdjustedTileSize()
+		);
+		this.#sub = new ScreenPosition(x * Game.getAdjustedTileSize(), y * Game.getAdjustedTileSize());
 	}
 	setLast(x: number, y: number) {
 		this.#last.x = x;
@@ -30,9 +33,8 @@ export class Coords {
 		this.#current.x = x;
 		this.#current.y = y;
 	}
-	setTarget(x: number, y: number) {
-		this.#target.x = x;
-		this.#target.y = y;
+	setTarget(pos: ScreenPosition) {
+		this.#target = pos;
 	}
 	setSub(x: number, y: number) {
 		this.#sub.x = x;

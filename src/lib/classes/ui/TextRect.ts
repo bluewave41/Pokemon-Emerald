@@ -12,7 +12,6 @@ export class TextRect extends UIElement {
 	constructor(text: string, startFrame: number) {
 		super('textbox');
 		this.text = text;
-		console.log(text);
 		this.startFrame = startFrame;
 	}
 	draw(x: number, y: number, game: Game) {

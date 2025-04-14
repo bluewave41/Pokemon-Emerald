@@ -9,7 +9,7 @@ import GameEvent from './GameEvent';
 import { TextRect } from './ui/TextRect';
 import type { Warp } from './tiles/Warp';
 import { adjustPositionForDirection } from '$lib/utils/adjustPositionForDirection';
-import { Position } from './Position';
+import { Position, ScreenPosition } from './Position';
 // these need to be included in the global state so scripts can use them
 import { FadeInRect } from './ui/FadeInRect';
 import SpriteBank from './SpriteBank';
@@ -34,7 +34,9 @@ export class Game {
 		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 		this.mapHandler.active.entities.push(this.player);
-		this.mapHandler.active.entities.push(new NPC('npc-fat', 14, 11, this.mapHandler.active));
+		this.mapHandler.active.entities.push(
+			new NPC('npc-fat', 14, 11, 'DOWN', this.mapHandler.active)
+		);
 	}
 	async loadMapById(mapId: number, warpId: number, warpType: WarpType) {
 		const map = await this.mapHandler.fetchMapById(mapId);
@@ -72,8 +74,7 @@ export class Game {
 			this.mapHandler.reorient();
 			this.player.coords.setCurrent(current.x, this.mapHandler.active.height - 1);
 			this.player.coords.setTarget(
-				sub.x,
-				this.mapHandler.active.height * Game.getAdjustedTileSize()
+				new ScreenPosition(sub.x, this.mapHandler.active.height * Game.getAdjustedTileSize())
 			);
 			this.player.coords.setSub(sub.x, this.mapHandler.active.height * Game.getAdjustedTileSize());
 		}
@@ -84,8 +85,7 @@ export class Game {
 			this.mapHandler.reorient();
 			this.player.coords.setCurrent(this.mapHandler.active.width, current.y);
 			this.player.coords.setTarget(
-				this.mapHandler.active.width * Game.getAdjustedTileSize(),
-				sub.y
+				new ScreenPosition(this.mapHandler.active.width * Game.getAdjustedTileSize(), sub.y)
 			);
 		}
 		if (direction === 'RIGHT' && this.mapHandler.right) {
@@ -94,7 +94,7 @@ export class Game {
 			this.mapHandler.right = null;
 			this.mapHandler.reorient();
 			this.player.coords.setCurrent(-1, current.y);
-			this.player.coords.setTarget(-1 * Game.getAdjustedTileSize(), sub.y);
+			this.player.coords.setTarget(new ScreenPosition(-1 * Game.getAdjustedTileSize(), sub.y));
 		}
 		if (direction === 'DOWN' && this.mapHandler.down) {
 			this.mapHandler.setActive(this.mapHandler.down);
@@ -102,7 +102,7 @@ export class Game {
 			this.mapHandler.down = null;
 			this.mapHandler.reorient();
 			this.player.coords.setCurrent(current.x, 0);
-			this.player.coords.setTarget(sub.x, -1 * Game.getAdjustedTileSize());
+			this.player.coords.setTarget(new ScreenPosition(sub.x, -1 * Game.getAdjustedTileSize()));
 			this.player.coords.setSub(sub.x, -1 * Game.getAdjustedTileSize());
 		}
 
@@ -215,7 +215,40 @@ export class Game {
 		this.canPlayerMove = true;
 	}
 	async executeScript(script: Script) {
-		eval(`(async () => { ${script.script} })()`);
+		if (script.name === 'test') {
+			const active = this.activeMap;
+			const mom = new NPC('mom', 9, 8, 'UP', active, true);
+			this.player.coords.setCoords(8, 8);
+			active.entities.push(mom);
+			active.entities.push(new NPC('vigoroth', 4, 5, 'UP', active, true).setPath(['UP']));
+			active.entities.push(
+				new NPC('vigoroth', 1, 3, 'RIGHT', active, true).setPath([
+					'RIGHT',
+					'RIGHT',
+					'RIGHT',
+					'LEFT',
+					'LEFT',
+					'LEFT'
+				])
+			);
+			active.entities.push(new Sprite(5, 4, 'misc', 'box-open', active));
+			active.entities.push(new Sprite(5, 2, 'misc', 'box-closed', active));
+
+			await this.showMessageBox("MOM: See, A?/Isn't it nice in here, too?");
+			mom.direction = 'LEFT';
+			this.player.direction = 'RIGHT';
+			await this.showMessageBox(
+				"The mover's POKéMON do all the work/of moving us in and cleaning up after."
+			);
+			await this.showMessageBox('This is so conveinient!');
+			await this.showMessageBox('A, your room is upstairs./Go check it out dear!');
+			await this.showMessageBox('DAD bought you a new clock to mark/our move here.');
+			await this.showMessageBox("Don't forget to set it!");
+			this.player.walk('UP');
+			mom.direction = 'UP';
+		} else {
+			eval(`(async () => { ${script.script} })()`);
+		}
 	}
 	async showMessageBox(text: string) {
 		this.canvas.elements.addElement(new TextRect(text, this.lastFrameTime));

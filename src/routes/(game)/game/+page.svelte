@@ -15,7 +15,6 @@
 
 	GameEvent.attach('rerender', () => {
 		status++;
-		console.log('render');
 	});
 
 	async function init() {
@@ -30,6 +29,7 @@
 			await SpriteBank.readBank('npc-fat', data.npc);
 			await SpriteBank.readBank('utility', data.utility);
 			await SpriteBank.readBank('misc', data.misc);
+			await SpriteBank.readBank('vigoroth', data.vigoroth);
 
 			game = new Game(canvas, gameMap);
 
@@ -54,8 +54,6 @@
 	const onKeyUp = (e: KeyboardEvent) => {
 		KeyHandler.keyUp(e.key);
 	};
-
-	console.log('here');
 </script>
 
 <h1>{page.params.map}</h1>

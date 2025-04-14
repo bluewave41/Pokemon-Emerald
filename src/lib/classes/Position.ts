@@ -1,7 +1,6 @@
-import type { Direction } from '@prisma/client';
 import { Game } from './Game';
 
-export class Position {
+export class Position<T extends Position<T>> {
 	x: number;
 	y: number;
 
@@ -9,49 +8,55 @@ export class Position {
 		this.x = x;
 		this.y = y;
 	}
-	equals(position: Position) {
+	equals(position: T) {
 		return this.x === position.x && this.y === position.y;
 	}
+}
+
+export class GridPosition extends Position<GridPosition> {
+	constructor(x: number, y: number) {
+		super(x, y);
+	}
 	up() {
-		return {
-			x: this.x,
-			y: this.y - 1,
-			targetX: this.x,
-			targetY: (this.y - 1) * Game.getAdjustedTileSize(),
-			direction: 'UP' as Direction
-		};
+		return new GridPosition(this.x, this.y - 1);
 	}
 	left() {
-		return {
-			x: this.x - 1,
-			y: this.y,
-			targetX: (this.x - 1) * Game.getAdjustedTileSize(),
-			targetY: this.y,
-			direction: 'LEFT' as Direction
-		};
+		return new GridPosition(this.x - 1, this.y);
 	}
 	right() {
-		return {
-			x: this.x + 1,
-			y: this.y,
-			targetX: (this.x + 1) * Game.getAdjustedTileSize(),
-			targetY: this.y,
-			direction: 'RIGHT' as Direction
-		};
+		return new GridPosition(this.x + 1, this.y);
 	}
 	down() {
-		return {
-			x: this.x,
-			y: this.y + 1,
-			targetX: this.x,
-			targetY: (this.y + 1) * Game.getAdjustedTileSize(),
-			direction: 'DOWN' as Direction
-		};
+		return new GridPosition(this.x, this.y + 1);
 	}
-	toPixels() {
-		return new Position(this.x * Game.getAdjustedTileSize(), this.y * Game.getAdjustedTileSize());
+	toScreen() {
+		return new ScreenPosition(
+			this.x * Game.getAdjustedTileSize(),
+			this.y * Game.getAdjustedTileSize()
+		);
+	}
+}
+
+export class ScreenPosition extends Position<ScreenPosition> {
+	constructor(x: number, y: number) {
+		super(x, y);
+	}
+	up() {
+		return new ScreenPosition(this.x, this.y - Game.getAdjustedTileSize());
+	}
+	left() {
+		return new ScreenPosition(this.x - Game.getAdjustedTileSize(), this.y);
+	}
+	right() {
+		return new ScreenPosition(this.x + Game.getAdjustedTileSize(), this.y);
+	}
+	down() {
+		return new ScreenPosition(this.x, this.y + Game.getAdjustedTileSize());
 	}
 	toGrid() {
-		return new Position(this.x / Game.getAdjustedTileSize(), this.y / Game.getAdjustedTileSize());
+		return new GridPosition(
+			this.x / Game.getAdjustedTileSize(),
+			this.y / Game.getAdjustedTileSize()
+		);
 	}
 }
