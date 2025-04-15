@@ -270,8 +270,11 @@ export class Player extends Entity {
 		const isStairsWarp = currentTile.type === 'STAIRS';
 
 		if (isDoorWarp) {
-			tiles.forEach((tile) => tile.playForward());
-			await GameEvent.waitForOnce('animationComplete');
+			if (!tiles[0].hasAnimated()) {
+				tiles.forEach((tile) => tile.playForward());
+				await GameEvent.waitForOnce('animationComplete');
+			}
+
 			await this.walk(currentTile.activateDirection);
 			this.setVisible(false);
 			tiles.forEach((tile) => tile.playReversed());
@@ -388,7 +391,7 @@ export class Player extends Entity {
 
 		this.counter++;
 
-		const deltaTime = (currentFrameTime - lastFrameTime) / 1000; // in seconds
+		const deltaTime = (currentFrameTime - lastFrameTime) / 1000;
 
 		const moveX = this.speed * deltaTime;
 		const moveY = this.speed * deltaTime;

@@ -84,6 +84,13 @@ export class Tile {
 	isWarp(): this is Warp {
 		return this.kind === 'warp';
 	}
+	hasAnimated() {
+		return (
+			(this.animationOptions.direction === 'forwards' &&
+				this.animationOptions.sequenceIndex === this.tileSprites.images.length - 1) ||
+			(this.animationOptions.direction === 'backwards' && this.animationOptions.sequenceIndex === 0)
+		);
+	}
 	playForward() {
 		this.animationOptions = {
 			isAnimating: true,
