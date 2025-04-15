@@ -111,7 +111,11 @@ class InternalSpriteBank {
 		return this.tiles[id];
 	}
 	getSprite(bank: BankNames, sprite: string) {
-		return this.sprites[bank][sprite];
+		try {
+			return this.sprites[bank][sprite];
+		} catch (e) {
+			console.log(`Failed to get sprite: ${bank} ${sprite}`);
+		}
 	}
 }
 

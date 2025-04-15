@@ -3,6 +3,7 @@ import { GameMap } from './GameMap';
 import { Buffer } from 'buffer';
 import { GameMapResources, type MapNames } from '$lib/interfaces/MapNames';
 import type { Direction } from '@prisma/client';
+import { Player } from '../entities/Player';
 
 export class MapHandler {
 	up: GameMap | null = null;
@@ -47,6 +48,9 @@ export class MapHandler {
 	}
 	handleWarpTo(map: GameMap) {
 		this.setActive(map);
+		map.entities.setEntities(
+			map.entities.getEntities().filter((entity) => entity instanceof Player)
+		);
 		this.up = null;
 		this.left = null;
 		this.right = null;
@@ -54,7 +58,7 @@ export class MapHandler {
 		this.connect();
 	}
 	setActive(map: GameMap) {
-		map.entities = [...this.active.entities];
+		map.entities = this.active.entities;
 		this.active = map;
 	}
 	setUp(map: GameMap) {

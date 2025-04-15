@@ -8,8 +8,8 @@ export class Sprite extends Entity {
 	bank: BankNames;
 	sprite: string;
 
-	constructor(x: number, y: number, bank: BankNames, sprite: string, map: GameMap) {
-		super(x, y, map);
+	constructor(id: string, x: number, y: number, bank: BankNames, sprite: string, map: GameMap) {
+		super(id, x, y, map);
 		this.bank = bank;
 		this.sprite = sprite;
 	}

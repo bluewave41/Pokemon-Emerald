@@ -16,6 +16,7 @@ import SpriteBank from './SpriteBank';
 import { Sprite } from './entities/Sprite';
 import { FadeOutRect } from './ui/FadeOutRect';
 import { sleep } from '$lib/utils/sleep';
+import FlagSet from './FlagSet';
 
 export class Game {
 	mapHandler: MapHandler;
@@ -33,9 +34,9 @@ export class Game {
 		this.player = new Player(10, 10, this, 'DOWN');
 		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
-		this.mapHandler.active.entities.push(this.player);
-		this.mapHandler.active.entities.push(
-			new NPC('npc-fat', 14, 11, 'DOWN', this.mapHandler.active)
+		this.mapHandler.active.entities.addEntity(this.player);
+		this.mapHandler.active.entities.addEntity(
+			new NPC('npc-fat', 'npc-fat', 14, 11, 'DOWN', this.mapHandler.active)
 		);
 	}
 	async loadMapById(mapId: number, warpId: number, warpType: WarpType) {
@@ -60,6 +61,11 @@ export class Game {
 		this.player.coords.setCoords(targetPosition.x, targetPosition.y);
 
 		GameEvent.dispatchEvent(new CustomEvent('rerender'));
+
+		for (const script of this.activeMap.scripts) {
+			this.executeScript(script, 'setup');
+		}
+
 		return targetWarp;
 	}
 	changeMap(direction: Direction) {
@@ -148,11 +154,13 @@ export class Game {
 			this.drawMap(currentFrameTime, this.mapHandler.down);
 		}
 
-		const entities = this.mapHandler.active.entities.sort((a, b) =>
-			a.priority !== b.priority
-				? a.priority - b.priority
-				: a.coords.getCurrent().y - b.coords.getCurrent().y
-		);
+		const entities = this.mapHandler.active.entities
+			.getEntities()
+			.sort((a, b) =>
+				a.priority !== b.priority
+					? a.priority - b.priority
+					: a.coords.getCurrent().y - b.coords.getCurrent().y
+			);
 
 		for (const entity of entities) {
 			entity.tick(currentFrameTime, this.lastFrameTime, this.canvas);
@@ -193,10 +201,6 @@ export class Game {
 	drawMap(currentFrameTime: number, map: GameMap, runScripts?: boolean) {
 		map.drawBaseLayer(this.canvas);
 		map.tick(currentFrameTime, this.canvas);
-
-		//if (runScripts) {
-		//	map.tickScripts(this);
-		//}
 	}
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;
@@ -214,40 +218,15 @@ export class Game {
 	unblockMovement() {
 		this.canPlayerMove = true;
 	}
-	async executeScript(script: Script) {
-		if (script.name === 'test') {
-			const active = this.activeMap;
-			const mom = new NPC('mom', 9, 8, 'UP', active, true);
-			this.player.coords.setCoords(8, 8);
-			active.entities.push(mom);
-			active.entities.push(new NPC('vigoroth', 4, 5, 'UP', active, true).setPath(['UP']));
-			active.entities.push(
-				new NPC('vigoroth', 1, 3, 'RIGHT', active, true).setPath([
-					'RIGHT',
-					'RIGHT',
-					'RIGHT',
-					'LEFT',
-					'LEFT',
-					'LEFT'
-				])
-			);
-			active.entities.push(new Sprite(5, 4, 'misc', 'box-open', active));
-			active.entities.push(new Sprite(5, 2, 'misc', 'box-closed', active));
-
-			await this.showMessageBox("MOM: See, A?/Isn't it nice in here, too?");
-			mom.direction = 'LEFT';
-			this.player.direction = 'RIGHT';
-			await this.showMessageBox(
-				"The mover's POKéMON do all the work/of moving us in and cleaning up after."
-			);
-			await this.showMessageBox('This is so conveinient!');
-			await this.showMessageBox('A, your room is upstairs./Go check it out dear!');
-			await this.showMessageBox('DAD bought you a new clock to mark/our move here.');
-			await this.showMessageBox("Don't forget to set it!");
-			this.player.walk('UP');
-			mom.direction = 'UP';
-		} else {
-			eval(`(async () => { ${script.script} })()`);
+	async executeScript(script: Script, type: 'setup' | 'script') {
+		const cond = eval(script.condition);
+		console.log(script.name, cond, type);
+		if (cond) {
+			if (type === 'setup') {
+				eval(`(async () => { ${script.setup} })()`);
+			} else {
+				eval(`(async () => { ${script.script} })()`);
+			}
 		}
 	}
 	async showMessageBox(text: string) {

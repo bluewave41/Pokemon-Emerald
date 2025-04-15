@@ -6,15 +6,16 @@ import { Tile, tileSchema } from '../tiles/Tile';
 import type { AnyTile } from '$lib/interfaces/AnyTile';
 import { editorSignSchema, Sign } from '../tiles/Sign';
 import { editorWarpSchema, Warp } from '../tiles/Warp';
-import type { Entity } from '../entities/Entity';
-import { Game } from '../Game';
 import type { GridPosition, Position } from '../Position';
+import { EntityList } from '../EntityList';
 
 export type Script = {
 	mapId: number;
 	name: string;
 	x: number | null;
 	y: number | null;
+	condition: string;
+	setup: string;
 	script: string;
 };
 
@@ -47,9 +48,8 @@ export interface GameMapType {
 	height: number;
 	tiles: AnyTile[][];
 	backgroundTile: number;
-	entities: Entity[];
+	entities: EntityList;
 	scripts: Script[];
-	activeScripts: Script[];
 }
 
 export class GameMap {
@@ -64,9 +64,8 @@ export class GameMap {
 	height: number;
 	tiles: AnyTile[][];
 	backgroundTile: Tile;
-	entities: Entity[] = [];
-	scripts: Script[];
-	activeScripts: Script[] = [];
+	entities: EntityList = new EntityList();
+	scripts: Script[] = [];
 
 	constructor(
 		canvas: Canvas,
@@ -129,13 +128,8 @@ export class GameMap {
 			}
 		}
 	}
-	tickScripts(game: Game) {
-		for (const script of this.activeScripts) {
-			game.executeScript(script);
-		}
-	}
 	isTileOccupied(position: Position<GridPosition>) {
-		return this.entities.some((entity) => {
+		return this.entities.getEntities().some((entity) => {
 			return position.equals(entity.coords.getCurrent());
 		});
 	}
@@ -166,6 +160,7 @@ export class GameMap {
 					buffer.readBoolean(),
 					buffer.readByte(),
 					buffer.readDirection(),
+					buffer.readBoolean() === true ? buffer.readString() : null,
 					buffer.readBoolean()
 				);
 				if (!backgroundTile && tile.id === backgroundId) {
@@ -209,6 +204,8 @@ export class GameMap {
 			scripts.push({
 				mapId: buffer.readByte(),
 				name: buffer.readString(),
+				condition: buffer.readString(),
+				setup: buffer.readString(),
 				script: buffer.readString(),
 				x: hasCoordinates ? buffer.readByte() : null,
 				y: hasCoordinates ? buffer.readByte() : null
@@ -218,7 +215,11 @@ export class GameMap {
 		return new GameMap(canvas, id, name, width, height, map, backgroundTile, scripts);
 	}
 	getTile(x: number, y: number) {
-		return this.tiles[y][x];
+		try {
+			return this.tiles[y][x];
+		} catch (e) {
+			return null;
+		}
 	}
 	toJSON() {
 		return {

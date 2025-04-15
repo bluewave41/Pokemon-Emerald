@@ -59,18 +59,19 @@ export const actions = {
 			sequence: zfd.text().optional(),
 			delay: zfd.numeric().optional(),
 			activated: zfd.text().optional(),
-			jumpDirection: zfd.text().optional()
+			jumpDirection: zfd.text().optional(),
+			script: z.string().transform((val) => (val === '' ? null : val))
 		});
 
-		const result = await schema.safeParseAsync(await request.formData());
+		const formData = await request.formData();
+
+		const result = await schema.safeParseAsync(formData);
 		if (result.error) {
-			console.log(result.error);
+			console.log('HERE', result.error);
 			return error(400);
 		}
 
-		const { tile, sequence, delay, activated, jumpDirection } = result.data;
-
-		console.log(jumpDirection);
+		const { tile, sequence, delay, activated, jumpDirection, script } = result.data;
 
 		const data: Partial<Prisma.TileUpdateInput> = {};
 		if (sequence) {
@@ -84,6 +85,9 @@ export const actions = {
 		}
 		if (jumpDirection) {
 			data.jumpDirection = jumpDirection as Direction;
+		}
+		if (script) {
+			data.script = script;
 		}
 
 		await prisma.tile.update({

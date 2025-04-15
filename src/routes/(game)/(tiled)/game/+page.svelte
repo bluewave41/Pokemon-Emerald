@@ -90,7 +90,8 @@
 		{#each game.mapHandler.active.scripts as script}
 			<button
 				onclick={() => {
-					game?.executeScript(script);
+					game?.executeScript(script, 'setup');
+					game?.executeScript(script, 'script');
 				}}
 			>
 				{script.name}

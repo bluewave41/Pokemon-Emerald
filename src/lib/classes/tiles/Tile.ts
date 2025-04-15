@@ -23,6 +23,7 @@ export interface BaseTileProps {
 	permissions: number;
 	tileSprites: HTMLImageElement | HTMLImageElement[];
 	activeSprite: number;
+	script: string;
 }
 
 export interface TileProps extends BaseTileProps {
@@ -41,6 +42,7 @@ export class Tile {
 	lastFrame: number = 0;
 	jumpable: Direction | null;
 	activatedAnimation: boolean;
+	script: string | null;
 	animationOptions: {
 		isAnimating: boolean;
 		direction: 'forwards' | 'backwards';
@@ -58,6 +60,7 @@ export class Tile {
 		overlay: boolean,
 		permissions: number,
 		jumpable: Direction | null,
+		script: string | null,
 		activatedAnimation?: boolean
 	) {
 		this.x = x;
@@ -68,14 +71,12 @@ export class Tile {
 		this.permissions = permissions;
 		this.tileSprites = SpriteBank.getTile(this.id);
 		this.jumpable = jumpable;
+		this.script = script;
 		this.activatedAnimation = activatedAnimation ?? false;
 		this.animationOptions.isAnimating = this.activatedAnimation ? false : true;
 	}
 	isPassable() {
 		return this.permissions !== 1;
-	}
-	activate(game: Game) {
-		void game;
 	}
 	isSign(): this is Sign {
 		return this.kind === 'sign';
@@ -143,5 +144,21 @@ export class Tile {
 			];
 		}
 		return this.tileSprites.images[this.animationOptions.sequenceIndex];
+	}
+	activate(game: Game) {
+		if (this.script) {
+			game.executeScript(
+				{
+					name: '',
+					x: null,
+					y: null,
+					mapId: -1,
+					condition: 'true',
+					script: this.script,
+					setup: ''
+				},
+				'script'
+			);
+		}
 	}
 }

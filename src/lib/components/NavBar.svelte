@@ -4,6 +4,7 @@
 	import Login from '$lib/icons/login.svelte';
 	import Logout from '$lib/icons/logout.svelte';
 	import Map from '$lib/icons/map.svelte';
+	import Script from '$lib/icons/script.svelte';
 
 	const links = [
 		{
@@ -40,6 +41,11 @@
 			label: 'Tiles',
 			Icon: Image,
 			href: '/tiles'
+		},
+		{
+			label: 'Scripts',
+			Icon: Script,
+			href: '/scripts'
 		}
 	];
 </script>

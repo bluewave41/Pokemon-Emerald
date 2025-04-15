@@ -46,6 +46,7 @@ model Tile {
   activatedAnimation Boolean?
   warpType           WarpType?
   jumpDirection      Direction?
+  script             String?
 
   MapTile   MapTile[]
   Maps      Map[]
@@ -125,12 +126,14 @@ model Sprite {
 }
 
 model Script {
-  id     Int    @id @default(autoincrement())
-  name   String
-  mapId  Int
-  script String
-  x      Int?
-  y      Int?
+  id        Int    @id @default(autoincrement())
+  name      String
+  mapId     Int
+  condition String @default("")
+  setup     String @default("")
+  script    String @default("")
+  x         Int?
+  y         Int?
 
   Map Map @relation(fields: [mapId], references: [id])
 }

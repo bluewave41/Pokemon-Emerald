@@ -11,7 +11,7 @@ import GameEvent from '../GameEvent';
 
 export class NPC extends Entity {
 	home: GridPosition;
-	id: BankNames;
+	bankId: BankNames;
 	moving: boolean = false;
 	counter: number = 0;
 	direction: Direction = 'DOWN';
@@ -23,18 +23,19 @@ export class NPC extends Entity {
 	pathIndex: number = 0;
 
 	constructor(
-		id: BankNames,
+		id: string,
+		bankId: BankNames,
 		x: number,
 		y: number,
 		direction: Direction,
 		map: GameMap,
 		scripted?: boolean
 	) {
-		super(x, y, map);
+		super(id, x, y, map);
 		this.direction = direction;
 		const current = this.coords.getCurrent();
 		this.home = new GridPosition(current.x, current.y);
-		this.id = id;
+		this.bankId = bankId;
 		this.scripted = scripted ?? false;
 	}
 	setPath(directions: Direction[]) {
@@ -47,12 +48,13 @@ export class NPC extends Entity {
 	tick(currentFrameTime: number, lastFrameTime: number, canvas: Canvas) {
 		const current = this.coords.getCurrent();
 		const target = this.coords.getTarget();
+
 		const direction = this.direction.toLocaleLowerCase();
 		const walkSprite = this.moving
 			? direction + (this.counter % 20 < 10 ? this.walkFrame : '')
 			: direction;
 
-		const sprite = SpriteBank.getSprite(this.id, walkSprite);
+		const sprite = SpriteBank.getSprite(this.bankId, walkSprite);
 
 		if (this.shouldDraw) {
 			const sub = this.coords.getSub();
@@ -170,7 +172,7 @@ export class NPC extends Entity {
 
 		const targetTile = target.toGrid();
 		const tile = this.map.getTile(targetTile.x, targetTile.y);
-		if (!tile.isPassable() || this.map.isTileOccupied(target.toGrid())) {
+		if (!tile.isPassable() || (!this.scripted && this.map.isTileOccupied(target.toGrid()))) {
 			return;
 		}
 

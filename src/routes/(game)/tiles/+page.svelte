@@ -35,6 +35,7 @@
 							<option value="RIGHT">Right</option>
 							<option value="DOWN">Down</option>
 						</select>
+						<textarea name="script" placeholder="Script"></textarea>
 						<input type="text" hidden name="tile" bind:value={selectedTile.id} />
 						{#if selectedTile.TileFrame.length}
 							<p>{selectedTile.TileFrame.length} frames.</p>

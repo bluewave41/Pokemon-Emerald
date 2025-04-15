@@ -28,7 +28,7 @@ export class Player extends Entity {
 	offsetY: number = 0;
 
 	constructor(x: number, y: number, game: Game, direction: Direction) {
-		super(x, y, game.mapHandler.active);
+		super('player', x, y, game.mapHandler.active);
 		this.coords = new Coords(x, y);
 		this.game = game;
 		this.coords = new Coords(x, y);
@@ -69,18 +69,20 @@ export class Player extends Entity {
 
 		if (activeKey.down && activeKey.initial) {
 			const tile = this.getFacingTile();
-			if (tile.kind === 'sign') {
-				const sign = this.game.canvas.elements.getElement('sign') as TextRect;
-				if (sign) {
-					if (sign.finished) {
-						this.game.canvas.elements.removeElement('sign');
-						this.game.unblockMovement();
+			if (tile) {
+				if (tile.kind === 'sign') {
+					const sign = this.game.canvas.elements.getElement('sign') as TextRect;
+					if (sign) {
+						if (sign.finished) {
+							this.game.canvas.elements.removeElement('sign');
+							this.game.unblockMovement();
+						}
+					} else {
+						tile.activate(this.game);
 					}
 				} else {
 					tile.activate(this.game);
 				}
-			} else {
-				tile.activate(this.game);
 			}
 		}
 
@@ -244,17 +246,23 @@ export class Player extends Entity {
 		const current = this.coords.getCurrent();
 		return this.game.mapHandler.active.getTile(current.x, current.y);
 	}
-	async handleWarp() {
+	async handleWarp(warpId?: number) {
 		this.game.blockMovement();
 
-		const currentTile = this.getCurrentTile() as Warp;
+		const currentTile = warpId
+			? (this.game.activeMap.tiles
+					.flat()
+					.find((tile) => tile.isWarp() && tile.targetWarpId === warpId) as Warp)
+			: (this.getCurrentTile() as Warp);
 
 		let tiles: Tile[] = [];
 		if (this.doesFacingTileExist()) {
 			if (currentTile.type !== 'STAIRS') {
 				const tile = this.getFacingTile();
-				tiles.push(tile);
-				tiles.push(this.game.mapHandler.active.getTile(tile.x, tile.y - 1));
+				if (tile) {
+					tiles.push(tile);
+					tiles.push(this.game.mapHandler.active.getTile(tile.x, tile.y - 1));
+				}
 			}
 		}
 
@@ -271,7 +279,6 @@ export class Player extends Entity {
 			await sleep(300);
 		} else if (isStairsWarp) {
 			await this.walk(currentTile.activateDirection);
-			this.setVisible(false);
 		}
 
 		this.game.canvas.elements.addElement(new FadeOutRect());
@@ -290,8 +297,11 @@ export class Player extends Entity {
 			tiles = [tileAboveWarp, this.game.mapHandler.active.getTile(targetWarp.x, targetWarp.y - 2)];
 		}
 
+		this.setVisible(true);
+
 		this.game.canvas.elements.removeElement('fadedOut');
 		this.game.canvas.elements.addElement(new FadeInRect());
+		await GameEvent.waitForOnce('fadedIn');
 
 		if (tiles.length !== 0) {
 			this.setVisible(false);
@@ -308,10 +318,14 @@ export class Player extends Entity {
 			this.direction = getOppositeDirection(this.direction);
 		}
 
-		this.setVisible(true);
-
 		if (isStairsWarp) {
-			this.walk(getOppositeDirection(currentTile.activateDirection));
+			await this.walk(getOppositeDirection(currentTile.activateDirection));
+		}
+
+		// map has been changed lets try all the scripts that aren't attached to a tile...
+		const scripts = this.game.mapHandler.active.scripts.filter((script) => !script.x && !script.y);
+		for (const script of scripts) {
+			this.game.executeScript(script, 'script');
 		}
 
 		this.game.unblockMovement();
@@ -410,7 +424,18 @@ export class Player extends Entity {
 				target.x / Game.getAdjustedTileSize(),
 				target.y / Game.getAdjustedTileSize()
 			);
+
+			this.checkForScripts();
 			GameEvent.dispatchEvent(new CustomEvent('movementFinished'));
+		}
+	}
+	checkForScripts() {
+		const current = this.coords.getCurrent();
+		const script = this.game.mapHandler.active.scripts.find(
+			(script) => script.x === current.x && script.y === current.y
+		);
+		if (script) {
+			this.game.executeScript(script, 'script');
 		}
 	}
 }

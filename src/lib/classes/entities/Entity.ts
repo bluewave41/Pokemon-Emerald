@@ -3,12 +3,14 @@ import { Coords } from '../Coords';
 import type { GameMap } from '../maps/GameMap';
 
 export class Entity {
+	id: string;
 	map: GameMap;
 	coords: Coords;
 	priority: number = 0;
 	visible: boolean = true;
 
-	constructor(x: number, y: number, map: GameMap) {
+	constructor(id: string, x: number, y: number, map: GameMap) {
+		this.id = id;
 		this.coords = new Coords(x, y);
 		this.map = map;
 	}

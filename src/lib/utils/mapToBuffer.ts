@@ -37,6 +37,10 @@ export const mapToBuffer = async (name: MapNames) => {
 		buffer.writeBoolean(tile.tile.overlay);
 		buffer.writeByte(tile.permissions);
 		buffer.writeDirection(tile.tile.jumpDirection);
+		buffer.writeBoolean(tile.tile.script !== null);
+		if (tile.tile.script) {
+			buffer.writeString(tile.tile.script);
+		}
 		buffer.writeBoolean(tile.tile.activatedAnimation ?? false);
 	}
 
@@ -67,6 +71,8 @@ export const mapToBuffer = async (name: MapNames) => {
 		buffer.writeBoolean(script.x !== null && script.y !== null);
 		buffer.writeByte(script.mapId);
 		buffer.writeString(script.name);
+		buffer.writeString(script.condition);
+		buffer.writeString(script.setup);
 		buffer.writeString(script.script);
 		if (script.x && script.y) {
 			buffer.writeByte(script.x);
