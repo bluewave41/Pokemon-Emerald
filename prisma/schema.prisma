@@ -44,6 +44,7 @@ model Tile {
   sequence           Int[]      @default([])
   delay              Int?
   activatedAnimation Boolean?
+  repeating          Boolean?
   warpType           WarpType?
   jumpDirection      Direction?
   script             String?

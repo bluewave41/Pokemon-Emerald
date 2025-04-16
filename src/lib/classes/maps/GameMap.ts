@@ -161,6 +161,7 @@ export class GameMap {
 					buffer.readByte(),
 					buffer.readDirection(),
 					buffer.readBoolean() === true ? buffer.readString() : null,
+					buffer.readBoolean(),
 					buffer.readBoolean()
 				);
 				if (!backgroundTile && tile.id === backgroundId) {

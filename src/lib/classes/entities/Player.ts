@@ -17,7 +17,6 @@ import { GridPosition, ScreenPosition } from '../Position';
 
 export class Player extends Entity {
 	coords: Coords;
-	game: Game;
 	direction: Direction;
 	moving: boolean = false;
 	jumping: boolean = false;
@@ -28,7 +27,7 @@ export class Player extends Entity {
 	offsetY: number = 0;
 
 	constructor(x: number, y: number, game: Game, direction: Direction) {
-		super('player', x, y, game.mapHandler.active);
+		super('player', x, y, game);
 		this.coords = new Coords(x, y);
 		this.game = game;
 		this.coords = new Coords(x, y);
@@ -80,13 +79,13 @@ export class Player extends Entity {
 					} else {
 						tile.activate(this.game);
 					}
-				} else {
+				} else if (activeKey.initial) {
 					tile.activate(this.game);
 				}
 			}
 		}
 
-		if (!this.moving && !this.jumping) {
+		if (!this.moving && !this.jumping && !this.game.frozen) {
 			this.updateDirection();
 		} else if (!target.equals(sub)) {
 			this.move(currentFrameTime, lastFrameTime);
@@ -101,7 +100,7 @@ export class Player extends Entity {
 		}
 	}
 	updateDirection() {
-		if (!this.game.canPlayerMove) {
+		if (this.game.frozen) {
 			return;
 		}
 		const current = this.coords.getCurrent();
@@ -325,13 +324,13 @@ export class Player extends Entity {
 			await this.walk(getOppositeDirection(currentTile.activateDirection));
 		}
 
+		this.game.unblockMovement();
+
 		// map has been changed lets try all the scripts that aren't attached to a tile...
 		const scripts = this.game.mapHandler.active.scripts.filter((script) => !script.x && !script.y);
 		for (const script of scripts) {
 			this.game.executeScript(script, 'script');
 		}
-
-		this.game.unblockMovement();
 	}
 	async walk(direction: Direction) {
 		const sub = this.coords.getSub();

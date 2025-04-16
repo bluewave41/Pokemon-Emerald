@@ -118,7 +118,8 @@ export class EditorGameMap {
 					// unused script
 					buffer.readString();
 				}
-				buffer.readBoolean(); //unused animation byte
+				buffer.readBoolean(); // unused animation byte
+				buffer.readBoolean(); // unused animation byte
 
 				if (!backgroundTile && tile.id === backgroundId) {
 					backgroundTile = tile;

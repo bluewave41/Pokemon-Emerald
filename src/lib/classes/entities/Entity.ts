@@ -1,18 +1,18 @@
 import type { Canvas } from '../Canvas';
 import { Coords } from '../Coords';
-import type { GameMap } from '../maps/GameMap';
+import type { Game } from '../Game';
 
 export class Entity {
 	id: string;
-	map: GameMap;
+	game: Game;
 	coords: Coords;
 	priority: number = 0;
 	visible: boolean = true;
 
-	constructor(id: string, x: number, y: number, map: GameMap) {
+	constructor(id: string, x: number, y: number, game: Game) {
 		this.id = id;
 		this.coords = new Coords(x, y);
-		this.map = map;
+		this.game = game;
 	}
 	setVisible(visible: boolean) {
 		this.visible = visible;

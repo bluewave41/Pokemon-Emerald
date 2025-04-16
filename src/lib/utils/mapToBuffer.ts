@@ -42,6 +42,7 @@ export const mapToBuffer = async (name: MapNames) => {
 			buffer.writeString(tile.tile.script);
 		}
 		buffer.writeBoolean(tile.tile.activatedAnimation ?? false);
+		buffer.writeBoolean(tile.tile.repeating ?? false);
 	}
 
 	buffer.writeByte(map.Events.length);

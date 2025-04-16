@@ -26,7 +26,7 @@ export class Game {
 	static tileSize: number = 16;
 	static zoom: number = 2;
 	lastFrameTime: number = 0;
-	canPlayerMove: boolean = true;
+	frozen: boolean = false;
 
 	constructor(canvas: Canvas, map: GameMap) {
 		this.mapHandler = new MapHandler(map);
@@ -35,9 +35,18 @@ export class Game {
 		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 		this.mapHandler.active.entities.addEntity(this.player);
-		this.mapHandler.active.entities.addEntity(
-			new NPC('npc-fat', 'npc-fat', 14, 11, 'DOWN', this.mapHandler.active)
-		);
+		//this.mapHandler.active.entities.addEntity(
+		//	new NPC('npc-fat', 'npc-fat', 14, 11, 'DOWN', this.mapHandler.active)
+		//);
+		this.tickScripts();
+	}
+	async tickScripts() {
+		GameEvent.attach('flagSet', () => {
+			for (const script of this.activeMap.scripts) {
+				this.executeScript(script, 'setup');
+				this.executeScript(script, 'script');
+			}
+		});
 	}
 	async loadMapById(mapId: number, warpId: number, warpType: WarpType) {
 		const map = await this.mapHandler.fetchMapById(mapId);
@@ -213,19 +222,24 @@ export class Game {
 	}
 	blockMovement() {
 		this.player.moving = false;
-		this.canPlayerMove = false;
+		this.frozen = true;
 	}
 	unblockMovement() {
-		this.canPlayerMove = true;
+		this.frozen = false;
 	}
 	async executeScript(script: Script, type: 'setup' | 'script') {
 		const cond = eval(script.condition);
-		console.log(script.name, cond, type);
 		if (cond) {
 			if (type === 'setup') {
+				this.blockMovement();
 				eval(`(async () => { ${script.setup} })()`);
 			} else {
-				eval(`(async () => { ${script.script} })()`);
+				this.blockMovement();
+				const val = await eval(`(async () => { ${script.script} })()`);
+				this.unblockMovement();
+				if (val === 1) {
+					GameEvent.dispatchEvent(new CustomEvent('flagSet'));
+				}
 			}
 		}
 	}

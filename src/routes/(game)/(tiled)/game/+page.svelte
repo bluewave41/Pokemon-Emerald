@@ -69,13 +69,18 @@
 		const input = e.target as HTMLInputElement;
 		if (e.key === 'Enter') {
 			try {
-				game?.executeScript({
-					name: 'console',
-					mapId: game.mapHandler.active.id,
-					script: input.value,
-					x: null,
-					y: null
-				});
+				game?.executeScript(
+					{
+						name: 'console',
+						mapId: game.mapHandler.active.id,
+						condition: 'true',
+						setup: '',
+						script: input.value,
+						x: null,
+						y: null
+					},
+					'script'
+				);
 			} catch (e) {
 				console.log(e);
 			} finally {

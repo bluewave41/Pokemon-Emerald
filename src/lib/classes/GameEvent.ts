@@ -1,20 +1,27 @@
-import type { BlockEvents } from './blocks/Block';
+export type DispatchedEvent =
+	| 'movementFinished'
+	| 'animationComplete'
+	| 'fadedOut'
+	| 'fadedIn'
+	| 'continueText'
+	| 'npcMovementFinished'
+	| 'flagSet';
 
 class InternalGameEvent extends EventTarget {
-	once(event: BlockEvents, callback: () => void) {
+	once(event: DispatchedEvent, callback: () => void) {
 		const handler = (e: any) => {
 			callback(e);
 			GameEvent.removeEventListener(event, handler);
 		};
 		GameEvent.addEventListener(event, handler);
 	}
-	attach(event: BlockEvents, callback: () => void) {
+	attach(event: DispatchedEvent, callback: () => void) {
 		const handler = (e: any) => {
 			callback(e);
 		};
 		GameEvent.addEventListener(event, handler);
 	}
-	waitForOnce(event: BlockEvents): Promise<any> {
+	waitForOnce(event: DispatchedEvent): Promise<any> {
 		return new Promise((resolve) => {
 			const handler = (e: any) => {
 				resolve(e);

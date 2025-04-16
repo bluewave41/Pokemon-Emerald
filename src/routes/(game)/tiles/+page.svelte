@@ -35,7 +35,8 @@
 							<option value="RIGHT">Right</option>
 							<option value="DOWN">Down</option>
 						</select>
-						<textarea name="script" placeholder="Script"></textarea>
+						<textarea name="script" placeholder="Script" bind:value={selectedTile.script}
+						></textarea>
 						<input type="text" hidden name="tile" bind:value={selectedTile.id} />
 						{#if selectedTile.TileFrame.length}
 							<p>{selectedTile.TileFrame.length} frames.</p>
@@ -52,13 +53,16 @@
 								<input type="delay" name="delay" bind:value={selectedTile.delay} />
 								<div>
 									<label for="activated">Activated</label>
-									<input type="checkbox" bind:checked={selectedTile.activatedAnimation} />
+									<input
+										name="activated"
+										type="checkbox"
+										bind:checked={selectedTile.activatedAnimation}
+									/>
 								</div>
-								<input
-									type="hidden"
-									name="activated"
-									bind:value={selectedTile.activatedAnimation}
-								/>
+								<div>
+									<label for="repeating">Repeating</label>
+									<input name="repeating" type="checkbox" bind:checked={selectedTile.repeating} />
+								</div>
 							</div>
 						{/if}
 						<button type="submit">Update</button>

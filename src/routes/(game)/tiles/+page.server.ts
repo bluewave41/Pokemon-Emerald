@@ -59,6 +59,7 @@ export const actions = {
 			sequence: zfd.text().optional(),
 			delay: zfd.numeric().optional(),
 			activated: zfd.text().optional(),
+			repeating: zfd.text().optional(),
 			jumpDirection: zfd.text().optional(),
 			script: z.string().transform((val) => (val === '' ? null : val))
 		});
@@ -71,7 +72,7 @@ export const actions = {
 			return error(400);
 		}
 
-		const { tile, sequence, delay, activated, jumpDirection, script } = result.data;
+		const { tile, sequence, delay, repeating, activated, jumpDirection, script } = result.data;
 
 		const data: Partial<Prisma.TileUpdateInput> = {};
 		if (sequence) {
@@ -80,9 +81,8 @@ export const actions = {
 		if (delay) {
 			data.delay = delay;
 		}
-		if (activated) {
-			data.activatedAnimation = activated === 'true';
-		}
+		data.repeating = repeating ? true : false;
+		data.activatedAnimation = activated ? true : false;
 		if (jumpDirection) {
 			data.jumpDirection = jumpDirection as Direction;
 		}

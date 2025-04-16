@@ -6,7 +6,6 @@ import type { BankNames } from '$lib/interfaces/BankNames';
 import { Game } from '../Game';
 import { getRandomDirection } from '$lib/utils/getRandomDirection';
 import { GridPosition, ScreenPosition } from '../Position';
-import type { GameMap } from '../maps/GameMap';
 import GameEvent from '../GameEvent';
 
 export class NPC extends Entity {
@@ -28,10 +27,10 @@ export class NPC extends Entity {
 		x: number,
 		y: number,
 		direction: Direction,
-		map: GameMap,
+		game: Game,
 		scripted?: boolean
 	) {
-		super(id, x, y, map);
+		super(id, x, y, game);
 		this.direction = direction;
 		const current = this.coords.getCurrent();
 		this.home = new GridPosition(current.x, current.y);
@@ -46,6 +45,7 @@ export class NPC extends Entity {
 		this.shouldDraw = visible;
 	}
 	tick(currentFrameTime: number, lastFrameTime: number, canvas: Canvas) {
+		const active = this.game.activeMap;
 		const current = this.coords.getCurrent();
 		const target = this.coords.getTarget();
 
@@ -63,8 +63,8 @@ export class NPC extends Entity {
 
 			canvas.drawSprite(
 				sprite,
-				Math.round(sub.x) + this.map.absoluteX * Game.getAdjustedTileSize(),
-				Math.round(sub.y) + this.map.absoluteY * Game.getAdjustedTileSize(),
+				Math.round(sub.x) + active.absoluteX * Game.getAdjustedTileSize(),
+				Math.round(sub.y) + active.absoluteY * Game.getAdjustedTileSize(),
 				xOffset,
 				yOffset
 			);
@@ -102,7 +102,7 @@ export class NPC extends Entity {
 				const moveTarget = moveTable[newDirection];
 				// keep contained within home area
 				if (
-					!this.map.isTileOccupied(moveTarget.pos) &&
+					!this.game.activeMap.isTileOccupied(moveTarget.pos) &&
 					moveTarget.pos.x >= this.home.x - 2 &&
 					moveTarget.pos.x <= this.home.x + 2 &&
 					moveTarget.pos.y >= this.home.y - 2 &&
@@ -162,7 +162,7 @@ export class NPC extends Entity {
 	}
 	move(currentFrameTime: number, lastFrameTime: number) {
 		const target = this.coords.getTarget();
-		if (!this.moving) {
+		if (!this.moving || (this.game.frozen && !this.scripted)) {
 			return;
 		}
 
@@ -171,8 +171,11 @@ export class NPC extends Entity {
 		this.counter++;
 
 		const targetTile = target.toGrid();
-		const tile = this.map.getTile(targetTile.x, targetTile.y);
-		if (!tile.isPassable() || (!this.scripted && this.map.isTileOccupied(target.toGrid()))) {
+		const tile = this.game.activeMap.getTile(targetTile.x, targetTile.y);
+		if (
+			!tile.isPassable() ||
+			(!this.scripted && this.game.activeMap.isTileOccupied(target.toGrid()))
+		) {
 			return;
 		}
 
