@@ -56,7 +56,6 @@ class InternalSpriteBank {
 				(srcImage) =>
 					new Promise<void>((resolve) => {
 						if (this.tiles[srcImage.id]) {
-							// already loaded
 							resolve();
 						}
 
@@ -111,11 +110,12 @@ class InternalSpriteBank {
 		return this.tiles[id];
 	}
 	getSprite(bank: BankNames, sprite: string) {
-		try {
-			return this.sprites[bank][sprite];
-		} catch (e) {
-			console.log(`Failed to get sprite: ${bank} ${sprite}`);
+		const result = this.sprites[bank]?.[sprite];
+		if (!result) {
+			throw new Error(`Sprite not found: ${bank}/${sprite}`);
 		}
+
+		return result;
 	}
 }
 

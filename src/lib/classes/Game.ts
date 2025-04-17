@@ -1,13 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { Canvas } from './Canvas';
 import { Player } from './entities/Player';
 import { GameMap, type Script } from './maps/GameMap';
 import KeyHandler from './KeyHandler';
 import { MapHandler } from './maps/MapHandler';
 import { WarpType, type Direction } from '@prisma/client';
-import { NPC } from './entities/NPC';
 import GameEvent from './GameEvent';
 import { TextRect } from './ui/TextRect';
-import type { Warp } from './tiles/Warp';
 import { adjustPositionForDirection } from '$lib/utils/adjustPositionForDirection';
 import { Position, ScreenPosition } from './Position';
 // these need to be included in the global state so scripts can use them
@@ -17,6 +17,8 @@ import { Sprite } from './entities/Sprite';
 import { FadeOutRect } from './ui/FadeOutRect';
 import { sleep } from '$lib/utils/sleep';
 import FlagSet from './FlagSet';
+import { NPC } from './entities/NPC';
+import type { Warp } from './tiles/Warp';
 
 export class Game {
 	mapHandler: MapHandler;
@@ -35,9 +37,6 @@ export class Game {
 		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 		this.mapHandler.active.entities.addEntity(this.player);
-		//this.mapHandler.active.entities.addEntity(
-		//	new NPC('npc-fat', 'npc-fat', 14, 11, 'DOWN', this.mapHandler.active)
-		//);
 		this.tickScripts();
 	}
 	async tickScripts() {
@@ -51,9 +50,9 @@ export class Game {
 	async loadMapById(mapId: number, warpId: number, warpType: WarpType) {
 		const map = await this.mapHandler.fetchMapById(mapId);
 
-		const targetWarp: Warp = map.tiles
+		const targetWarp = map.tiles
 			.flat()
-			.find((tile) => tile.isWarp() && tile.targetWarpId === warpId);
+			.find((tile) => tile.isWarp() && tile.targetWarpId === warpId) as Warp;
 
 		if (!targetWarp) {
 			throw new Error(`Couldn't find target warp.`);

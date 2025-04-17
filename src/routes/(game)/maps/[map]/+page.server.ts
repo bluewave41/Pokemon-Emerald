@@ -109,7 +109,7 @@ export const actions = {
 
 		const tiles = await prisma.mapTile.findMany({
 			select: {
-				tile: {
+				Tile: {
 					select: {
 						id: true,
 						original: true
@@ -130,7 +130,7 @@ export const actions = {
 			}
 		});
 
-		const updates = tiles.map(async ({ tile }) => {
+		const updates = tiles.map(async ({ Tile: tile }) => {
 			const processedData = await removeImageBackground(backgroundImage.original, tile.original);
 
 			return prisma.tile.update({
@@ -144,7 +144,7 @@ export const actions = {
 		await Promise.all(updates);
 
 		// update tile overlays
-		const uniqueTiles = Array.from(new Set(tiles.map((tile) => tile.tile.id)));
+		const uniqueTiles = Array.from(new Set(tiles.map((tile) => tile.Tile.id)));
 
 		// reset them all
 		await prisma.tile.updateMany({

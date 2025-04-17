@@ -6,7 +6,7 @@ export const mapToBuffer = async (name: MapNames) => {
 	const map = await prisma.map.findFirst({
 		include: {
 			MapTile: {
-				include: { tile: true },
+				include: { Tile: true },
 				orderBy: { id: 'asc' }
 			},
 			Events: {
@@ -34,15 +34,15 @@ export const mapToBuffer = async (name: MapNames) => {
 	//write map data
 	for (const tile of map.MapTile) {
 		buffer.writeByte(tile.tileId);
-		buffer.writeBoolean(tile.tile.overlay);
+		buffer.writeBoolean(tile.Tile.overlay);
 		buffer.writeByte(tile.permissions);
-		buffer.writeDirection(tile.tile.jumpDirection);
-		buffer.writeBoolean(tile.tile.script !== null);
-		if (tile.tile.script) {
-			buffer.writeString(tile.tile.script);
+		buffer.writeDirection(tile.Tile.jumpDirection);
+		buffer.writeBoolean(tile.Tile.script !== null);
+		if (tile.Tile.script) {
+			buffer.writeString(tile.Tile.script);
 		}
-		buffer.writeBoolean(tile.tile.activatedAnimation ?? false);
-		buffer.writeBoolean(tile.tile.repeating ?? false);
+		buffer.writeBoolean(tile.Tile.activatedAnimation ?? false);
+		buffer.writeBoolean(tile.Tile.repeating ?? false);
 	}
 
 	buffer.writeByte(map.Events.length);

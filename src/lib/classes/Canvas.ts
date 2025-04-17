@@ -132,12 +132,13 @@ export class Canvas {
 		this.context.translate(rect.x, rect.y);
 	}
 	showMessageBox(text: string, startFrameTime: number, currentFrameTime: number) {
+		text = text.replaceAll('{player}', 'A'); //replace placeholder with player name
 		this.context.font = '24pt "pokemon"';
-		//const delay = 50; // Adjust delay to control the speed of the scrolling text (in milliseconds).
+		//const delay = 50;
 		const delay = 10;
-		const elapsedTime = currentFrameTime - startFrameTime; // Time elapsed since the message started
-		const lengthToShow = Math.floor(elapsedTime / delay); // Determine how many characters to show based on elapsed time
-		const textToShow = text.slice(0, lengthToShow); // Slice the message up to the calculated length
+		const elapsedTime = currentFrameTime - startFrameTime;
+		const lengthToShow = Math.floor(elapsedTime / delay);
+		const textToShow = text.slice(0, lengthToShow);
 
 		if (lengthToShow >= text.length) {
 			// this runs way too many times
@@ -146,7 +147,7 @@ export class Canvas {
 
 		const pieces = textToShow.split('/');
 
-		const metrics = this.context.measureText(pieces.at(-1));
+		const metrics = this.context.measureText(pieces[pieces.length - 1]);
 
 		const gap = 5;
 		const size = 80;

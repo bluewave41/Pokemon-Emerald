@@ -1,5 +1,5 @@
 - Fat NPC size is wrong need to remake sprites
 - Player can walk inside vigoroth walk cycle
-- Mom drawn too high in test script
+- Mom drawn too high
 - Scripts assume name is "A"
 - Scrolling textbox supprort missing

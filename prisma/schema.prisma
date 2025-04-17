@@ -32,6 +32,7 @@ model Map {
   Events         Event[]
   Warp           Warp[]
   Scripts        Script[]
+  Entity         Entity[]
 }
 
 model Tile {
@@ -59,7 +60,7 @@ model TileFrame {
   tileId Int
   data   String @unique
 
-  tile Tile @relation(fields: [tileId], references: [id], onDelete: Cascade)
+  Tile Tile @relation(fields: [tileId], references: [id], onDelete: Cascade)
 }
 
 model MapTile {
@@ -70,8 +71,8 @@ model MapTile {
   y           Int
   permissions Int
 
-  map  Map  @relation(fields: [mapId], references: [id], onDelete: Cascade)
-  tile Tile @relation(fields: [tileId], references: [id], onDelete: Cascade)
+  Map  Map  @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  Tile Tile @relation(fields: [tileId], references: [id], onDelete: Cascade)
 
   @@unique([mapId, x, y])
 }
@@ -83,7 +84,7 @@ model Event {
   x     Int
   y     Int
 
-  map  Map   @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  Map  Map   @relation(fields: [mapId], references: [id], onDelete: Cascade)
   Sign Sign?
   Warp Warp?
 }
@@ -93,7 +94,7 @@ model Sign {
   eventId Int    @unique
   text    String
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  Event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model Warp {
@@ -104,15 +105,16 @@ model Warp {
   type      WarpType
   direction Direction
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  map   Map?  @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  Event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  Map   Map?  @relation(fields: [mapId], references: [id], onDelete: Cascade)
 }
 
 model SpriteBank {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  sprite Sprite[]
+  Sprite Sprite[]
+  Entity Entity[]
 }
 
 model Sprite {
@@ -121,7 +123,7 @@ model Sprite {
   name   String
   data   String
 
-  bank SpriteBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  Bank SpriteBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
 
   @@unique([bankId, name])
 }
@@ -137,6 +139,17 @@ model Script {
   y         Int?
 
   Map Map @relation(fields: [mapId], references: [id])
+}
+
+model Entity {
+  id    Int @id @default(autoincrement())
+  mapId Int
+  x     Int
+  y     Int
+  bank  Int
+
+  Map    Map        @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  Sprite SpriteBank @relation(fields: [bank], references: [id], onDelete: Cascade)
 }
 
 enum EventType {

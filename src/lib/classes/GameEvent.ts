@@ -1,3 +1,14 @@
+type GameEventMap = {
+	movementFinished: object;
+	animationComplete: object;
+	fadedOut: object;
+	fadedIn: object;
+	continueText: object;
+	npcMovementFinished: object;
+	flagSet: object;
+	signComplete: object;
+};
+
 export type DispatchedEvent =
 	| 'movementFinished'
 	| 'animationComplete'
@@ -5,30 +16,38 @@ export type DispatchedEvent =
 	| 'fadedIn'
 	| 'continueText'
 	| 'npcMovementFinished'
-	| 'flagSet';
+	| 'flagSet'
+	| 'signComplete';
+
+type GameEventName = keyof GameEventMap;
 
 class InternalGameEvent extends EventTarget {
-	once(event: DispatchedEvent, callback: () => void) {
-		const handler = (e: any) => {
-			callback(e);
-			GameEvent.removeEventListener(event, handler);
-		};
-		GameEvent.addEventListener(event, handler);
+	dispatch<K extends GameEventName>(type: K, detail: GameEventMap[K]) {
+		this.dispatchEvent(new CustomEvent(type, { detail }));
 	}
-	attach(event: DispatchedEvent, callback: () => void) {
-		const handler = (e: any) => {
-			callback(e);
+	once<K extends GameEventName>(type: K, callback: (event: CustomEvent<GameEventMap[K]>) => void) {
+		const handler = (e: Event) => {
+			callback(e as CustomEvent<GameEventMap[K]>);
+			GameEvent.removeEventListener(type, handler);
 		};
-		GameEvent.addEventListener(event, handler);
+		GameEvent.addEventListener(type, handler);
+
+		this.addEventListener(type, callback as EventListener);
 	}
-	waitForOnce(event: DispatchedEvent): Promise<any> {
+	attach<K extends GameEventName>(
+		type: K,
+		callback: (event: CustomEvent<GameEventMap[K]>) => void
+	) {
+		this.addEventListener(type, callback as EventListener);
+	}
+	waitForOnce<K extends GameEventName>(type: K) {
 		return new Promise((resolve) => {
-			const handler = (e: any) => {
+			const handler = (e: Event) => {
 				resolve(e);
-				this.removeEventListener(event, handler);
+				this.removeEventListener(type, handler);
 			};
 
-			this.addEventListener(event, handler);
+			this.addEventListener(type, handler);
 		});
 	}
 }

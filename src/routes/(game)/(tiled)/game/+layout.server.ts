@@ -6,7 +6,7 @@ export const load = async () => {
 		distinct: ['tileId'],
 		select: {
 			tileId: true,
-			tile: {
+			Tile: {
 				select: {
 					overlay: true,
 					data: true,
@@ -32,16 +32,16 @@ export const load = async () => {
 
 	for (const tile of images) {
 		imageBuffer.writeShort(tile.tileId);
-		imageBuffer.writeString(tile.tile.data);
-		imageBuffer.writeBoolean(tile.tile.animated);
-		if (tile.tile.animated && tile.tile.delay) {
-			imageBuffer.writeShort(tile.tile.delay);
-			imageBuffer.writeByte(tile.tile.sequence.length);
-			for (const sequence of tile.tile.sequence) {
+		imageBuffer.writeString(tile.Tile.data);
+		imageBuffer.writeBoolean(tile.Tile.animated);
+		if (tile.Tile.animated && tile.Tile.delay) {
+			imageBuffer.writeShort(tile.Tile.delay);
+			imageBuffer.writeByte(tile.Tile.sequence.length);
+			for (const sequence of tile.Tile.sequence) {
 				imageBuffer.writeByte(sequence);
 			}
-			imageBuffer.writeByte(tile.tile.TileFrame.length);
-			for (const frame of tile.tile.TileFrame) {
+			imageBuffer.writeByte(tile.Tile.TileFrame.length);
+			for (const frame of tile.Tile.TileFrame) {
 				imageBuffer.writeString(frame.data);
 			}
 		}

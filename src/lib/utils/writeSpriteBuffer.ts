@@ -5,7 +5,7 @@ import prisma from '$lib/prisma';
 export const writeSpriteBuffer = async (bank: BankNames) => {
 	const sprites = await prisma.sprite.findMany({
 		where: {
-			bank: {
+			Bank: {
 				name: bank
 			}
 		}

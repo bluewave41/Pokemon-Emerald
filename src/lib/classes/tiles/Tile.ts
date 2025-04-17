@@ -111,6 +111,14 @@ export class Tile {
 			repeating: this.animationOptions.repeating
 		};
 	}
+	stopAnimating() {
+		this.animationOptions = {
+			isAnimating: false,
+			direction: 'forwards',
+			sequenceIndex: 0,
+			repeating: this.animationOptions.repeating
+		};
+	}
 	tick(currentFrameTime: number) {
 		if ((this.tileSprites.delay && !this.activatedAnimation) || this.animationOptions.isAnimating) {
 			if (this.lastFrame + this.tileSprites.delay < currentFrameTime) {
