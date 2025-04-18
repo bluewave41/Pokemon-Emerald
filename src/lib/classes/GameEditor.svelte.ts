@@ -1,17 +1,17 @@
 import { Canvas } from './Canvas';
 import { Buffer } from 'buffer';
 import { EditorGameMap } from './maps/EditorGameMap.svelte';
-import type { EditorTile } from './tiles/EditorTile';
 import { Game } from './Game';
+import type { Tile } from './tiles/Tile';
 
 export type Tabs = 'Tiles' | 'Permissions' | 'Events' | 'Entities';
 
 interface Options {
 	activeTab: Tabs;
-	activeTile: EditorTile | null;
+	activeTile: Tile | null;
 	activeColor: number;
-	backgroundTile: EditorTile | null;
-	selectedTile: EditorTile | null;
+	backgroundTile: Tile | null;
+	selectedTile: Tile | null;
 	selectedEventIndex: number;
 }
 
@@ -63,7 +63,10 @@ export class GameEditor {
 		this.map.tick(this.#canvas, 0, 0);
 		this.map.drawTopLayer(this.#canvas, 0, 0);
 
-		if (this.options.selectedTile) {
+		if (
+			(this.options.activeTab === 'Events' || this.options.activeTab === 'Entities') &&
+			this.options.selectedTile
+		) {
 			this.#canvas.drawBorder(this.options.selectedTile.x, this.options.selectedTile.y, {
 				color: 'blue'
 			});

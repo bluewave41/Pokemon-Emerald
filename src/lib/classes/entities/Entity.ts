@@ -28,3 +28,6 @@ export class Entity {
 		throw new Error('Method `tick` must be implemented in subclass.');
 	}
 }
+
+export type EntityType = typeof Entity;
+export type EditorEntityType = Partial<EntityType>;

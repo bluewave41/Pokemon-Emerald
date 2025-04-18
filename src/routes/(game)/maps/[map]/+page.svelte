@@ -8,9 +8,9 @@
 	import SpriteBank from '$lib/classes/SpriteBank.js';
 	import { GameEditor, type Tabs } from '$lib/classes/GameEditor.svelte.js';
 	import { createWarp } from '$lib/classes/tiles/Warp.js';
-	import { EditorTile } from '$lib/classes/tiles/EditorTile.js';
 	import type { TileEvents } from '$lib/interfaces/Events.js';
 	import { createSign } from '$lib/classes/tiles/Sign.js';
+	import type { Tile } from '$lib/classes/tiles/Tile.js';
 
 	let { data }: PageProps = $props();
 
@@ -33,7 +33,7 @@
 		2: 'green'
 	};
 
-	const hasEvents = (tile: EditorTile) => {
+	const hasEvents = (tile: Tile) => {
 		return editor.map.events.some((event) => event.x === tile.x && event.y === tile.y);
 	};
 

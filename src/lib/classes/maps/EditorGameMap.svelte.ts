@@ -2,10 +2,9 @@ import { BufferHelper } from '$lib/BufferHelper';
 import { mapNamesSchema, type MapNames } from '$lib/interfaces/MapNames';
 import { z } from 'zod';
 import type { Canvas } from '../Canvas';
-import { tileSchema } from '../tiles/Tile';
+import { Tile, tileSchema } from '../tiles/Tile';
 import { signSchema, type EditorSignProps } from '../tiles/Sign';
 import { warpSchema, type EditorWarpProps } from '../tiles/Warp';
-import { EditorTile } from '../tiles/EditorTile';
 import type { MapEvents } from '$lib/interfaces/Events';
 import type { Script } from './GameMap';
 import type { Entity } from '../entities/Entity';
@@ -28,8 +27,8 @@ export interface EditorGameMapType {
 	name: MapNames;
 	width: number;
 	height: number;
-	tiles: EditorTile[][];
-	backgroundTile: EditorTile | null;
+	tiles: Tile[][];
+	backgroundTile: Tile | null;
 	events: MapEvents[];
 	entities: Entity[];
 }
@@ -39,8 +38,8 @@ export class EditorGameMap {
 	name: MapNames;
 	width: number;
 	height: number;
-	tiles: EditorTile[][];
-	backgroundTile: EditorTile | null = null;
+	tiles: Tile[][];
+	backgroundTile: Tile | null = null;
 	events: MapEvents[] = $state([]);
 	scripts: Script[] = $state([]);
 	entities: Entity[] = $state([]);
@@ -50,8 +49,8 @@ export class EditorGameMap {
 		name: MapNames,
 		width: number,
 		height: number,
-		tiles: EditorTile[][],
-		backgroundTile: EditorTile | null,
+		tiles: Tile[][],
+		backgroundTile: Tile | null,
 		events: MapEvents[],
 		scripts: Script[]
 	) {
@@ -102,19 +101,22 @@ export class EditorGameMap {
 		const height = buffer.readByte();
 		const backgroundId = buffer.readByte();
 
-		let backgroundTile: EditorTile | null = null;
+		let backgroundTile: Tile | null = null;
 
-		const map: EditorTile[][] = [];
+		const map: Tile[][] = [];
 		for (let y = 0; y < height; y++) {
 			const row = [];
 			for (let x = 0; x < width; x++) {
-				const tile = new EditorTile(
+				const tile = new Tile(
 					x,
 					y,
 					buffer.readByte(),
 					buffer.readBoolean(),
 					buffer.readByte(),
-					buffer.readBoolean()
+					buffer.readBoolean(),
+					null,
+					false,
+					false
 				);
 				if (buffer.readBoolean()) {
 					// unused script
