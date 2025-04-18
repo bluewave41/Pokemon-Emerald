@@ -6,6 +6,8 @@ import SpriteBank from './SpriteBank';
 
 interface DrawOptions {
 	color?: string;
+	opacity?: number;
+	size?: number;
 }
 
 export class Canvas {
@@ -25,7 +27,8 @@ export class Canvas {
 		this.context.resetTransform();
 		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
-	drawText(text: string, x: number, y: number) {
+	drawText(text: string, x: number, y: number, options: DrawOptions = {}) {
+		this.handleOptions(options);
 		this.context.fillStyle = '#303030';
 		const metrics = this.context.measureText(text);
 		const fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
@@ -36,11 +39,11 @@ export class Canvas {
 		this.context.drawImage(image, rect.x, rect.y, rect.width, rect.height);
 	}
 	drawOverlay(x: number, y: number, options: DrawOptions = {}) {
-		if (options.color) {
-			this.context.fillStyle = options?.color;
-		}
+		this.context.save();
+		this.handleOptions(options);
 		const rect = new AdjustedRect(x, y);
 		this.context.fillRect(rect.x, rect.y, rect.width, rect.height);
+		this.context.restore();
 	}
 	drawImage(
 		image: HTMLImageElement,
@@ -85,6 +88,25 @@ export class Canvas {
 	}
 	drawAbsoluteImage(image: HTMLImageElement, x: number, y: number) {
 		this.context.drawImage(image, x, y);
+	}
+	drawBorder(x: number, y: number, options: DrawOptions = {}) {
+		this.context.save();
+		this.handleOptions(options);
+		const rect = new AdjustedRect(x, y);
+
+		this.context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+		this.context.restore();
+	}
+	handleOptions(options: DrawOptions) {
+		if (options.color) {
+			this.context.fillStyle = options.color;
+		}
+		if (options.opacity) {
+			this.context.globalAlpha = options.opacity;
+		}
+		if (options.size) {
+			this.context.font = `${options.size}pt "pokemon"`;
+		}
 	}
 	drawLine(x: number, y: number, toX: number, toY: number) {
 		this.context.fillStyle = 'black';

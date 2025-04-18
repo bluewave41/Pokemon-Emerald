@@ -8,6 +8,7 @@ import { warpSchema, type EditorWarpProps } from '../tiles/Warp';
 import { EditorTile } from '../tiles/EditorTile';
 import type { MapEvents } from '$lib/interfaces/Events';
 import type { Script } from './GameMap';
+import type { Entity } from '../entities/Entity';
 
 export const gameMapSchema = z.object({
 	name: mapNamesSchema,
@@ -30,7 +31,7 @@ export interface EditorGameMapType {
 	tiles: EditorTile[][];
 	backgroundTile: EditorTile | null;
 	events: MapEvents[];
-	scripts: string[];
+	entities: Entity[];
 }
 
 export class EditorGameMap {
@@ -42,6 +43,7 @@ export class EditorGameMap {
 	backgroundTile: EditorTile | null = null;
 	events: MapEvents[] = $state([]);
 	scripts: Script[] = $state([]);
+	entities: Entity[] = $state([]);
 
 	constructor(
 		id: number,

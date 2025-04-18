@@ -14,7 +14,7 @@
 
 	let { data }: PageProps = $props();
 
-	const tabs: Tabs[] = ['Tiles', 'Permissions', 'Events', 'Scripts'];
+	const tabs: Tabs[] = ['Tiles', 'Permissions', 'Events', 'Entities'];
 
 	let canvasRef: HTMLCanvasElement;
 	let topCanvasRef: HTMLCanvasElement;
@@ -32,8 +32,6 @@
 		1: 'red',
 		2: 'green'
 	};
-
-	$inspect(editor.map.scripts);
 
 	const hasEvents = (tile: EditorTile) => {
 		return editor.map.events.some((event) => event.x === tile.x && event.y === tile.y);
@@ -99,11 +97,15 @@
 	});
 
 	const getMousePosition = (e: MouseEvent) => {
-		var rect = editor.canvas.canvas.getBoundingClientRect();
+		const canvas = editor.canvas.canvas;
+		const rect = canvas.getBoundingClientRect();
+
+		const scaleX = canvas.width / rect.width;
+		const scaleY = canvas.height / rect.height;
 
 		return {
-			x: Math.floor((e.clientX - rect.left) / Game.getAdjustedTileSize()),
-			y: Math.floor((e.clientY - rect.top) / Game.getAdjustedTileSize())
+			x: Math.floor(((e.clientX - rect.left) * scaleX) / Game.getAdjustedTileSize()),
+			y: Math.floor(((e.clientY - rect.top) * scaleY) / Game.getAdjustedTileSize())
 		};
 	};
 
@@ -133,7 +135,7 @@
 				editor.map.getTile(x, y).permissions = editor.options.activeColor;
 				break;
 			case 'Events':
-			case 'Scripts':
+			case 'Entities':
 				editor.options.selectedTile = editor.map.getTile(x, y);
 				editor.options.selectedEventIndex = 0;
 				break;
@@ -295,37 +297,11 @@
 						</div>
 					{/if}
 				{/if}
-				{#if editor.options.activeTab === 'Scripts'}
-					<div>
-						{#each editor.map.scripts as _, index}
-							<button onclick={() => (editor.options.selectedEventIndex = index)}
-								>{index + 1}</button
-							>
-						{/each}
-					</div>
-					{#if editor.map.scripts.length}
-						<input
-							type="text"
-							name="name"
-							bind:value={editor.map.scripts[editor.options.selectedEventIndex].name}
-						/>
-						<textarea
-							rows="30"
-							cols="30"
-							bind:value={editor.map.scripts[editor.options.selectedEventIndex].script}
-						></textarea>
-					{/if}
-
-					<button
-						onclick={() =>
-							editor.map.scripts.push({
-								mapId: editor.map.id,
-								name: '',
-								script: '',
-								x: null,
-								y: null
-							})}>Create Script</button
-					>
+				{#if editor.options.activeTab === 'Entities'}
+					<p>Entities</p>
+					<p>X: {editor.options.selectedTile?.x}</p>
+					<p>Y: {editor.options.selectedTile?.y}</p>
+					<button onclick={editor.map.entities.push({})}>Create Entity</button>
 				{/if}
 			</div>
 		</div>

@@ -2,8 +2,9 @@ import { Canvas } from './Canvas';
 import { Buffer } from 'buffer';
 import { EditorGameMap } from './maps/EditorGameMap.svelte';
 import type { EditorTile } from './tiles/EditorTile';
+import { Game } from './Game';
 
-export type Tabs = 'Tiles' | 'Permissions' | 'Events' | 'Scripts';
+export type Tabs = 'Tiles' | 'Permissions' | 'Events' | 'Entities';
 
 interface Options {
 	activeTab: Tabs;
@@ -61,6 +62,27 @@ export class GameEditor {
 		this.#topCanvas.reset();
 		this.map.tick(this.#canvas, 0, 0);
 		this.map.drawTopLayer(this.#canvas, 0, 0);
+
+		if (this.options.selectedTile) {
+			this.#canvas.drawBorder(this.options.selectedTile.x, this.options.selectedTile.y, {
+				color: 'blue'
+			});
+		}
+
+		if (this.options.activeTab === 'Events') {
+			for (const event of this.map.events) {
+				const measurement = this.#canvas.context.measureText('W');
+				if (event.kind === 'warp') {
+					this.#canvas.drawOverlay(event.x, event.y, { color: 'purple', opacity: 0.6 });
+					this.#canvas.drawText(
+						'W',
+						event.x * Game.getAdjustedTileSize() + measurement.width / 2,
+						event.y * Game.getAdjustedTileSize() - 12,
+						{ size: 30 }
+					);
+				}
+			}
+		}
 	}
 	static getAdjustedTileSize() {
 		return this.tileSize * this.zoom;
