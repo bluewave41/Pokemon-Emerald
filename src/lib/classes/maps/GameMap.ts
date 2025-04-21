@@ -8,6 +8,9 @@ import { editorSignSchema, Sign } from '../tiles/Sign';
 import { editorWarpSchema, Warp } from '../tiles/Warp';
 import type { GridPosition, Position } from '../Position';
 import { EntityList } from '../EntityList';
+import { Entity, entitySchema } from '../entities/Entity';
+import { NPC } from '../entities/NPC';
+import type { BankNames } from '$lib/interfaces/BankNames';
 
 export type Script = {
 	mapId: number;
@@ -34,7 +37,8 @@ export const gameMapSchema = z.object({
 	tiles: tileSchema.array().array(),
 	backgroundTile: z.number().optional(),
 	events: z.union([editorWarpSchema, editorSignSchema]).array(),
-	scripts: scriptSchema.array()
+	scripts: scriptSchema.array(),
+	entities: entitySchema.array()
 });
 
 export const gameEditorMapSchema = gameMapSchema.extend({
@@ -75,7 +79,8 @@ export class GameMap {
 		height: number,
 		tiles: AnyTile[][],
 		backgroundTile: Tile,
-		scripts: Script[]
+		scripts: Script[],
+		entities: Entity[]
 	) {
 		this.canvas = canvas;
 		this.id = id;
@@ -85,6 +90,7 @@ export class GameMap {
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
 		this.scripts = scripts;
+		this.entities.setEntities(entities);
 	}
 	drawImage(image: HTMLImageElement, x: number, y: number) {
 		const xDiff = image.width - 16; //10
@@ -109,7 +115,11 @@ export class GameMap {
 	drawTopLayer(canvas: Canvas) {
 		const tiles = this.tiles.flat().filter((tile) => tile.overlay);
 		for (const tile of tiles) {
-			canvas.drawTile(tile.getActiveSprite(), tile.x + this.absoluteX, tile.y + this.absoluteY);
+			canvas.drawTile(
+				tile.getActiveSprite(),
+				tile.position.x + this.absoluteX,
+				tile.position.y + this.absoluteY
+			);
 		}
 	}
 	tick(currentFrameTime: number, canvas: Canvas) {
@@ -157,9 +167,7 @@ export class GameMap {
 					x,
 					y,
 					buffer.readByte(),
-					buffer.readBoolean(),
 					buffer.readByte(),
-					buffer.readDirection(),
 					buffer.readBoolean() === true ? buffer.readString() : null,
 					buffer.readBoolean(),
 					buffer.readBoolean()
@@ -213,14 +221,25 @@ export class GameMap {
 			});
 		}
 
-		return new GameMap(canvas, id, name, width, height, map, backgroundTile, scripts);
+		const numOfEntities = buffer.readByte();
+		const entities: Entity[] = [];
+		for (let i = 0; i < numOfEntities; i++) {
+			entities.push(
+				new NPC(
+					buffer.readString(),
+					buffer.readString() as BankNames,
+					buffer.readByte(),
+					buffer.readByte(),
+					'DOWN',
+					buffer.readString()
+				)
+			);
+		}
+
+		return new GameMap(canvas, id, name, width, height, map, backgroundTile, scripts, entities);
 	}
 	getTile(x: number, y: number) {
-		try {
-			return this.tiles[y][x];
-		} catch (e) {
-			return null;
-		}
+		return this.tiles[y][x];
 	}
 	toJSON() {
 		return {

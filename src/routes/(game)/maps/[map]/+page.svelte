@@ -11,6 +11,8 @@
 	import type { TileEvents } from '$lib/interfaces/Events.js';
 	import { createSign } from '$lib/classes/tiles/Sign.js';
 	import type { Tile } from '$lib/classes/tiles/Tile.js';
+	import { createNPC, NPC } from '$lib/classes/entities/NPC.js';
+	import type { BankNames } from '$lib/interfaces/BankNames.js';
 
 	let { data }: PageProps = $props();
 
@@ -25,16 +27,14 @@
 		)
 	);
 
-	let events: MapEvent[] = $state([]);
-
 	const colorTable: Record<number, string> = {
 		0: 'blue',
 		1: 'red',
 		2: 'green'
 	};
 
-	const hasEvents = (tile: Tile) => {
-		return editor.map.events.some((event) => event.x === tile.x && event.y === tile.y);
+	const hasEvents = ({ position }: Tile) => {
+		return editor.map.events.some((event) => event.x === position.x && event.y === position.y);
 	};
 
 	const createEvent = (event: TileEvents) => {
@@ -42,7 +42,8 @@
 		if (!selectedTile) {
 			return;
 		}
-		const { x, y } = selectedTile;
+
+		const { x, y } = selectedTile.position;
 
 		switch (event) {
 			case 'none':
@@ -69,7 +70,6 @@
 				data.tiles.filter((tile) => tile.overlay).map((tile) => tile.id)
 			);
 			editor.setRefs(canvasRef, topCanvasRef);
-			events = editor.map.events;
 
 			const render = () => {
 				animId++;
@@ -160,6 +160,7 @@
 <div class="wrapper">
 	<div class="left-top">
 		<div
+			role="presentation"
 			class="container"
 			onmousemove={onMouseMove}
 			onmousedown={onMouseDown}
@@ -241,13 +242,13 @@
 				{#if editor.options.activeTab === 'Events' && editor.options.selectedTile}
 					{@const { selectedTile } = editor.options}
 					<p>Events</p>
-					<p>X: {editor.options.selectedTile?.x}</p>
-					<p>Y: {editor.options.selectedTile?.y}</p>
+					<p>X: {editor.options.selectedTile?.position.x}</p>
+					<p>Y: {editor.options.selectedTile?.position.y}</p>
 					<button onclick={() => createEvent('warp')}>Create warp</button>
 					<button onclick={() => createEvent('sign')}>Create Sign</button>
 					{#if hasEvents(selectedTile)}
 						{@const events = editor.map.events.filter(
-							(event) => event.x === selectedTile.x && event.y === selectedTile.y
+							(event) => event.x === selectedTile.position.x && event.y === selectedTile.position.y
 						)}
 						{@const selectedEvent = events[editor.options.selectedEventIndex]}
 						<div>
@@ -298,10 +299,42 @@
 					{/if}
 				{/if}
 				{#if editor.options.activeTab === 'Entities'}
-					<p>Entities</p>
-					<p>X: {editor.options.selectedTile?.x}</p>
-					<p>Y: {editor.options.selectedTile?.y}</p>
-					<button onclick={editor.map.entities.push({})}>Create Entity</button>
+					{#if editor.options.selectedTile}
+						{@const tile = editor.options.selectedTile}
+						{@const entity = editor.map.entities.find((entity) =>
+							entity.coords.getCurrent().equals(tile.position)
+						) as NPC}
+						<p>Entities</p>
+						<p>X: {editor.options.selectedTile?.position.x}</p>
+						<p>Y: {editor.options.selectedTile?.position.y}</p>
+						<button onclick={() => editor.map.entities.push(createNPC(tile.position))}
+							>Create Entity</button
+						>
+						{#if entity}
+							<div class="basic-col">
+								<label for="id">ID</label>
+								<input
+									name="id"
+									type="text"
+									onchange={(e) => (entity.id = e.currentTarget.value)}
+								/>
+								<label for="bank">Bank</label>
+								<select
+									name="bank"
+									onchange={(e) => (entity.bankId = e.currentTarget.value as BankNames)}
+								>
+									{#each data.banks as bank}
+										<option value={bank.name}>{bank.name}</option>
+									{/each}
+								</select>
+								<select name="script" onchange={(e) => (entity.script = e.currentTarget.value)}>
+									{#each data.scripts as script}
+										<option value={script.name}>{script.name}</option>
+									{/each}
+								</select>
+							</div>
+						{/if}
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -397,5 +430,10 @@
 		&:hover {
 			cursor: pointer;
 		}
+	}
+	.basic-col {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 </style>

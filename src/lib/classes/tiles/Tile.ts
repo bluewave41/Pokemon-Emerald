@@ -6,10 +6,15 @@ import type { Warp } from './Warp';
 import type { Sign } from './Sign';
 import GameEvent from '../GameEvent';
 import type { Direction } from '@prisma/client';
+import { GridPosition } from '../Position';
+
+export const directions: Direction[] = ['UP', 'LEFT', 'RIGHT', 'DOWN'];
 
 export const tileSchema = z.object({
-	x: z.number(),
-	y: z.number(),
+	position: z.object({
+		x: z.number(),
+		y: z.number()
+	}),
 	id: z.number(),
 	overlay: z.boolean(),
 	permissions: z.number()
@@ -32,9 +37,8 @@ export interface TileProps extends BaseTileProps {
 
 export class Tile {
 	kind: TileKind = 'tile';
-	x: number;
-	y: number;
 	id: number;
+	position: GridPosition;
 	newId: number;
 	overlay: boolean;
 	permissions: number;
@@ -59,21 +63,18 @@ export class Tile {
 		x: number,
 		y: number,
 		id: number,
-		overlay: boolean,
-		permissions: number,
-		jumpable: Direction | null,
+		properties: number,
 		script: string | null,
 		activatedAnimation: boolean,
 		repeatingAnimation: boolean
 	) {
-		this.x = x;
-		this.y = y;
 		this.id = id;
+		this.position = new GridPosition(x, y);
 		this.newId = id;
-		this.overlay = overlay;
-		this.permissions = permissions;
+		this.overlay = Boolean((properties >> 7) & 0b1);
+		this.permissions = (properties >> 2) & 0b11111;
 		this.tileSprites = SpriteBank.getTile(this.id);
-		this.jumpable = jumpable;
+		this.jumpable = (properties & 0b11) === 0 ? null : directions[properties & 0b11];
 		this.script = script;
 		this.activatedAnimation = activatedAnimation;
 		this.animationOptions.isAnimating = !this.activatedAnimation;

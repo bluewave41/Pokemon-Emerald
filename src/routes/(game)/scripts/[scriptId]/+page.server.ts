@@ -23,14 +23,14 @@ export const actions = {
 		const schema = zfd.formData({
 			x: z.string().transform((val) => (val === '' ? null : parseInt(val))),
 			y: z.string().transform((val) => (val === '' ? null : parseInt(val))),
-			condition: zfd.text(),
-			setup: zfd.text(),
+			condition: z.string().transform((val) => (val === '' ? null : val)),
+			setup: z.string().transform((val) => (val === '' ? null : val)),
 			script: zfd.text()
 		});
 
 		const result = await schema.safeParseAsync(fd);
 		if (result.error) {
-			console.log('rror', result.error);
+			console.log('error', result.error);
 			return fail(400);
 		}
 

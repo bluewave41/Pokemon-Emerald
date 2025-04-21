@@ -32,6 +32,8 @@
 			await SpriteBank.readBank('vigoroth', data.vigoroth);
 
 			game = new Game(canvas, gameMap);
+			game.init();
+			game.activeMap.entities.getEntities().forEach((entity) => entity.init(game!));
 
 			GameEvent.dispatchEvent(new CustomEvent('rerender'));
 
@@ -58,7 +60,7 @@
 
 <h1>{page.params.map}</h1>
 
-<div class="container" onkeydown={onKeyDown} onkeyup={onKeyUp} tabIndex={1}>
+<div role="presentation" class="container" onkeydown={onKeyDown} onkeyup={onKeyUp} tabIndex={1}>
 	<canvas bind:this={canvasRef}></canvas>
 </div>
 

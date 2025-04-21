@@ -1,15 +1,15 @@
-import { Position } from '$lib/classes/Position';
+import { GridPosition } from '$lib/classes/Position';
 import type { Direction } from '@prisma/client';
 
-export const adjustPositionForDirection = (position: Position, direction: Direction) => {
+export const adjustPositionForDirection = (position: GridPosition, direction: Direction) => {
 	switch (direction) {
 		case 'UP':
-			return new Position(position.x, position.y - 1);
+			return new GridPosition(position.x, position.y - 1);
 		case 'LEFT':
-			return new Position(position.x - 1, position.y);
+			return new GridPosition(position.x - 1, position.y);
 		case 'RIGHT':
-			return new Position(position.x + 1, position.y);
+			return new GridPosition(position.x + 1, position.y);
 		case 'DOWN':
-			return new Position(position.x, position.y + 1);
+			return new GridPosition(position.x, position.y + 1);
 	}
 };

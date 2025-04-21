@@ -3,10 +3,12 @@ type GameEventMap = {
 	animationComplete: object;
 	fadedOut: object;
 	fadedIn: object;
-	continueText: object;
+	continueText: { scroll: boolean };
 	npcMovementFinished: object;
 	flagSet: object;
-	signComplete: object;
+	textComplete: object;
+	rerender: object;
+	textScrolled: object;
 };
 
 export type DispatchedEvent =
@@ -17,22 +19,21 @@ export type DispatchedEvent =
 	| 'continueText'
 	| 'npcMovementFinished'
 	| 'flagSet'
-	| 'signComplete';
+	| 'textComplete'
+	| 'textScrolled';
 
 type GameEventName = keyof GameEventMap;
 
 class InternalGameEvent extends EventTarget {
-	dispatch<K extends GameEventName>(type: K, detail: GameEventMap[K]) {
-		this.dispatchEvent(new CustomEvent(type, { detail }));
+	dispatch<K extends GameEventName>(type: K, detail?: GameEventMap[K]) {
+		this.dispatchEvent(new CustomEvent<GameEventMap[K]>(type, { detail }));
 	}
 	once<K extends GameEventName>(type: K, callback: (event: CustomEvent<GameEventMap[K]>) => void) {
 		const handler = (e: Event) => {
 			callback(e as CustomEvent<GameEventMap[K]>);
-			GameEvent.removeEventListener(type, handler);
+			this.removeEventListener(type, handler);
 		};
-		GameEvent.addEventListener(type, handler);
-
-		this.addEventListener(type, callback as EventListener);
+		this.addEventListener(type, handler);
 	}
 	attach<K extends GameEventName>(
 		type: K,
@@ -40,13 +41,18 @@ class InternalGameEvent extends EventTarget {
 	) {
 		this.addEventListener(type, callback as EventListener);
 	}
-	waitForOnce<K extends GameEventName>(type: K) {
+	detach<K extends GameEventName>(
+		type: K,
+		callback: (event: CustomEvent<GameEventMap[K]>) => void
+	) {
+		this.removeEventListener(type, callback as EventListener);
+	}
+	waitForOnce<K extends GameEventName>(type: K): Promise<CustomEvent<GameEventMap[K]>> {
 		return new Promise((resolve) => {
 			const handler = (e: Event) => {
-				resolve(e);
+				resolve(e as CustomEvent<GameEventMap[K]>);
 				this.removeEventListener(type, handler);
 			};
-
 			this.addEventListener(type, handler);
 		});
 	}

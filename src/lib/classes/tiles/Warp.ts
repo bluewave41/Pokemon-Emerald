@@ -45,6 +45,7 @@ export interface WarpProps {
 	kind: 'warp';
 	x: number;
 	y: number;
+	type: WarpType;
 	targetMapId: number;
 	targetWarpId: number;
 	activateDirection: Direction;
@@ -65,7 +66,7 @@ export class Warp extends Tile {
 		targetWarpId: number,
 		type: WarpType
 	) {
-		super(tile.x, tile.y, tile.id, tile.overlay, tile.permissions, tile.activatedAnimation);
+		super(tile.position.x, tile.position.y, tile.id, 0, null, tile.activatedAnimation, false);
 		this.kind = 'warp';
 		this.warpId = warpId;
 		this.activateDirection = activateDirection;
@@ -76,15 +77,15 @@ export class Warp extends Tile {
 	getWarpOutSpot() {
 		switch (this.activateDirection) {
 			case 'UP':
-				return { x: this.x, y: this.y - 1 };
+				return { x: this.position.x, y: this.position.y - 1 };
 			case 'LEFT':
-				return { x: this.x - 1, y: this.y };
+				return { x: this.position.x - 1, y: this.position.y };
 			case 'RIGHT':
-				return { x: this.x + 1, y: this.y };
+				return { x: this.position.x + 1, y: this.position.y };
 			case 'DOWN':
-				return { x: this.x, y: this.y + 1 };
+				return { x: this.position.x, y: this.position.y + 1 };
 			default:
-				return { x: this.x, y: this.y };
+				return { x: this.position.x, y: this.position.y };
 		}
 	}
 }

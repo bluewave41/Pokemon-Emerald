@@ -18,6 +18,9 @@ export const load: PageServerLoad = async () => {
 			id: true,
 			name: true
 		},
+		where: {
+			id: { not: 0 }
+		},
 		orderBy: { id: 'asc' }
 	});
 

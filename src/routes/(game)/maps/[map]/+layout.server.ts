@@ -33,7 +33,7 @@ export const load = async () => {
 		imageBuffer.writeShort(tile.tileId);
 		imageBuffer.writeString(tile.Tile.original);
 		imageBuffer.writeBoolean(tile.Tile.animated);
-		if (tile.Tile.animated) {
+		if (tile.Tile.animated && tile.Tile.delay) {
 			imageBuffer.writeShort(tile.Tile.delay);
 			imageBuffer.writeByte(tile.Tile.sequence.length);
 			for (const sequence of tile.Tile.sequence) {

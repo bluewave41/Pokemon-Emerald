@@ -129,27 +129,31 @@ model Sprite {
 }
 
 model Script {
-  id        Int    @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   name      String
   mapId     Int
-  condition String @default("")
-  setup     String @default("")
-  script    String @default("")
+  condition String?
+  setup     String?
+  script    String?
   x         Int?
   y         Int?
 
-  Map Map @relation(fields: [mapId], references: [id])
+  Map    Map      @relation(fields: [mapId], references: [id])
+  Entity Entity[]
 }
 
 model Entity {
-  id    Int @id @default(autoincrement())
-  mapId Int
-  x     Int
-  y     Int
-  bank  Int
+  id       Int    @id @default(autoincrement())
+  entityId String
+  mapId    Int
+  x        Int
+  y        Int
+  bankId   Int
+  scriptId Int
 
-  Map    Map        @relation(fields: [mapId], references: [id], onDelete: Cascade)
-  Sprite SpriteBank @relation(fields: [bank], references: [id], onDelete: Cascade)
+  Map        Map        @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  SpriteBank SpriteBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  Script     Script     @relation(fields: [scriptId], references: [id], onDelete: Cascade)
 }
 
 enum EventType {

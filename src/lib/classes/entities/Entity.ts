@@ -1,17 +1,22 @@
+import { z } from 'zod';
 import type { Canvas } from '../Canvas';
 import { Coords } from '../Coords';
 import type { Game } from '../Game';
 
 export class Entity {
 	id: string;
-	game: Game;
+	game!: Game;
 	coords: Coords;
 	priority: number = 0;
 	visible: boolean = true;
+	script: string | null;
 
-	constructor(id: string, x: number, y: number, game: Game) {
+	constructor(id: string, x: number, y: number, script: string | null) {
 		this.id = id;
 		this.coords = new Coords(x, y);
+		this.script = script;
+	}
+	init(game: Game) {
 		this.game = game;
 	}
 	setVisible(visible: boolean) {
@@ -27,7 +32,15 @@ export class Entity {
 		void canvas;
 		throw new Error('Method `tick` must be implemented in subclass.');
 	}
+	toJSON() {}
 }
 
-export type EntityType = typeof Entity;
-export type EditorEntityType = Partial<EntityType>;
+export const entitySchema = z.object({
+	entityId: z.string(),
+	position: z.object({
+		x: z.number(),
+		y: z.number()
+	}),
+	bank: z.string(),
+	script: z.string()
+});

@@ -63,11 +63,18 @@ export class GameEditor {
 		this.map.tick(this.#canvas, 0, 0);
 		this.map.drawTopLayer(this.#canvas, 0, 0);
 
+		const position = this.options.selectedTile?.position;
+		if (!position) {
+			return;
+		}
+
+		const { x, y } = position;
+
 		if (
 			(this.options.activeTab === 'Events' || this.options.activeTab === 'Entities') &&
 			this.options.selectedTile
 		) {
-			this.#canvas.drawBorder(this.options.selectedTile.x, this.options.selectedTile.y, {
+			this.#canvas.drawBorder(x, y, {
 				color: 'blue'
 			});
 		}

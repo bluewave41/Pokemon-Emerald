@@ -14,6 +14,7 @@ import { sleep } from '$lib/utils/sleep';
 import { FadeOutRect } from '../ui/FadeOutRect';
 import { FadeInRect } from '../ui/FadeInRect';
 import { GridPosition, ScreenPosition } from '../Position';
+import type { NPC } from './NPC';
 
 export class Player extends Entity {
 	coords: Coords;
@@ -26,10 +27,9 @@ export class Player extends Entity {
 	offsetX: number = 0;
 	offsetY: number = 0;
 
-	constructor(x: number, y: number, game: Game, direction: Direction) {
-		super('player', x, y, game);
+	constructor(x: number, y: number, direction: Direction) {
+		super('player', x, y, null);
 		this.coords = new Coords(x, y);
-		this.game = game;
 		this.coords = new Coords(x, y);
 		this.direction = direction;
 	}
@@ -66,14 +66,25 @@ export class Player extends Entity {
 
 		const activeKey = KeyHandler.getActiveKeyState('z');
 
+		if (this.game.frozen) {
+			return;
+		}
+
 		if (activeKey.down && activeKey.initial) {
 			const tile = this.getFacingTile();
-			if (tile) {
+			const entity = this.game.activeMap.entities.getEntityOnTile(tile.position) as NPC;
+			if (entity) {
+				const script = this.game.activeMap.scripts.find((script) => script.name === entity.script);
+				if (script) {
+					entity.direction = getOppositeDirection(this.direction);
+					this.game.executeScript(script, 'script');
+				}
+			} else if (tile) {
 				if (tile.kind === 'sign') {
-					const sign = this.game.canvas.elements.getElement('sign') as TextRect;
-					if (sign) {
-						if (sign.finished) {
-							this.game.canvas.elements.removeElement('sign');
+					const textbox = this.game.canvas.elements.getElement('textbox') as TextRect;
+					if (textbox) {
+						if (textbox.finished) {
+							this.game.canvas.elements.removeElement('textbox');
 							this.game.unblockMovement();
 						}
 					} else {
@@ -179,7 +190,9 @@ export class Player extends Entity {
 						this.counter = 0;
 					} else if (
 						newTile.isPassable() &&
-						!this.game.mapHandler.active.isTileOccupied(new GridPosition(newTile.x, newTile.y))
+						!this.game.mapHandler.active.isTileOccupied(
+							new GridPosition(newTile.position.x, newTile.position.y)
+						)
 					) {
 						this.moving = true;
 						this.coords.setCurrent(move.x, move.y);
@@ -260,7 +273,7 @@ export class Player extends Entity {
 				const tile = this.getFacingTile();
 				if (tile) {
 					tiles.push(tile);
-					tiles.push(this.game.mapHandler.active.getTile(tile.x, tile.y - 1));
+					tiles.push(this.game.mapHandler.active.getTile(tile.position.x, tile.position.y - 1));
 				}
 			}
 		}
@@ -294,9 +307,15 @@ export class Player extends Entity {
 
 		// now that we've loaded the new map do we need to animate the exit tiles?
 		tiles = [];
-		const tileAboveWarp = this.game.mapHandler.active.getTile(targetWarp.x, targetWarp.y - 1);
+		const tileAboveWarp = this.game.mapHandler.active.getTile(
+			targetWarp.position.x,
+			targetWarp.position.y - 1
+		);
 		if (tileAboveWarp.tileSprites.images.length !== 1) {
-			tiles = [tileAboveWarp, this.game.mapHandler.active.getTile(targetWarp.x, targetWarp.y - 2)];
+			tiles = [
+				tileAboveWarp,
+				this.game.mapHandler.active.getTile(targetWarp.position.x, targetWarp.position.y - 2)
+			];
 		}
 
 		this.setVisible(true);

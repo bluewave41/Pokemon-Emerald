@@ -153,28 +153,46 @@ export class Canvas {
 		const rect = new AdjustedRect(x, y);
 		this.context.translate(rect.x, rect.y);
 	}
-	showMessageBox(text: string, startFrameTime: number, currentFrameTime: number) {
-		text = text.replaceAll('{player}', 'A'); //replace placeholder with player name
+	showMessageBox(
+		text: string[],
+		startFrameTime: number,
+		currentFrameTime: number,
+		scrollOffset: number,
+		currentIndex: number = 0
+	) {
+		text.forEach((el) => el.replaceAll('{player}', 'A')); //replace placeholder with player name
 		this.context.font = '24pt "pokemon"';
-		//const delay = 50;
-		const delay = 10;
+
+		const delay = 50;
 		const elapsedTime = currentFrameTime - startFrameTime;
 		const lengthToShow = Math.floor(elapsedTime / delay);
-		const textToShow = text.slice(0, lengthToShow);
 
-		if (lengthToShow >= text.length) {
+		const textForMath = text.slice(currentIndex, currentIndex + 2);
+
+		const relevantText =
+			currentIndex > 0
+				? [textForMath[1].slice(0, lengthToShow)]
+				: textForMath.join('|').slice(0, lengthToShow).split('|');
+
+		const totalLength =
+			currentIndex > 0
+				? textForMath[1].length
+				: textForMath.reduce((sum, str) => sum + str.length, 0) + 5;
+
+		console.log(totalLength);
+
+		if (lengthToShow >= totalLength) {
 			// this runs way too many times
-			GameEvent.dispatchEvent(new CustomEvent('signComplete'));
+			GameEvent.dispatchEvent(new CustomEvent('textComplete'));
 		}
 
-		const pieces = textToShow.split('/');
+		const metrics = this.context.measureText(relevantText[1] ?? relevantText[0]);
 
-		const metrics = this.context.measureText(pieces[pieces.length - 1]);
-
-		const gap = 5;
+		const gap = 10;
 		const size = 80;
 		const rectOffset = 2;
-		const textOffset = 20;
+		const xTextOffset = 15;
+		const yTextOffset = 10;
 
 		const x = gap - rectOffset;
 		let y = this.canvas.height - size - gap - rectOffset;
@@ -183,21 +201,38 @@ export class Canvas {
 
 		this.context.fillStyle = 'green';
 		this.context.fillRect(x, y, length, height);
+
+		this.context.save();
+		this.context.beginPath();
+		this.context.rect(gap, this.canvas.height - gap - size, this.canvas.width - gap * 2, size);
+		this.context.clip();
+
 		this.context.fillStyle = 'white';
 		this.context.fillRect(gap, this.canvas.height - gap - size, this.canvas.width - gap * 2, size);
 
-		for (const piece of pieces) {
-			this.drawText(piece, x + gap + textOffset, y + textOffset / 3);
-			y += 32;
+		if (currentIndex > 0) {
+			this.drawText(textForMath[0], x + gap + xTextOffset, y + yTextOffset / 3);
+			this.drawText(
+				relevantText[0],
+				x + gap + xTextOffset,
+				y + yTextOffset / 3 + scrollOffset + 38 * 2
+			);
+		} else {
+			for (const piece of relevantText) {
+				this.drawText(piece, x + gap + xTextOffset, y + yTextOffset / 3 + scrollOffset);
+				y += 38;
+			}
 		}
 
 		if (lengthToShow >= text.length) {
 			this.drawAbsoluteImage(
 				SpriteBank.getSprite('utility', 'pointer'),
-				x + gap + textOffset + metrics.width,
+				x + gap + xTextOffset + metrics.width,
 				y - 11
 			);
 		}
+
+		this.context.restore();
 	}
 	get width() {
 		return this.canvas.width;

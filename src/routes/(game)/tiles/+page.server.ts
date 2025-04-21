@@ -68,7 +68,7 @@ export const actions = {
 
 		const result = await schema.safeParseAsync(formData);
 		if (result.error) {
-			console.log('HERE', result.error);
+			console.log(result.error);
 			return error(400);
 		}
 

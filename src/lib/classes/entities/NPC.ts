@@ -2,11 +2,20 @@ import type { Direction } from '@prisma/client';
 import { Entity } from './Entity';
 import SpriteBank from '../SpriteBank';
 import type { Canvas } from '../Canvas';
-import type { BankNames } from '$lib/interfaces/BankNames';
+import { bankNamesSchema, type BankNames } from '$lib/interfaces/BankNames';
 import { Game } from '../Game';
 import { getRandomDirection } from '$lib/utils/getRandomDirection';
 import { GridPosition, ScreenPosition } from '../Position';
 import GameEvent from '../GameEvent';
+import { z } from 'zod';
+import { Coords } from '../Coords';
+
+export const editorNPCSchema = z.object({
+	id: z.string(),
+	bankId: bankNamesSchema,
+	x: z.number(),
+	y: z.number()
+});
 
 export class NPC extends Entity {
 	home: GridPosition;
@@ -27,10 +36,10 @@ export class NPC extends Entity {
 		x: number,
 		y: number,
 		direction: Direction,
-		game: Game,
+		script: string | null,
 		scripted?: boolean
 	) {
-		super(id, x, y, game);
+		super(id, x, y, script);
 		this.direction = direction;
 		const current = this.coords.getCurrent();
 		this.home = new GridPosition(current.x, current.y);
@@ -172,6 +181,9 @@ export class NPC extends Entity {
 
 		const targetTile = target.toGrid();
 		const tile = this.game.activeMap.getTile(targetTile.x, targetTile.y);
+		if (!tile) {
+			throw new Error('Null NPC tile.');
+		}
 		if (
 			!tile.isPassable() ||
 			(!this.scripted && this.game.activeMap.isTileOccupied(target.toGrid()))
@@ -205,4 +217,25 @@ export class NPC extends Entity {
 			GameEvent.dispatchEvent(new CustomEvent('npcMovementFinished'));
 		}
 	}
+	toJSON() {
+		const { x, y } = this.coords.getCurrent();
+		return {
+			entityId: this.id,
+			position: {
+				x,
+				y
+			},
+			bank: this.bankId,
+			script: this.script
+		};
+	}
 }
+
+export const createNPC = (position: GridPosition) => {
+	const npc = Object.create(NPC.prototype) as NPC;
+	npc.coords = new Coords(position.x, position.y);
+	return npc;
+};
+
+export type NPCType = InstanceType<typeof NPC>;
+export type EditorNPCType = Partial<NPCType>;

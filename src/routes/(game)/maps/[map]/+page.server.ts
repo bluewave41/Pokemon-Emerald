@@ -52,10 +52,29 @@ export const load: PageServerLoad = async ({ params }) => {
 		orderBy: { id: 'asc' }
 	});
 
+	const banks = await prisma.spriteBank.findMany({
+		select: {
+			name: true
+		}
+	});
+
+	const scripts = await prisma.script.findMany({
+		select: {
+			name: true
+		},
+		where: {
+			Map: {
+				name: result.data.map
+			}
+		}
+	});
+
 	return {
 		map: map.toString('base64'),
 		maps,
-		tiles
+		tiles,
+		banks,
+		scripts
 	};
 };
 
@@ -130,6 +149,10 @@ export const actions = {
 			}
 		});
 
+		if (!backgroundImage) {
+			return fail(400);
+		}
+
 		const updates = tiles.map(async ({ Tile: tile }) => {
 			const processedData = await removeImageBackground(backgroundImage.original, tile.original);
 
@@ -175,8 +198,8 @@ export const actions = {
 				prisma.mapTile.update({
 					where: {
 						mapId_x_y: {
-							x: tile.x,
-							y: tile.y,
+							x: tile.position.x,
+							y: tile.position.y,
 							mapId: updated.id
 						}
 					},
@@ -199,6 +222,9 @@ export const actions = {
 
 		for (let i = 0; i < warps.length; i++) {
 			const warp = warps[i];
+			if (!warp.activateDirection || !warp.type) {
+				continue;
+			}
 			await prisma.event.create({
 				data: {
 					mapId: updated.id,
@@ -219,6 +245,9 @@ export const actions = {
 
 		for (let i = 0; i < signs.length; i++) {
 			const sign = signs[i];
+			if (!sign.text) {
+				continue;
+			}
 			await prisma.event.create({
 				data: {
 					mapId: updated.id,
@@ -234,19 +263,37 @@ export const actions = {
 			});
 		}
 
-		await prisma.script.deleteMany({
+		const scripts = await prisma.script.findMany({
+			select: {
+				id: true,
+				name: true
+			},
 			where: {
 				mapId: updated.id
 			}
 		});
 
-		await prisma.script.createMany({
-			data: map.scripts.map((script) => ({
+		await prisma.entity.deleteMany({
+			where: {
+				mapId: updated.id
+			}
+		});
+
+		const spriteBanks = await prisma.spriteBank.findMany({
+			select: {
+				id: true,
+				name: true
+			}
+		});
+
+		await prisma.entity.createMany({
+			data: map.entities.map((entity) => ({
+				x: entity.position.x,
+				y: entity.position.y,
+				bankId: spriteBanks.find((bank) => bank.name === entity.bank)?.id,
+				entityId: entity.entityId,
 				mapId: updated.id,
-				name: script.name,
-				x: script.x,
-				y: script.y,
-				script: script.script
+				scriptId: scripts.find((script) => script.name === entity.script)?.id
 			}))
 		});
 	}

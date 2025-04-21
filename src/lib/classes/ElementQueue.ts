@@ -18,11 +18,6 @@ export class ElementQueue {
 		const index = this.elements.findLastIndex((el) => el.id === id);
 		this.elements.splice(index, 1);
 	}
-	continueText() {
-		const index = this.elements.findLastIndex((el) => el.id === 'textbox');
-		this.elements.splice(index, 1);
-		GameEvent.dispatchEvent(new CustomEvent('continueText'));
-	}
 	getElements() {
 		return this.elements;
 	}

@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { Prisma, Tile } from '@prisma/client';
+	import type { Tile } from '$lib/classes/tiles/Tile';
+	import type { Tile as PrismaTile } from '@prisma/client';
 
 	interface Props {
-		tiles: Prisma.TileGetPayload<{ include: { TileFrame: true } }>[];
+		tiles: PrismaTile[];
 		active?: number | null;
 		background?: number | null;
-		onClick: (tile: Prisma.TileGetPayload<{ include: { TileFrame: true } }>) => void;
+		onClick: (tile: Tile) => void;
 	}
 
 	let { tiles, active, background, onClick }: Props = $props();

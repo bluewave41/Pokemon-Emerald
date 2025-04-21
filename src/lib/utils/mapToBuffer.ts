@@ -1,6 +1,16 @@
 import { BufferHelper } from '$lib/BufferHelper';
 import type { MapNames } from '$lib/interfaces/MapNames';
 import prisma from '$lib/prisma';
+import type { Direction } from '@prisma/client';
+
+const pack = (overlay: boolean, permissions: number, jumpDirection: Direction | null) => {
+	const directions = ['UP', 'LEFT', 'RIGHT', 'DOWN'];
+	return (
+		((Number(overlay) & 0b1) << 7) |
+		((permissions & 0b11111) << 2) |
+		((!jumpDirection ? 0 : directions.indexOf(jumpDirection) + 1) & 0b11)
+	);
+};
 
 export const mapToBuffer = async (name: MapNames) => {
 	const map = await prisma.map.findFirst({
@@ -12,7 +22,10 @@ export const mapToBuffer = async (name: MapNames) => {
 			Events: {
 				include: { Sign: true, Warp: true }
 			},
-			Scripts: true
+			Scripts: true,
+			Entity: {
+				include: { SpriteBank: true, Script: true }
+			}
 		},
 		where: {
 			name
@@ -34,9 +47,7 @@ export const mapToBuffer = async (name: MapNames) => {
 	//write map data
 	for (const tile of map.MapTile) {
 		buffer.writeByte(tile.tileId);
-		buffer.writeBoolean(tile.Tile.overlay);
-		buffer.writeByte(tile.permissions);
-		buffer.writeDirection(tile.Tile.jumpDirection);
+		buffer.writeByte(pack(tile.Tile.overlay, tile.permissions, tile.Tile.jumpDirection));
 		buffer.writeBoolean(tile.Tile.script !== null);
 		if (tile.Tile.script) {
 			buffer.writeString(tile.Tile.script);
@@ -79,6 +90,15 @@ export const mapToBuffer = async (name: MapNames) => {
 			buffer.writeByte(script.x);
 			buffer.writeByte(script.y);
 		}
+	}
+
+	buffer.writeByte(map.Entity.length);
+	for (const entity of map.Entity) {
+		buffer.writeString(entity.entityId);
+		buffer.writeString(entity.SpriteBank.name);
+		buffer.writeByte(entity.x);
+		buffer.writeByte(entity.y);
+		buffer.writeString(entity.Script.name);
 	}
 
 	return {

@@ -76,7 +76,7 @@ export class EditorGameMap {
 	drawTopLayer(canvas: Canvas, x: number, y: number) {
 		const tiles = this.tiles.flat().filter((tile) => tile.overlay);
 		for (const tile of tiles) {
-			canvas.drawTile(tile.getActiveSprite(), tile.x + x, tile.y + y);
+			canvas.drawTile(tile.getActiveSprite(), tile.position.x + x, tile.position.y + y);
 		}
 	}
 	tick(canvas: Canvas, x: number, y: number) {
@@ -107,17 +107,7 @@ export class EditorGameMap {
 		for (let y = 0; y < height; y++) {
 			const row = [];
 			for (let x = 0; x < width; x++) {
-				const tile = new Tile(
-					x,
-					y,
-					buffer.readByte(),
-					buffer.readBoolean(),
-					buffer.readByte(),
-					buffer.readBoolean(),
-					null,
-					false,
-					false
-				);
+				const tile = new Tile(x, y, buffer.readByte(), buffer.readByte(), null, false, false);
 				if (buffer.readBoolean()) {
 					// unused script
 					buffer.readString();
@@ -202,7 +192,8 @@ export class EditorGameMap {
 			tiles: this.tiles,
 			backgroundTile: this.backgroundTile?.id,
 			events: this.events,
-			scripts: this.scripts
+			scripts: this.scripts,
+			entities: this.entities.map((entity) => entity.toJSON())
 		};
 	}
 }

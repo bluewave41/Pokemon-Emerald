@@ -40,6 +40,12 @@ export class Coords {
 		this.#sub.x = x;
 		this.#sub.y = y;
 	}
+	setX(x: number) {
+		this.setCoords(x, this.getCurrent().y);
+	}
+	setY(y: number) {
+		this.setCoords(this.getCurrent().x, y);
+	}
 	getLast() {
 		return this.#last;
 	}

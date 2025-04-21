@@ -40,11 +40,9 @@ export class BufferHelper {
 				return 'warp';
 		}
 	}
-	readDirection(): Direction | null {
+	readDirection(): Direction {
 		const b = this.readByte();
 		switch (b) {
-			case 0:
-				return null;
 			case 1:
 				return 'UP';
 			case 2:
@@ -53,9 +51,8 @@ export class BufferHelper {
 				return 'RIGHT';
 			case 4:
 				return 'DOWN';
-			default:
-				throw new Error(`Invalid direction received from buffer: ${b}`);
 		}
+		throw new Error(`Invalid direction: ${b}`);
 	}
 	readWarpType(): WarpType {
 		const b = this.readByte();
@@ -84,7 +81,11 @@ export class BufferHelper {
 		this.#buffer.writeUInt32LE(i, this.#index);
 		this.#index += 4;
 	}
-	writeString(str: string) {
+	writeString(str: string | null) {
+		if (!str) {
+			this.writeShort(0);
+			return;
+		}
 		this.writeShort(str.length);
 		for (let i = 0; i < str.length; i++) {
 			this.writeByte(str.charCodeAt(i));
@@ -151,5 +152,8 @@ export class BufferHelper {
 	}
 	get length() {
 		return this.#buffer.length;
+	}
+	get index() {
+		return this.#index;
 	}
 }

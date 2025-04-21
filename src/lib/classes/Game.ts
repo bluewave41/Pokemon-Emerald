@@ -9,7 +9,7 @@ import { WarpType, type Direction } from '@prisma/client';
 import GameEvent from './GameEvent';
 import { TextRect } from './ui/TextRect';
 import { adjustPositionForDirection } from '$lib/utils/adjustPositionForDirection';
-import { Position, ScreenPosition } from './Position';
+import { GridPosition, Position, ScreenPosition } from './Position';
 // these need to be included in the global state so scripts can use them
 import { FadeInRect } from './ui/FadeInRect';
 import SpriteBank from './SpriteBank';
@@ -33,11 +33,15 @@ export class Game {
 	constructor(canvas: Canvas, map: GameMap) {
 		this.mapHandler = new MapHandler(map);
 		this.canvas = canvas;
-		this.player = new Player(10, 10, this, 'DOWN');
+		this.player = new Player(10, 10, 'DOWN');
 		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
 		this.mapHandler.active.entities.addEntity(this.player);
 		this.tickScripts();
+	}
+	init() {
+		// pass game instance to all objects that use it
+		this.player.init(this);
 	}
 	async tickScripts() {
 		GameEvent.attach('flagSet', () => {
@@ -60,11 +64,12 @@ export class Game {
 
 		const targetPosition =
 			warpType === 'DOOR'
-				? targetWarp
+				? targetWarp.position
 				: adjustPositionForDirection(
-						new Position(targetWarp.x, targetWarp.y),
+						new GridPosition(targetWarp.position.x, targetWarp.position.y),
 						targetWarp.activateDirection
 					);
+
 		this.mapHandler.handleWarpTo(map);
 		this.player.coords.setCoords(targetPosition.x, targetPosition.y);
 
@@ -228,7 +233,7 @@ export class Game {
 	}
 	async executeScript(script: Script, type: 'setup' | 'script') {
 		const cond = eval(script.condition);
-		if (cond) {
+		if (cond || cond === undefined) {
 			if (type === 'setup') {
 				this.blockMovement();
 				eval(`(async () => { ${script.setup} })()`);
@@ -242,9 +247,21 @@ export class Game {
 			}
 		}
 	}
-	async showMessageBox(text: string) {
-		this.canvas.elements.addElement(new TextRect(text, this.lastFrameTime));
-		await GameEvent.waitForOnce('continueText');
+	async showMessageBox(text: string[]) {
+		const rect = new TextRect(text, this.lastFrameTime);
+		this.canvas.elements.addElement(rect);
+		const res = await GameEvent.waitForOnce('continueText');
+		if (res.detail.scroll) {
+			while (true) {
+				rect.scroll();
+				const done = await GameEvent.waitForOnce('textScrolled');
+				if (done) {
+					break;
+				}
+			}
+			await GameEvent.waitForOnce('continueText');
+		}
+		this.canvas.elements.removeElement(rect.id);
 	}
 	get activeMap() {
 		return this.mapHandler.active;

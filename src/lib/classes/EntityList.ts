@@ -1,4 +1,5 @@
 import type { Entity } from './entities/Entity';
+import type { GridPosition } from './Position';
 
 export class EntityList {
 	entities: Entity[] = [];
@@ -12,6 +13,9 @@ export class EntityList {
 	}
 	getEntity(id: string) {
 		return this.entities.find((entity) => entity.id === id);
+	}
+	getEntityOnTile(position: GridPosition) {
+		return this.entities.find((entity) => entity.coords.getCurrent().equals(position));
 	}
 	getEntities() {
 		return this.entities;
