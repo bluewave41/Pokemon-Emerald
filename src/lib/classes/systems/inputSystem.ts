@@ -1,5 +1,14 @@
+import type { Position } from '$lib/interfaces/components/Position';
 import { Game } from '../Game';
 import KeyHandler from '../KeyHandler';
+
+function isTileBlocked(game: Game, position: Position) {
+	console.log(position);
+	const tiles = game.getComponent(game.activeMapId, 'Tiles')!;
+	const tile = tiles[position.y][position.x];
+
+	return game.hasComponent(tile, 'Solid');
+}
 
 export function inputSystem(game: Game) {
 	const entities = game.entitiesWith(['Controllable', 'Position', 'SubPosition', 'Direction']);
@@ -40,7 +49,10 @@ export function inputSystem(game: Game) {
 				break;
 		}
 
-		game.addComponent(id, 'TargetPosition', target);
 		game.setComponent(id, 'Direction', KeyHandler.keyToDirection(key));
+
+		if (!isTileBlocked(game, position)) {
+			game.addComponent(id, 'TargetPosition', target);
+		}
 	}
 }

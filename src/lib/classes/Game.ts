@@ -98,6 +98,14 @@ export class Game {
 				const tileId = this.createEntity();
 				this.addComponent(tileId, 'Position', { x, y });
 				this.addComponent(tileId, 'TileSprite', { sprite: SpriteBank.getTile(tile.id) });
+				if ((tile.properties >> 2) & 0b11111) {
+					this.addComponent(tileId, 'Solid', {});
+				}
+
+				/*this.overlay = Boolean((properties >> 7) & 0b1);
+				this.permissions = (properties >> 2) & 0b11111;
+				this.tileSprites = SpriteBank.getTile(this.id);
+				this.jumpable = (properties & 0b11) === 0 ? null : directions[properties & 0b11];*/
 				row.push(tileId);
 			}
 			tileEntities.push(row);
@@ -143,6 +151,12 @@ export class Game {
 		component: ComponentTypes[K]
 	) {
 		this.addComponent(entityId, componentName, component);
+	}
+	hasComponent<K extends keyof ComponentTypes>(entityId: number, componentName: K): boolean {
+		const componentMap = this.components[componentName] as
+			| Map<number, ComponentTypes[K]>
+			| undefined;
+		return componentMap?.has(entityId) ?? false;
 	}
 	getComponent<K extends keyof ComponentTypes>(
 		entityId: number,

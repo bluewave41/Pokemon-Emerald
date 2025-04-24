@@ -24,4 +24,5 @@ export interface ComponentTypes {
 	Player: object;
 	Speed: number;
 	Controllable: object;
+	Solid: object;
 }
