@@ -61,6 +61,7 @@ export class GameMap {
 	absoluteX: number = 0;
 	// literal Y position on canvas in pixels
 	absoluteY: number = 0;
+
 	canvas: Canvas;
 	id: number;
 	name: MapNames;
@@ -68,7 +69,7 @@ export class GameMap {
 	height: number;
 	tiles: AnyTile[][];
 	backgroundTile: Tile;
-	entities: EntityList = new EntityList();
+	entities: EntityList;
 	scripts: Script[] = [];
 
 	constructor(
@@ -90,6 +91,7 @@ export class GameMap {
 		this.tiles = tiles;
 		this.backgroundTile = backgroundTile;
 		this.scripts = scripts;
+		this.entities = new EntityList();
 		this.entities.setEntities(entities);
 	}
 	drawImage(image: HTMLImageElement, x: number, y: number) {

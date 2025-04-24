@@ -7,13 +7,13 @@ export class Sprite extends Entity {
 	bank: BankNames;
 	sprite: string;
 
-	constructor(id: string, x: number, y: number, bank: BankNames, sprite: string, game: Game) {
-		super(id, x, y, game);
+	constructor(id: string, x: number, y: number, bank: BankNames, sprite: string) {
+		super(id, x, y, null);
 		this.bank = bank;
 		this.sprite = sprite;
 	}
 	tick() {
-		const active = this.game.activeMap;
+		const active = this.map;
 		const sub = this.coords.getSub();
 		const image = SpriteBank.getSprite(this.bank, this.sprite);
 		const xOffset = image.width - 15;

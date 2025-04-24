@@ -10,9 +10,23 @@ export interface SpriteInfo {
 	activated: boolean;
 }
 
+export type CharacterSprites =
+	| 'up'
+	| 'up1'
+	| 'up2'
+	| 'left'
+	| 'left1'
+	| 'left2'
+	| 'right'
+	| 'right1'
+	| 'right2'
+	| 'down'
+	| 'down1'
+	| 'down2';
+
 class InternalSpriteBank {
 	tiles: Record<number, SpriteInfo> = {};
-	sprites: Record<BankNames, Record<string, HTMLImageElement>> = {
+	sprites: Record<BankNames, Partial<Record<CharacterSprites, HTMLImageElement>>> = {
 		player: {},
 		'npc-fat': {},
 		mom: {},
@@ -108,6 +122,9 @@ class InternalSpriteBank {
 	}
 	getTile(id: number) {
 		return this.tiles[id];
+	}
+	getSprites(bank: BankNames) {
+		return this.sprites[bank];
 	}
 	getSprite(bank: BankNames, sprite: string) {
 		const result = this.sprites[bank]?.[sprite];

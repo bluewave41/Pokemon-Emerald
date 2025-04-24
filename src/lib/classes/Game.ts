@@ -5,11 +5,10 @@ import { Player } from './entities/Player';
 import { GameMap, type Script } from './maps/GameMap';
 import KeyHandler from './KeyHandler';
 import { MapHandler } from './maps/MapHandler';
-import { WarpType, type Direction } from '@prisma/client';
+import { Direction, WarpType } from '@prisma/client';
 import GameEvent from './GameEvent';
 import { TextRect } from './ui/TextRect';
 import { adjustPositionForDirection } from '$lib/utils/adjustPositionForDirection';
-import { GridPosition, Position, ScreenPosition } from './Position';
 // these need to be included in the global state so scripts can use them
 import { FadeInRect } from './ui/FadeInRect';
 import SpriteBank from './SpriteBank';
@@ -19,29 +18,145 @@ import { sleep } from '$lib/utils/sleep';
 import FlagSet from './FlagSet';
 import { NPC } from './entities/NPC';
 import type { Warp } from './tiles/Warp';
+import type { ComponentTypes } from '$lib/interfaces/components/ComponentTypes';
+import { renderSystem } from './systems/renderSystem';
+import { mapRenderSystem } from './systems/mapRenderSystem';
+import type { MapNames } from '$lib/interfaces/MapNames';
+import type { TileInfo } from '$lib/interfaces/TileInfo';
+import type { MapInfo } from '$lib/utils/readMap';
+import { viewportSystem } from './systems/viewportSystem';
+import { movementSystem } from './systems/movementSystem';
+import { inputSystem } from './systems/inputSystem';
+
+export interface Viewport {
+	width: number;
+	height: number;
+	pos: {
+		x: number;
+		y: number;
+		xOffset: number;
+		yOffset: number;
+	};
+}
 
 export class Game {
-	mapHandler: MapHandler;
+	activeMapId: number;
 	canvas: Canvas;
-	player: Player;
-	viewport = { width: 15, height: 11, pos: { x: 0, y: 0, xOffset: 0, yOffset: 0 } };
+	viewport: Viewport = { width: 15, height: 11, pos: { x: 0, y: 0, xOffset: 0, yOffset: 0 } };
 	static tileSize: number = 16;
 	static zoom: number = 2;
 	lastFrameTime: number = 0;
 	frozen: boolean = false;
+	private entities: Set<number> = new Set();
+	private components: { [key: string]: Map<number, any> } = {};
+	private idCount = 1;
 
-	constructor(canvas: Canvas, map: GameMap) {
-		this.mapHandler = new MapHandler(map);
+	constructor(canvas: Canvas, mapInfo: MapInfo) {
 		this.canvas = canvas;
-		this.player = new Player(10, 10, 'DOWN');
 		this.canvas.canvas.width = this.viewport.width * Game.getAdjustedTileSize();
 		this.canvas.canvas.height = this.viewport.height * Game.getAdjustedTileSize();
-		this.mapHandler.active.entities.addEntity(this.player);
+		//this.mapHandler.active.entities.addEntity(this.player);
 		this.tickScripts();
+		this.init(mapInfo);
 	}
-	init() {
-		// pass game instance to all objects that use it
-		this.player.init(this);
+
+	init(mapInfo: MapInfo) {
+		this.createPlayer();
+		this.createMap(mapInfo);
+	}
+	createPlayer() {
+		const playerId = this.createEntity();
+		const image = SpriteBank.getSprite('player', 'down1');
+
+		this.addComponent(playerId, 'Position', { x: 10, y: 10 });
+		this.addComponent(playerId, 'SubPosition', {
+			x: 10 * Game.getAdjustedTileSize(),
+			y: 10 * Game.getAdjustedTileSize()
+		});
+		this.addComponent(playerId, 'Direction', Direction.DOWN);
+		this.addComponent(playerId, 'Movement', {
+			moving: false,
+			jumping: false,
+			counter: 0,
+			walkFrame: 1
+		});
+		this.addComponent(playerId, 'Sprite', {
+			bankId: 'player',
+			sprites: SpriteBank.getSprites('player')
+		});
+		this.addComponent(playerId, 'Offset', { x: image.width - 15, y: image.height - 21 });
+		this.addComponent(playerId, 'Speed', Game.getAdjustedTileSize() * 3);
+		this.addComponent(playerId, 'Player', {});
+		this.addComponent(playerId, 'Controllable', {});
+	}
+	createTiles(tiles: TileInfo[][]) {
+		const tileEntities: number[][] = [];
+		for (let y = 0; y < tiles.length; y++) {
+			const row = [];
+			for (let x = 0; x < tiles[0].length; x++) {
+				const tile = tiles[y][x];
+				const tileId = this.createEntity();
+				this.addComponent(tileId, 'Position', { x, y });
+				this.addComponent(tileId, 'TileSprite', { sprite: SpriteBank.getTile(tile.id) });
+				row.push(tileId);
+			}
+			tileEntities.push(row);
+		}
+		return tileEntities;
+	}
+	createMap(mapInfo: MapInfo) {
+		const tiles = this.createTiles(mapInfo.tiles);
+
+		const mapId = this.createEntity();
+
+		this.addComponent(mapId, 'MapInfo', {
+			id: mapInfo.id,
+			name: mapInfo.name,
+			width: mapInfo.width,
+			height: mapInfo.height
+		});
+		this.addComponent(mapId, 'Tiles', tiles);
+		this.addComponent(mapId, 'Background', SpriteBank.getTile(mapInfo.backgroundId).images[0]);
+		this.addComponent(mapId, 'Connections', {});
+
+		this.activeMapId = mapId;
+	}
+	createEntity() {
+		const id = this.idCount;
+		this.idCount++;
+		this.entities.add(id);
+		return id;
+	}
+	addComponent<K extends keyof ComponentTypes>(
+		entityId: number,
+		componentName: K,
+		component: ComponentTypes[K]
+	) {
+		if (!this.components[componentName]) {
+			this.components[componentName] = new Map();
+		}
+		(this.components[componentName] as Map<number, ComponentTypes[K]>).set(entityId, component);
+	}
+	setComponent<K extends keyof ComponentTypes>(
+		entityId: number,
+		componentName: K,
+		component: ComponentTypes[K]
+	) {
+		this.addComponent(entityId, componentName, component);
+	}
+	getComponent<K extends keyof ComponentTypes>(
+		entityId: number,
+		componentName: K
+	): ComponentTypes[K] | undefined {
+		return (this.components[componentName] as Map<number, ComponentTypes[K]>)?.get(entityId);
+	}
+	removeComponent(entityId: number, componentName: string) {
+		this.components[componentName]?.delete(entityId);
+	}
+	entitiesWith(componentNames: string[]): number[] {
+		return Array.from(this.entities).filter((id) =>
+			componentNames.every((componentName) => this.components[componentName]?.has(id))
+		);
 	}
 	async tickScripts() {
 		GameEvent.attach('flagSet', () => {
@@ -51,7 +166,7 @@ export class Game {
 			}
 		});
 	}
-	async loadMapById(mapId: number, warpId: number, warpType: WarpType) {
+	/*async loadMapById(mapId: number, warpId: number, warpType: WarpType) {
 		const map = await this.mapHandler.fetchMapById(mapId);
 
 		const targetWarp = map.tiles
@@ -80,8 +195,8 @@ export class Game {
 		}
 
 		return targetWarp;
-	}
-	changeMap(direction: Direction) {
+	}*/
+	/*changeMap(direction: Direction) {
 		const current = this.player.coords.getCurrent();
 		const sub = this.player.coords.getSub();
 
@@ -126,9 +241,14 @@ export class Game {
 		}
 
 		this.mapHandler.connect();
-	}
+	}*/
 	tick(currentFrameTime: number) {
-		const sub = this.player.coords.getSub();
+		this.canvas.reset();
+
+		this.updateSystems(currentFrameTime);
+
+		this.lastFrameTime = currentFrameTime;
+		/*const sub = this.player.coords.getSub();
 
 		this.canvas.reset();
 		this.viewport.pos = {
@@ -175,8 +295,10 @@ export class Game {
 					: a.coords.getCurrent().y - b.coords.getCurrent().y
 			);
 
-		for (const entity of entities) {
-			entity.tick(currentFrameTime, this.lastFrameTime, this.canvas);
+		if (!this.frozen) {
+			for (const entity of entities) {
+				entity.tick(currentFrameTime, this.lastFrameTime, this.canvas);
+			}
 		}
 
 		if (this.mapHandler.up) {
@@ -209,7 +331,16 @@ export class Game {
 			element.draw(0, 0, this);
 		}
 
-		this.canvas.context.restore();
+		this.canvas.context.restore();*/
+	}
+	updateSystems(currentFrameTime: number) {
+		const deltaTime = (currentFrameTime - this.lastFrameTime) / 1000;
+
+		viewportSystem(this, this.canvas, this.viewport);
+		mapRenderSystem(this, this.canvas);
+		renderSystem(this, this.canvas);
+		inputSystem(this);
+		movementSystem(this, deltaTime);
 	}
 	drawMap(currentFrameTime: number, map: GameMap, runScripts?: boolean) {
 		map.drawBaseLayer(this.canvas);

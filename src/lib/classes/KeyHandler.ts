@@ -1,3 +1,5 @@
+import { Direction } from '@prisma/client';
+
 export type ActiveKeys = 'z';
 export type MovementKeys = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
 
@@ -78,6 +80,18 @@ export class InternalKeyHandler {
 		const value = { ...this.#pressedKeys[key] };
 		this.#pressedKeys[key].initial = false;
 		return value;
+	}
+	keyToDirection(key: MovementKeys) {
+		switch (key) {
+			case 'ArrowUp':
+				return Direction.UP;
+			case 'ArrowLeft':
+				return Direction.LEFT;
+			case 'ArrowRight':
+				return Direction.RIGHT;
+			case 'ArrowDown':
+				return Direction.DOWN;
+		}
 	}
 }
 

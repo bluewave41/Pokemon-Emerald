@@ -4,34 +4,25 @@ import KeyHandler, { type MovementKeys } from '../KeyHandler';
 import SpriteBank from '../SpriteBank';
 import type { Tile } from '../tiles/Tile';
 import type { Warp } from '../tiles/Warp';
-import { WarpType, type Direction } from '@prisma/client';
+import { Direction, WarpType } from '@prisma/client';
 import { getOppositeDirection } from '$lib/utils/getOppositeDirection';
 import type { TextRect } from '../ui/TextRect';
-import { Coords } from '../Coords';
-import { Entity } from './Entity';
 import { AdjustedRect } from '../AdjustedRect';
 import { sleep } from '$lib/utils/sleep';
 import { FadeOutRect } from '../ui/FadeOutRect';
 import { FadeInRect } from '../ui/FadeInRect';
 import { GridPosition, ScreenPosition } from '../Position';
 import type { NPC } from './NPC';
+import { Character } from './Character';
 
-export class Player extends Entity {
-	coords: Coords;
-	direction: Direction;
-	moving: boolean = false;
-	jumping: boolean = false;
-	speed: number = Game.getAdjustedTileSize() * 3;
-	walkFrame: number = 1;
-	counter: number = 0;
+export class Player extends Character {
+	game: Game;
 	offsetX: number = 0;
 	offsetY: number = 0;
 
-	constructor(x: number, y: number, direction: Direction) {
-		super('player', x, y, null);
-		this.coords = new Coords(x, y);
-		this.coords = new Coords(x, y);
-		this.direction = direction;
+	constructor(x: number, y: number, game: Game) {
+		super('player', 'player', x, y, null);
+		this.game = game;
 	}
 	tick(currentFrameTime: number, lastFrameTime: number) {
 		const sub = this.coords.getSub();
@@ -351,28 +342,7 @@ export class Player extends Entity {
 			this.game.executeScript(script, 'script');
 		}
 	}
-	async walk(direction: Direction) {
-		const sub = this.coords.getSub();
-		switch (direction) {
-			case 'UP':
-				this.coords.setTarget(new ScreenPosition(sub.x, sub.y - Game.getAdjustedTileSize()));
-				break;
-			case 'LEFT':
-				this.coords.setTarget(new ScreenPosition(sub.x - Game.getAdjustedTileSize(), sub.y));
-				break;
-			case 'RIGHT':
-				this.coords.setTarget(new ScreenPosition(sub.x + Game.getAdjustedTileSize(), sub.y));
-				break;
-			case 'DOWN':
-				this.coords.setTarget(new ScreenPosition(sub.x, sub.y + Game.getAdjustedTileSize()));
-				break;
-		}
-		this.direction = direction;
-		this.moving = true;
-		this.counter = 0;
 
-		await GameEvent.waitForOnce('movementFinished');
-	}
 	jump(direction: Direction) {
 		const sub = this.coords.getSub();
 		switch (direction) {
@@ -414,13 +384,13 @@ export class Player extends Entity {
 		const moveX = this.speed * deltaTime;
 		const moveY = this.speed * deltaTime;
 
-		if (this.direction === 'RIGHT') {
+		if (this.direction === Direction.RIGHT) {
 			sub.x = Math.round(Math.min(sub.x + moveX, target.x));
-		} else if (this.direction === 'LEFT') {
+		} else if (this.direction === Direction.LEFT) {
 			sub.x = Math.round(Math.max(sub.x - moveX, target.x));
-		} else if (this.direction === 'DOWN') {
+		} else if (this.direction === Direction.DOWN) {
 			sub.y = Math.round(Math.min(sub.y + moveY, target.y));
-		} else if (this.direction === 'UP') {
+		} else if (this.direction === Direction.UP) {
 			sub.y = Math.round(Math.max(sub.y - moveY, target.y));
 		}
 

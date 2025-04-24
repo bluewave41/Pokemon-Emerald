@@ -4,8 +4,8 @@
 	import { Game } from '$lib/classes/Game.js';
 	import GameEvent from '$lib/classes/GameEvent.js';
 	import KeyHandler from '$lib/classes/KeyHandler.js';
-	import { GameMap } from '$lib/classes/maps/GameMap.js';
 	import SpriteBank from '$lib/classes/SpriteBank.js';
+	import { readMap, type MapInfo } from '$lib/utils/readMap.js';
 	import { Buffer } from 'buffer';
 
 	let { data } = $props();
@@ -20,10 +20,11 @@
 	async function init() {
 		if (canvasRef) {
 			const canvas = new Canvas(canvasRef);
-			await SpriteBank.readMap(data.images);
-			const gameMap = GameMap.readMap(canvas, Buffer.from(data.map, 'base64'));
 
-			//player
+			const gameInfo: MapInfo = readMap(Buffer.from(data.map, 'base64'));
+
+			await SpriteBank.readMap(data.images);
+
 			await SpriteBank.readBank('player', data.player);
 			await SpriteBank.readBank('mom', data.mom);
 			await SpriteBank.readBank('npc-fat', data.npc);
@@ -31,9 +32,7 @@
 			await SpriteBank.readBank('misc', data.misc);
 			await SpriteBank.readBank('vigoroth', data.vigoroth);
 
-			game = new Game(canvas, gameMap);
-			game.init();
-			game.activeMap.entities.getEntities().forEach((entity) => entity.init(game!));
+			game = new Game(canvas, gameInfo);
 
 			GameEvent.dispatchEvent(new CustomEvent('rerender'));
 
@@ -92,7 +91,7 @@
 	}}
 />
 
-{#key status}
+<!--{#key status}
 	{#if game}
 		{#each game.mapHandler.active.scripts as script}
 			<button
@@ -105,7 +104,7 @@
 			</button>
 		{/each}
 	{/if}
-{/key}
+{/key}-->
 
 <style>
 	.container {

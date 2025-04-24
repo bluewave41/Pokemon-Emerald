@@ -1,7 +1,4 @@
 import type { Direction } from '@prisma/client';
-import { Entity } from './Entity';
-import SpriteBank from '../SpriteBank';
-import type { Canvas } from '../Canvas';
 import { bankNamesSchema, type BankNames } from '$lib/interfaces/BankNames';
 import { Game } from '../Game';
 import { getRandomDirection } from '$lib/utils/getRandomDirection';
@@ -9,6 +6,7 @@ import { GridPosition, ScreenPosition } from '../Position';
 import GameEvent from '../GameEvent';
 import { z } from 'zod';
 import { Coords } from '../Coords';
+import { Character } from './Character';
 
 export const editorNPCSchema = z.object({
 	id: z.string(),
@@ -17,16 +15,9 @@ export const editorNPCSchema = z.object({
 	y: z.number()
 });
 
-export class NPC extends Entity {
+export class NPC extends Character {
 	home: GridPosition;
-	bankId: BankNames;
-	moving: boolean = false;
-	counter: number = 0;
-	direction: Direction = 'DOWN';
-	walkFrame: number = 1;
-	speed: number = Game.getAdjustedTileSize() * 3;
 	scripted: boolean;
-	shouldDraw: boolean = true;
 	path: Direction[] = [];
 	pathIndex: number = 0;
 
@@ -35,55 +26,23 @@ export class NPC extends Entity {
 		bankId: BankNames,
 		x: number,
 		y: number,
-		direction: Direction,
 		script: string | null,
 		scripted?: boolean
 	) {
-		super(id, x, y, script);
-		this.direction = direction;
+		super(id, bankId, x, y, script);
 		const current = this.coords.getCurrent();
 		this.home = new GridPosition(current.x, current.y);
-		this.bankId = bankId;
 		this.scripted = scripted ?? false;
 	}
 	setPath(directions: Direction[]) {
 		this.path = directions;
 		return this;
 	}
-	setVisible(visible: boolean) {
-		this.shouldDraw = visible;
-	}
-	tick(currentFrameTime: number, lastFrameTime: number, canvas: Canvas) {
-		const active = this.game.activeMap;
+	tick(currentFrameTime: number, lastFrameTime: number) {
 		const current = this.coords.getCurrent();
 		const target = this.coords.getTarget();
 
-		const direction = this.direction.toLocaleLowerCase();
-		const walkSprite = this.moving
-			? direction + (this.counter % 20 < 10 ? this.walkFrame : '')
-			: direction;
-
-		const sprite = SpriteBank.getSprite(this.bankId, walkSprite);
-
-		if (this.shouldDraw) {
-			const sub = this.coords.getSub();
-			const xOffset = sprite.width - 15;
-			const yOffset = sprite.height - 21 + sprite.height - 21;
-
-			canvas.drawSprite(
-				sprite,
-				Math.round(sub.x) + active.absoluteX * Game.getAdjustedTileSize(),
-				Math.round(sub.y) + active.absoluteY * Game.getAdjustedTileSize(),
-				xOffset,
-				yOffset
-			);
-		}
-
 		this.move(currentFrameTime, lastFrameTime);
-
-		if (this.moving) {
-			return;
-		}
 
 		// random timer to move around
 		if (!this.scripted && currentFrameTime - lastFrameTime >= 3000) {
@@ -111,7 +70,7 @@ export class NPC extends Entity {
 				const moveTarget = moveTable[newDirection];
 				// keep contained within home area
 				if (
-					!this.game.activeMap.isTileOccupied(moveTarget.pos) &&
+					!this.map.isTileOccupied(moveTarget.pos) &&
 					moveTarget.pos.x >= this.home.x - 2 &&
 					moveTarget.pos.x <= this.home.x + 2 &&
 					moveTarget.pos.y >= this.home.y - 2 &&
@@ -147,31 +106,9 @@ export class NPC extends Entity {
 			}
 		}
 	}
-	async walk(direction: Direction) {
-		const sub = this.coords.getSub();
-		switch (direction) {
-			case 'UP':
-				this.coords.setTarget(new ScreenPosition(sub.x, sub.y - Game.getAdjustedTileSize()));
-				break;
-			case 'LEFT':
-				this.coords.setTarget(new ScreenPosition(sub.x - Game.getAdjustedTileSize(), sub.y));
-				break;
-			case 'RIGHT':
-				this.coords.setTarget(new ScreenPosition(sub.x + Game.getAdjustedTileSize(), sub.y));
-				break;
-			case 'DOWN':
-				this.coords.setTarget(new ScreenPosition(sub.x, sub.y + Game.getAdjustedTileSize()));
-				break;
-		}
-		this.direction = direction;
-		this.moving = true;
-		this.counter = 0;
-
-		await GameEvent.waitForOnce('npcMovementFinished');
-	}
 	move(currentFrameTime: number, lastFrameTime: number) {
 		const target = this.coords.getTarget();
-		if (!this.moving || (this.game.frozen && !this.scripted)) {
+		if (!this.moving) {
 			return;
 		}
 

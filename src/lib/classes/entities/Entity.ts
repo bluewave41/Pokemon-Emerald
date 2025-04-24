@@ -1,11 +1,9 @@
 import { z } from 'zod';
 import type { Canvas } from '../Canvas';
 import { Coords } from '../Coords';
-import type { Game } from '../Game';
 
 export class Entity {
 	id: string;
-	game!: Game;
 	coords: Coords;
 	priority: number = 0;
 	visible: boolean = true;
@@ -15,9 +13,6 @@ export class Entity {
 		this.id = id;
 		this.coords = new Coords(x, y);
 		this.script = script;
-	}
-	init(game: Game) {
-		this.game = game;
 	}
 	setVisible(visible: boolean) {
 		this.visible = visible;
