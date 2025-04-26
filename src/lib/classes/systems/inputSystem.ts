@@ -3,7 +3,6 @@ import { Game } from '../Game';
 import KeyHandler from '../KeyHandler';
 
 function isTileBlocked(game: Game, position: Position) {
-	console.log(position);
 	const tiles = game.getComponent(game.activeMapId, 'Tiles')!;
 	const tile = tiles[position.y][position.x];
 

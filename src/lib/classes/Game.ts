@@ -21,12 +21,16 @@ import type { Warp } from './tiles/Warp';
 import type { ComponentTypes } from '$lib/interfaces/components/ComponentTypes';
 import { renderSystem } from './systems/renderSystem';
 import { mapRenderSystem } from './systems/mapRenderSystem';
-import type { MapNames } from '$lib/interfaces/MapNames';
+import { GameMapResources, type MapNames } from '$lib/interfaces/MapNames';
 import type { TileInfo } from '$lib/interfaces/TileInfo';
-import type { MapInfo } from '$lib/utils/readMap';
+import { readMap, type MapInfo } from '$lib/utils/readMap';
 import { viewportSystem } from './systems/viewportSystem';
 import { movementSystem } from './systems/movementSystem';
 import { inputSystem } from './systems/inputSystem';
+import { mapOverlaySysyem } from './systems/mapOverlaySystem';
+import { mapSystem } from './systems/mapSystem';
+import axios from 'axios';
+import { Buffer } from 'buffer';
 
 export interface Viewport {
 	width: number;
@@ -41,6 +45,7 @@ export interface Viewport {
 
 export class Game {
 	activeMapId: number;
+	loadedMaps = new Set<MapNames>();
 	canvas: Canvas;
 	viewport: Viewport = { width: 15, height: 11, pos: { x: 0, y: 0, xOffset: 0, yOffset: 0 } };
 	static tileSize: number = 16;
@@ -63,6 +68,17 @@ export class Game {
 	init(mapInfo: MapInfo) {
 		this.createPlayer();
 		this.createMap(mapInfo);
+	}
+	hasMapLoaded(name: MapNames) {
+		return this.loadedMaps.has(name);
+	}
+	getMapIdByName(name: MapNames) {
+		for (const [id, mapInfo] of this.components['MapInfo']) {
+			if ((mapInfo as { name: MapNames }).name === name) {
+				return id;
+			}
+		}
+		return null;
 	}
 	createPlayer() {
 		const playerId = this.createEntity();
@@ -101,6 +117,9 @@ export class Game {
 				if ((tile.properties >> 2) & 0b11111) {
 					this.addComponent(tileId, 'Solid', {});
 				}
+				if ((tile.properties >> 7) & 0b1) {
+					this.addComponent(tileId, 'Overlay', {});
+				}
 
 				/*this.overlay = Boolean((properties >> 7) & 0b1);
 				this.permissions = (properties >> 2) & 0b11111;
@@ -112,10 +131,12 @@ export class Game {
 		}
 		return tileEntities;
 	}
-	createMap(mapInfo: MapInfo) {
+	createMap(mapInfo: MapInfo, direction?: Direction) {
 		const tiles = this.createTiles(mapInfo.tiles);
 
 		const mapId = this.createEntity();
+
+		const { connections } = GameMapResources.littleroot;
 
 		this.addComponent(mapId, 'MapInfo', {
 			id: mapInfo.id,
@@ -125,15 +146,32 @@ export class Game {
 		});
 		this.addComponent(mapId, 'Tiles', tiles);
 		this.addComponent(mapId, 'Background', SpriteBank.getTile(mapInfo.backgroundId).images[0]);
-		this.addComponent(mapId, 'Connections', {});
+		this.addComponent(mapId, 'Connections', connections);
 
-		this.activeMapId = mapId;
+		if (!direction) {
+			this.activeMapId = mapId;
+		} else {
+			this.addComponent(mapId, 'Direction', direction);
+		}
+
+		return mapId;
 	}
 	createEntity() {
 		const id = this.idCount;
 		this.idCount++;
 		this.entities.add(id);
 		return id;
+	}
+	async loadMap(name: MapNames, direction: Direction) {
+		const response = await axios.get(`/maps/name?name=${name}`);
+		if (response.status === 200) {
+			const map = readMap(Buffer.from(response.data.map, 'base64'));
+
+			this.loadedMaps.add(name);
+			return this.createMap(map, direction);
+		} else {
+			throw new Error('Failed to load map');
+		}
 	}
 	addComponent<K extends keyof ComponentTypes>(
 		entityId: number,
@@ -256,31 +294,13 @@ export class Game {
 
 		this.mapHandler.connect();
 	}*/
-	tick(currentFrameTime: number) {
+	async tick(currentFrameTime: number) {
 		this.canvas.reset();
 
-		this.updateSystems(currentFrameTime);
+		await this.updateSystems(currentFrameTime);
 
 		this.lastFrameTime = currentFrameTime;
 		/*const sub = this.player.coords.getSub();
-
-		this.canvas.reset();
-		this.viewport.pos = {
-			x: -(
-				sub.x / Game.getAdjustedTileSize() -
-				this.viewport.width / 2 +
-				(this.mapHandler?.left?.width ?? 0)
-			),
-			y: -(
-				sub.y / Game.getAdjustedTileSize() -
-				this.viewport.height / 2 +
-				(this.mapHandler.up?.height ?? 0)
-			),
-			xOffset: (this.mapHandler.left?.width ?? 0) * Game.getAdjustedTileSize(),
-			yOffset: (this.mapHandler.up?.height ?? 0) * Game.getAdjustedTileSize()
-		};
-
-		this.canvas.translate(this.viewport.pos.x, this.viewport.pos.y);
 
 		if (this.mapHandler.up) {
 			this.drawMap(currentFrameTime, this.mapHandler.up);
@@ -347,12 +367,14 @@ export class Game {
 
 		this.canvas.context.restore();*/
 	}
-	updateSystems(currentFrameTime: number) {
+	async updateSystems(currentFrameTime: number) {
 		const deltaTime = (currentFrameTime - this.lastFrameTime) / 1000;
 
 		viewportSystem(this, this.canvas, this.viewport);
+		await mapSystem(this);
 		mapRenderSystem(this, this.canvas);
 		renderSystem(this, this.canvas);
+		mapOverlaySysyem(this, this.canvas);
 		inputSystem(this);
 		movementSystem(this, deltaTime);
 	}

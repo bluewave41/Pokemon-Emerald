@@ -36,8 +36,8 @@
 
 			GameEvent.dispatchEvent(new CustomEvent('rerender'));
 
-			const render = (frameTime: number) => {
-				game!.tick(frameTime);
+			const render = async (frameTime: number) => {
+				await game!.tick(frameTime);
 				window.requestAnimationFrame(render);
 			};
 			render(0);

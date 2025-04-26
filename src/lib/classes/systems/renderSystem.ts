@@ -2,7 +2,7 @@ import type { Canvas } from '../Canvas';
 import { Game } from '../Game';
 
 export function renderSystem(game: Game, canvas: Canvas) {
-	//const map = game.entitiesWith(['ActiveMap']);
+	const map = game.getComponent(game.activeMapId, 'Position')!;
 
 	for (const id of game.entitiesWith(['Position', 'SubPosition', 'Sprite', 'Direction'])) {
 		const pos = game.getComponent(id, 'SubPosition')!;
@@ -26,8 +26,8 @@ export function renderSystem(game: Game, canvas: Canvas) {
 
 		canvas.drawSprite(
 			drawSprite,
-			Math.round(pos.x) /*+ map.absoluteX*/,
-			Math.round(pos.y) /*+ map.absoluteY*/,
+			Math.round(pos.x) + map.x * Game.getAdjustedTileSize(),
+			Math.round(pos.y) + map.y * Game.getAdjustedTileSize(),
 			offset?.x,
 			offset.y
 		);

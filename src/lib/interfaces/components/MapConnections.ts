@@ -1,6 +1,10 @@
-export interface MapConnections {
-	up?: number;
-	left?: number;
-	right?: number;
-	down?: number;
+import type { MapNames } from '../MapNames';
+
+export interface Connections {
+	UP?: MapNames | null;
+	LEFT?: MapNames | null;
+	RIGHT?: MapNames | null;
+	DOWN?: MapNames | null;
 }
+
+export type MapConnections = Connections | null;

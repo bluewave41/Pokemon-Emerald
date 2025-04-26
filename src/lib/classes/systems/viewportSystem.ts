@@ -11,10 +11,15 @@ export function viewportSystem(game: Game, canvas: Canvas, viewport: Viewport) {
 	const position = game.getComponent(playerId, 'SubPosition')!;
 	const connections = game.getComponent(game.activeMapId, 'Connections')!;
 
-	const width = connections.left ? (game.getComponent(connections.left, 'MapInfo')?.width ?? 0) : 0;
-	const height = connections.left
-		? (game.getComponent(connections.left, 'MapInfo')?.width ?? 0)
-		: 0;
+	if (!connections) {
+		return;
+	}
+
+	const leftMapInfo = game.getComponent(game.getMapIdByName(connections.LEFT), 'MapInfo');
+	const upMapInfo = game.getComponent(game.getMapIdByName(connections.UP), 'MapInfo');
+
+	const width = connections.LEFT ? (leftMapInfo?.width ?? 0) : 0;
+	const height = connections.UP ? (upMapInfo?.height ?? 0) : 0;
 
 	viewport.pos = {
 		x: -(position.x / Game.getAdjustedTileSize() - viewport.width / 2 + width),

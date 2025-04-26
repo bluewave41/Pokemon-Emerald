@@ -2,19 +2,21 @@ import type { Canvas } from '../Canvas';
 import type { Game } from '../Game';
 
 export function mapRenderSystem(game: Game, canvas: Canvas) {
-	const mapEntities = game.entitiesWith(['MapInfo', 'Tiles']);
-
+	const mapEntities = game.entitiesWith(['MapInfo', 'Tiles', 'Position']);
 	for (const id of mapEntities) {
-		const tiles = game.getComponent(id, 'Tiles')!;
+		const tileEntities = game.getComponent(id, 'Tiles')!.flat();
 		const background = game.getComponent(id, 'Background')!;
+		const position = game.getComponent(id, 'Position')!;
 
-		for (let row = 0; row < tiles.length; row++) {
-			for (let col = 0; col < tiles[0].length; col++) {
-				const tileId = tiles[row][col];
-				const tile = game.getComponent(tileId, 'TileSprite')!;
+		for (const id of tileEntities) {
+			const sprite = game.getComponent(id, 'TileSprite')!;
+			const pos = game.getComponent(id, 'Position')!;
+			const overlay = game.getComponent(id, 'Overlay');
 
-				canvas.drawImage(background, col, row);
-				canvas.drawImage(tile.sprite.images[0], col, row);
+			canvas.drawImage(background, pos.x + position.x, pos.y + position.y);
+
+			if (!overlay) {
+				canvas.drawImage(sprite.sprite.images[0], pos.x + position.x, pos.y + position.y);
 			}
 		}
 	}

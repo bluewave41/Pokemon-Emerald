@@ -14,7 +14,7 @@ export interface ComponentTypes {
 	Direction: Direction;
 	Movement: Movement;
 	Sprite: Sprite;
-	Overlay: boolean;
+	Overlay: object;
 	Offset: Offset;
 	MapInfo: MapInfo;
 	Tiles: number[][];
