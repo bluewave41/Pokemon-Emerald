@@ -11,13 +11,13 @@ export function movementSystem(game: Game, deltaTime: number) {
 		'Sprite'
 	]);
 
-	for (const id of entities) {
-		const position = game.getComponent(id, 'Position')!;
-		const sub = game.getComponent(id, 'SubPosition')!;
-		const target = game.getComponent(id, 'TargetPosition')!;
-		const direction = game.getComponent(id, 'Direction')!;
-		const movement = game.getComponent(id, 'Movement')!;
-		const speed = game.getComponent(id, 'Speed')!;
+	for (const entity of entities) {
+		const position = entity.components.Position;
+		const sub = entity.components.SubPosition;
+		const target = entity.components.TargetPosition;
+		const direction = entity.components.Direction;
+		const movement = entity.components.Movement;
+		const speed = entity.components.Speed;
 
 		if (!movement.moving) {
 			continue;

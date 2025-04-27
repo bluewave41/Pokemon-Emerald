@@ -31,6 +31,7 @@ import { mapOverlaySysyem } from './systems/mapOverlaySystem';
 import { mapSystem } from './systems/mapSystem';
 import axios from 'axios';
 import { Buffer } from 'buffer';
+import { mapTransitionSystem } from './systems/mapTransitionSystem';
 
 export interface Viewport {
 	width: number;
@@ -43,6 +44,11 @@ export interface Viewport {
 	};
 }
 
+export type EntityWith<K extends keyof ComponentTypes> = {
+	id: number;
+	components: { [P in K]: ComponentTypes[P] };
+};
+
 export class Game {
 	activeMapId: number;
 	loadedMaps = new Set<MapNames>();
@@ -52,9 +58,10 @@ export class Game {
 	static zoom: number = 2;
 	lastFrameTime: number = 0;
 	frozen: boolean = false;
-	private entities: Set<number> = new Set();
-	private components: { [key: string]: Map<number, any> } = {};
+	private entities: Map<number, Set<keyof ComponentTypes>> = new Map();
+	private components: { [K in keyof ComponentTypes]?: Map<number, ComponentTypes[K]> } = {};
 	private idCount = 1;
+	transitionInProgress: boolean = false;
 
 	constructor(canvas: Canvas, mapInfo: MapInfo) {
 		this.canvas = canvas;
@@ -63,6 +70,8 @@ export class Game {
 		//this.mapHandler.active.entities.addEntity(this.player);
 		this.tickScripts();
 		this.init(mapInfo);
+
+		this.loadedMaps.add('littleroot');
 	}
 
 	init(mapInfo: MapInfo) {
@@ -72,6 +81,22 @@ export class Game {
 	hasMapLoaded(name: MapNames) {
 		return this.loadedMaps.has(name);
 	}
+	updateMapPositions() {
+		const positions = {
+			UP: {
+				x: getMapFromDirection(mapInfo, 'LEFT')?.width ?? 0,
+				y: 0
+			},
+			DOWN: {
+				x: getMapFromDirection(mapInfo, 'LEFT')?.width ?? 0,
+				y: getMapFromDirection(mapInfo, 'UP')?.height ?? 0 + activeMap?.height
+			},
+			ACTIVE: {
+				x: getMapFromDirection(mapInfo, 'LEFT')?.width ?? 0,
+				y: getMapFromDirection(mapInfo, 'UP')?.height ?? 0
+			}
+		};
+	}
 	getMapIdByName(name: MapNames) {
 		for (const [id, mapInfo] of this.components['MapInfo']) {
 			if ((mapInfo as { name: MapNames }).name === name) {
@@ -79,6 +104,14 @@ export class Game {
 			}
 		}
 		return null;
+	}
+	getMapInfoByName(name: MapNames) {
+		const mapId = this.getMapIdByName(name);
+		if (!mapId) {
+			return null;
+		}
+
+		return this.getComponent(mapId, 'MapInfo');
 	}
 	createPlayer() {
 		const playerId = this.createEntity();
@@ -136,7 +169,7 @@ export class Game {
 
 		const mapId = this.createEntity();
 
-		const { connections } = GameMapResources.littleroot;
+		const { connections } = GameMapResources[mapInfo.name];
 
 		this.addComponent(mapId, 'MapInfo', {
 			id: mapInfo.id,
@@ -159,7 +192,7 @@ export class Game {
 	createEntity() {
 		const id = this.idCount;
 		this.idCount++;
-		this.entities.add(id);
+		this.entities.set(id, new Set());
 		return id;
 	}
 	async loadMap(name: MapNames, direction: Direction) {
@@ -178,6 +211,11 @@ export class Game {
 		componentName: K,
 		component: ComponentTypes[K]
 	) {
+		if (!this.entities.has(entityId)) {
+			this.entities.set(entityId, new Set<keyof ComponentTypes>());
+		}
+		this.entities.get(entityId)!.add(componentName);
+
 		if (!this.components[componentName]) {
 			this.components[componentName] = new Map();
 		}
@@ -202,13 +240,34 @@ export class Game {
 	): ComponentTypes[K] | undefined {
 		return (this.components[componentName] as Map<number, ComponentTypes[K]>)?.get(entityId);
 	}
-	removeComponent(entityId: number, componentName: string) {
+	removeComponent<K extends keyof ComponentTypes>(entityId: number, componentName: K) {
 		this.components[componentName]?.delete(entityId);
 	}
-	entitiesWith(componentNames: string[]): number[] {
-		return Array.from(this.entities).filter((id) =>
-			componentNames.every((componentName) => this.components[componentName]?.has(id))
-		);
+	entitiesWith<const K extends readonly (keyof ComponentTypes)[]>(
+		this: Game,
+		keys: K
+	): EntityWith<K[number]>[] {
+		const result: EntityWith<K[number]>[] = [];
+
+		for (const [id, entityComponentTypes] of this.entities) {
+			if (keys.every((key) => entityComponentTypes.has(key))) {
+				// Create a temporary untyped object for collecting components
+				const componentData: Record<string, unknown> = {};
+
+				// Collect all the component data
+				for (const key of keys) {
+					componentData[key as string] = this.components[key]!.get(id)!;
+				}
+
+				// Push with proper type assertion
+				result.push({
+					id,
+					components: componentData as { [P in K[number]]: ComponentTypes[P] }
+				});
+			}
+		}
+
+		return result;
 	}
 	async tickScripts() {
 		GameEvent.attach('flagSet', () => {
@@ -376,6 +435,7 @@ export class Game {
 		renderSystem(this, this.canvas);
 		mapOverlaySysyem(this, this.canvas);
 		inputSystem(this);
+		mapTransitionSystem(this);
 		movementSystem(this, deltaTime);
 	}
 	drawMap(currentFrameTime: number, map: GameMap, runScripts?: boolean) {

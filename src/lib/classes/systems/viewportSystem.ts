@@ -2,13 +2,7 @@ import type { Canvas } from '../Canvas';
 import { Game, type Viewport } from '../Game';
 
 export function viewportSystem(game: Game, canvas: Canvas, viewport: Viewport) {
-	const [playerId] = game.entitiesWith(['Player']);
-
-	if (!playerId) {
-		return;
-	}
-
-	const position = game.getComponent(playerId, 'SubPosition')!;
+	const [player] = game.entitiesWith(['Player', 'SubPosition']);
 	const connections = game.getComponent(game.activeMapId, 'Connections')!;
 
 	if (!connections) {
@@ -22,8 +16,12 @@ export function viewportSystem(game: Game, canvas: Canvas, viewport: Viewport) {
 	const height = connections.UP ? (upMapInfo?.height ?? 0) : 0;
 
 	viewport.pos = {
-		x: -(position.x / Game.getAdjustedTileSize() - viewport.width / 2 + width),
-		y: -(position.y / Game.getAdjustedTileSize() - viewport.height / 2 + height),
+		x: -(player.components.SubPosition.x / Game.getAdjustedTileSize() - viewport.width / 2 + width),
+		y: -(
+			player.components.SubPosition.y / Game.getAdjustedTileSize() -
+			viewport.height / 2 +
+			height
+		),
 		xOffset: width * Game.getAdjustedTileSize(),
 		yOffset: height * Game.getAdjustedTileSize()
 	};

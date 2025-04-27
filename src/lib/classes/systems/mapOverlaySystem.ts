@@ -2,13 +2,20 @@ import type { Canvas } from '../Canvas';
 import type { Game } from '../Game';
 
 export function mapOverlaySysyem(game: Game, canvas: Canvas) {
-	const mapPosition = game.getComponent(game.activeMapId, 'Position')!;
-	const tileEntities = game.entitiesWith(['TileSprite', 'Position', 'Overlay']);
+	const maps = game.entitiesWith(['MapInfo', 'Tiles', 'Position', 'Background']);
 
-	for (const id of tileEntities) {
-		const sprite = game.getComponent(id, 'TileSprite')!;
-		const pos = game.getComponent(id, 'Position')!;
+	for (const map of maps) {
+		const tileEntities = map.components.Tiles.flat();
+		const position = map.components.Position;
 
-		canvas.drawImage(sprite.sprite.images[0], pos.x + mapPosition.x, pos.y + mapPosition.y);
+		for (const id of tileEntities) {
+			const sprite = game.getComponent(id, 'TileSprite')!;
+			const pos = game.getComponent(id, 'Position')!;
+			const overlay = game.getComponent(id, 'Overlay');
+
+			if (overlay) {
+				canvas.drawImage(sprite.sprite.images[0], pos.x + position.x, pos.y + position.y);
+			}
+		}
 	}
 }

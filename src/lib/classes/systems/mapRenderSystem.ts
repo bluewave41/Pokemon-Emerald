@@ -2,11 +2,12 @@ import type { Canvas } from '../Canvas';
 import type { Game } from '../Game';
 
 export function mapRenderSystem(game: Game, canvas: Canvas) {
-	const mapEntities = game.entitiesWith(['MapInfo', 'Tiles', 'Position']);
-	for (const id of mapEntities) {
-		const tileEntities = game.getComponent(id, 'Tiles')!.flat();
-		const background = game.getComponent(id, 'Background')!;
-		const position = game.getComponent(id, 'Position')!;
+	const maps = game.entitiesWith(['MapInfo', 'Tiles', 'Position', 'Background']);
+
+	for (const map of maps) {
+		const tileEntities = map.components.Tiles.flat();
+		const background = map.components.Background;
+		const position = map.components.Position;
 
 		for (const id of tileEntities) {
 			const sprite = game.getComponent(id, 'TileSprite')!;

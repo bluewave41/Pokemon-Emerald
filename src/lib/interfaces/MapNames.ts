@@ -43,7 +43,7 @@ export const GameMapResources: Record<MapNames, Resource> = {
 	},
 	route101: {
 		connections: {
-			UP: 'oldale',
+			UP: null,
 			LEFT: null,
 			RIGHT: null,
 			DOWN: 'littleroot'

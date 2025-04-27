@@ -1,20 +1,19 @@
 import { directions } from '$lib/interfaces/Direction';
 import type { Direction } from '@prisma/client';
-import type { Game } from '../Game';
-import type { MapInfo } from '$lib/interfaces/components/MapInfo';
+import type { EntityWith, Game } from '../Game';
 
-interface MapSystemMap extends MapInfo {
-	entityId: number;
-	direction: Direction;
-}
-
-function getMapFromDirection(maps: MapSystemMap[], direction: Direction) {
-	return maps.find((el) => el.direction === direction);
+function getMapFromDirection(
+	loadedMaps: EntityWith<'MapInfo' | 'Direction'>[],
+	direction: Direction
+) {
+	return loadedMaps.find((el) => el.components.Direction === direction)?.components.MapInfo;
 }
 
 export async function mapSystem(game: Game) {
+	const activeMap = game.getComponent(game.activeMapId, 'MapInfo');
 	const connections = game.getComponent(game.activeMapId, 'Connections');
-	if (!connections) {
+
+	if (!activeMap || !connections) {
 		return;
 	}
 
@@ -34,28 +33,42 @@ export async function mapSystem(game: Game) {
 		...game.getComponent(id, 'MapInfo')!
 	}));
 
-	if (!mapInfo.length) {
+	if (!mapInfo.length && !game.transitionInProgress) {
 		// nothing new was loaded
 		return;
 	}
 
+	const connectedMaps = game.entitiesWith(['MapInfo', 'Direction']);
+
 	const positions = {
 		UP: {
-			x: getMapFromDirection(mapInfo, 'LEFT')?.width ?? 0,
+			x: getMapFromDirection(connectedMaps, 'LEFT')?.width ?? 0,
 			y: 0
 		},
+		LEFT: {
+			x: 0,
+			y: getMapFromDirection(connectedMaps, 'UP')?.height ?? 0
+		},
+		RIGHT: {
+			x: getMapFromDirection(connectedMaps, 'LEFT')?.width ?? 0 + activeMap?.width,
+			y: getMapFromDirection(connectedMaps, 'UP')?.height ?? 0
+		},
+		DOWN: {
+			x: getMapFromDirection(connectedMaps, 'LEFT')?.width ?? 0,
+			y: getMapFromDirection(connectedMaps, 'UP')?.height ?? 0 + activeMap?.height
+		},
 		ACTIVE: {
-			x: getMapFromDirection(mapInfo, 'LEFT')?.width ?? 0,
-			y: getMapFromDirection(mapInfo, 'UP')?.height ?? 0
+			x: getMapFromDirection(connectedMaps, 'LEFT')?.width ?? 0,
+			y: getMapFromDirection(connectedMaps, 'UP')?.height ?? 0
 		}
 	};
 
 	for (const map of mapInfo) {
-		if (map.direction === 'UP') {
-			game.setComponent(map.entityId, 'Position', positions.UP);
-		}
+		game.setComponent(map.entityId, 'Position', positions[map.direction]);
 	}
 
 	// set active map
 	game.setComponent(game.activeMapId, 'Position', positions.ACTIVE);
+
+	game.transitionInProgress = false;
 }

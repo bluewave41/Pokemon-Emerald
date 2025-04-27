@@ -4,12 +4,21 @@ import { Game } from '../Game';
 export function renderSystem(game: Game, canvas: Canvas) {
 	const map = game.getComponent(game.activeMapId, 'Position')!;
 
-	for (const id of game.entitiesWith(['Position', 'SubPosition', 'Sprite', 'Direction'])) {
-		const pos = game.getComponent(id, 'SubPosition')!;
-		const sprite = game.getComponent(id, 'Sprite')!;
-		const offset = game.getComponent(id, 'Offset')!;
-		const direction = game.getComponent(id, 'Direction')!;
-		const movement = game.getComponent(id, 'Movement');
+	const characters = game.entitiesWith([
+		'Position',
+		'SubPosition',
+		'Sprite',
+		'Direction',
+		'Offset',
+		'Movement'
+	]);
+
+	for (const character of characters) {
+		const pos = character.components.SubPosition;
+		const sprite = character.components.Sprite;
+		const offset = character.components.Offset;
+		const direction = character.components.Direction;
+		const movement = character.components.Movement;
 
 		let drawSprite = sprite.sprites[direction.toLowerCase()];
 		if (movement && (movement?.moving || movement.jumping)) {
