@@ -4,7 +4,7 @@ import type { Image } from '$lib/interfaces/Image';
 import { Buffer } from 'buffer';
 
 export interface SpriteInfo {
-	images: HTMLImageElement[];
+	frames: HTMLImageElement[];
 	delay: number;
 	sequence: number[];
 	activated: boolean;
@@ -84,7 +84,7 @@ class InternalSpriteBank {
 
 						Promise.all(imageSources.map(loadImage)).then((loadedImages) => {
 							this.tiles[srcImage.id] = {
-								images: loadedImages,
+								frames: loadedImages,
 								delay: srcImage.delay,
 								sequence: srcImage.sequence
 							};

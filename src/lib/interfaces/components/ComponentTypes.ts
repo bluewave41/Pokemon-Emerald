@@ -3,9 +3,9 @@ import type { Position } from './Position';
 import type { Sprite } from '../Sprite';
 import type { Offset } from './Offset';
 import type { MapInfo } from './MapInfo';
-import type { TileSprite } from './TileSprite';
 import type { MapConnections } from './MapConnections';
 import type { Movement } from './Movement';
+import type { Animated } from './Animated';
 
 export interface ComponentTypes {
 	Position: Position;
@@ -18,11 +18,13 @@ export interface ComponentTypes {
 	Offset: Offset;
 	MapInfo: MapInfo;
 	Tiles: number[][];
-	TileSprite: TileSprite;
+	TileSprite: HTMLImageElement;
 	Connections: MapConnections;
 	Background: HTMLImageElement;
 	Player: object;
 	Speed: number;
 	Controllable: object;
 	Solid: object;
+	Animated: Animated;
+	Timer: number;
 }

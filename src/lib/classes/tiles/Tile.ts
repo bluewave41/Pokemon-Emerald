@@ -92,7 +92,7 @@ export class Tile {
 	hasAnimated() {
 		return (
 			(this.animationOptions.direction === 'forwards' &&
-				this.animationOptions.sequenceIndex === this.tileSprites.images.length - 1) ||
+				this.animationOptions.sequenceIndex === this.tileSprites.frames.length - 1) ||
 			(this.animationOptions.direction === 'backwards' && this.animationOptions.sequenceIndex === 0)
 		);
 	}
@@ -108,7 +108,7 @@ export class Tile {
 		this.animationOptions = {
 			isAnimating: true,
 			direction: 'backwards',
-			sequenceIndex: this.tileSprites.images.length - 1,
+			sequenceIndex: this.tileSprites.frames.length - 1,
 			repeating: this.animationOptions.repeating
 		};
 	}
@@ -154,7 +154,7 @@ export class Tile {
 		}
 	}
 	setReversed() {
-		this.animationOptions.sequenceIndex = this.tileSprites.images.length - 1;
+		this.animationOptions.sequenceIndex = this.tileSprites.frames.length - 1;
 	}
 	handle(game: Game) {
 		void game;
@@ -169,11 +169,11 @@ export class Tile {
 		}
 
 		if (this.tileSprites.sequence && this.animationOptions.isAnimating) {
-			return this.tileSprites.images[
+			return this.tileSprites.frames[
 				this.tileSprites.sequence[this.animationOptions.sequenceIndex]
 			];
 		}
-		return this.tileSprites.images[this.animationOptions.sequenceIndex];
+		return this.tileSprites.frames[this.animationOptions.sequenceIndex];
 	}
 	activate(game: Game) {
 		if (this.script && !game.frozen) {

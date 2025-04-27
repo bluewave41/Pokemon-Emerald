@@ -14,7 +14,7 @@ export function mapOverlaySysyem(game: Game, canvas: Canvas) {
 			const overlay = game.getComponent(id, 'Overlay');
 
 			if (overlay) {
-				canvas.drawImage(sprite.sprite.images[0], pos.x + position.x, pos.y + position.y);
+				canvas.drawImage(sprite, pos.x + position.x, pos.y + position.y);
 			}
 		}
 	}

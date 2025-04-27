@@ -32,6 +32,7 @@ import { mapSystem } from './systems/mapSystem';
 import axios from 'axios';
 import { Buffer } from 'buffer';
 import { mapTransitionSystem } from './systems/mapTransitionSystem';
+import { animationSystem } from './systems/animationSystem';
 
 export interface Viewport {
 	width: number;
@@ -145,13 +146,24 @@ export class Game {
 			for (let x = 0; x < tiles[0].length; x++) {
 				const tile = tiles[y][x];
 				const tileId = this.createEntity();
+
+				const sprites = SpriteBank.getTile(tile.id);
+
 				this.addComponent(tileId, 'Position', { x, y });
-				this.addComponent(tileId, 'TileSprite', { sprite: SpriteBank.getTile(tile.id) });
+				this.addComponent(tileId, 'TileSprite', sprites.frames[0]);
 				if ((tile.properties >> 2) & 0b11111) {
 					this.addComponent(tileId, 'Solid', {});
 				}
 				if ((tile.properties >> 7) & 0b1) {
 					this.addComponent(tileId, 'Overlay', {});
+				}
+				if (sprites.frames.length > 1) {
+					this.addComponent(tileId, 'Animated', {
+						...sprites,
+						repeating: tile.repeatingAnimation,
+						index: 0
+					});
+					this.addComponent(tileId, 'Timer', 0);
 				}
 
 				/*this.overlay = Boolean((properties >> 7) & 0b1);
@@ -178,7 +190,7 @@ export class Game {
 			height: mapInfo.height
 		});
 		this.addComponent(mapId, 'Tiles', tiles);
-		this.addComponent(mapId, 'Background', SpriteBank.getTile(mapInfo.backgroundId).images[0]);
+		this.addComponent(mapId, 'Background', SpriteBank.getTile(mapInfo.backgroundId).frames[0]);
 		this.addComponent(mapId, 'Connections', connections);
 
 		if (!direction) {
@@ -437,6 +449,7 @@ export class Game {
 		inputSystem(this);
 		mapTransitionSystem(this);
 		movementSystem(this, deltaTime);
+		animationSystem(this, deltaTime);
 	}
 	drawMap(currentFrameTime: number, map: GameMap, runScripts?: boolean) {
 		map.drawBaseLayer(this.canvas);

@@ -17,7 +17,7 @@ export function mapRenderSystem(game: Game, canvas: Canvas) {
 			canvas.drawImage(background, pos.x + position.x, pos.y + position.y);
 
 			if (!overlay) {
-				canvas.drawImage(sprite.sprite.images[0], pos.x + position.x, pos.y + position.y);
+				canvas.drawImage(sprite, pos.x + position.x, pos.y + position.y);
 			}
 		}
 	}
