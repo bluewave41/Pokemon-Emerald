@@ -3,6 +3,8 @@ export interface Animated {
 	delay: number;
 	activated: boolean;
 	repeating: boolean;
-	index: number;
 	sequence: number[];
+	index: number;
+	direction: 'forward' | 'backward';
+	animating: boolean;
 }

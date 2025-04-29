@@ -59,7 +59,7 @@ export function readMap(mapBuffer: Buffer) {
 					activateDirection: buffer.readDirection(),
 					targetMapId: buffer.readShort(),
 					targetWarpId: buffer.readByte(),
-					warpType: buffer.readWarpType()
+					type: buffer.readWarpType()
 				});
 				break;
 		}
@@ -102,6 +102,7 @@ export function readMap(mapBuffer: Buffer) {
 		tiles,
 		backgroundId,
 		scripts,
-		entities
+		entities,
+		warps
 	};
 }

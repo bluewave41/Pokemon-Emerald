@@ -1,5 +1,4 @@
 import type { Position } from '$lib/interfaces/components/Position';
-import type { MapNames } from '$lib/interfaces/MapNames';
 import { Game, type EntityWith } from '../Game';
 
 function setPosition(

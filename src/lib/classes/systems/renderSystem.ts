@@ -14,6 +14,10 @@ export function renderSystem(game: Game, canvas: Canvas) {
 	]);
 
 	for (const character of characters) {
+		const hidden = game.getComponent(character.id, 'Hidden');
+		if (hidden) {
+			continue;
+		}
 		const pos = character.components.SubPosition;
 		const sprite = character.components.Sprite;
 		const offset = character.components.Offset;

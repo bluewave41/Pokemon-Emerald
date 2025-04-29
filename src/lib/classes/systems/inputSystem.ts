@@ -1,6 +1,6 @@
 import type { Position } from '$lib/interfaces/components/Position';
 import { Game } from '../Game';
-import KeyHandler from '../KeyHandler';
+import KeyHandler, { keyToDirection } from '../KeyHandler';
 
 function isTransitionValid(game: Game, position: Position) {
 	const connections = game.getComponent(game.activeMapId, 'Connections')!;
@@ -35,6 +35,8 @@ function isTileBlocked(game: Game, position: Position) {
 }
 
 export function inputSystem(game: Game) {
+	const [player] = game.entitiesWith(['Player', 'Position', 'Movement']);
+	const warps = game.entitiesWith(['Warp', 'Position']);
 	const entities = game.entitiesWith([
 		'Controllable',
 		'Position',
@@ -42,7 +44,32 @@ export function inputSystem(game: Game) {
 		'Direction',
 		'Movement'
 	]);
+
+	if (game.frozen) {
+		return;
+	}
+
 	const key = KeyHandler.getPrioritizedKey();
+
+	if (key === null) {
+		return;
+	}
+
+	const playerPosition = player.components.Position;
+
+	for (const warp of warps) {
+		const warpPosition = warp.components.Position;
+		if (
+			!player.components.Movement.moving &&
+			playerPosition.x === warpPosition.x &&
+			playerPosition.y === warpPosition.y &&
+			keyToDirection[key] == warp.components.Warp.activateDirection
+		) {
+			game.setComponent(player.id, 'Direction', KeyHandler.keyToDirection(key));
+			game.createWarpScript(warp);
+			return;
+		}
+	}
 
 	if (!key) {
 		return;
@@ -54,7 +81,6 @@ export function inputSystem(game: Game) {
 			continue;
 		}
 
-		movement.moving = true;
 		const position = entity.components.Position;
 		const sub = entity.components.SubPosition;
 
@@ -79,7 +105,9 @@ export function inputSystem(game: Game) {
 				break;
 		}
 
-		game.setComponent(entity.id, 'Direction', KeyHandler.keyToDirection(key));
+		movement.moving = true;
+
+		game.setComponent(player.id, 'Direction', KeyHandler.keyToDirection(key));
 
 		if (!isTileBlocked(game, position) || isTransitionValid(game, position)) {
 			game.addComponent(entity.id, 'TargetPosition', target);

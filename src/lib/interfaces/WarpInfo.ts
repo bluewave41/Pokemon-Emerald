@@ -4,7 +4,7 @@ export interface WarpInfo {
 	x: number;
 	y: number;
 	warpId: number;
-	warpType: WarpType;
+	type: WarpType;
 	targetMapId: number;
 	targetWarpId: number;
 	activateDirection: Direction;

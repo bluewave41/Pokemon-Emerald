@@ -13,17 +13,20 @@ export async function mapSystem(game: Game) {
 	const activeMap = game.getComponent(game.activeMapId, 'MapInfo');
 	const connections = game.getComponent(game.activeMapId, 'Connections');
 
-	if (!activeMap || !connections) {
+	if (!activeMap) {
 		return;
 	}
 
 	const loadPromises: Promise<number>[] = [];
 
-	for (const direction of directions) {
-		const mapName = connections[direction];
-		if (mapName && !game.hasMapLoaded(mapName)) {
-			const loadMapPromise = game.loadMap(mapName, direction);
-			loadPromises.push(loadMapPromise);
+	if (connections) {
+		for (const direction of directions) {
+			const mapName = connections[direction];
+			if (mapName && !game.hasMapLoaded(mapName)) {
+				console.log('loading', mapName);
+				const loadMapPromise = game.loadMap(mapName, direction);
+				loadPromises.push(loadMapPromise);
+			}
 		}
 	}
 

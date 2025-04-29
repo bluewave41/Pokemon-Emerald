@@ -17,7 +17,6 @@ import { FadeOutRect } from './ui/FadeOutRect';
 import { sleep } from '$lib/utils/sleep';
 import FlagSet from './FlagSet';
 import { NPC } from './entities/NPC';
-import type { Warp } from './tiles/Warp';
 import type { ComponentTypes } from '$lib/interfaces/components/ComponentTypes';
 import { renderSystem } from './systems/renderSystem';
 import { mapRenderSystem } from './systems/mapRenderSystem';
@@ -33,6 +32,14 @@ import axios from 'axios';
 import { Buffer } from 'buffer';
 import { mapTransitionSystem } from './systems/mapTransitionSystem';
 import { animationSystem } from './systems/animationSystem';
+import type { WarpInfo } from '$lib/interfaces/WarpInfo';
+import { equals } from '$lib/utils/equals';
+import { getFacingPosition } from '$lib/utils/getFacingPosition';
+import { scriptSystem } from './systems/scriptSystem';
+import { fadeSystem } from './systems/fadeSystem';
+import type { Warp } from '$lib/interfaces/components/Warp';
+import type { GridPosition } from '$lib/interfaces/components/GridPosition';
+import { getNewPosition } from '$lib/utils/getNewPosition';
 
 export interface Viewport {
 	width: number;
@@ -60,7 +67,9 @@ export class Game {
 	lastFrameTime: number = 0;
 	frozen: boolean = false;
 	private entities: Map<number, Set<keyof ComponentTypes>> = new Map();
-	private components: { [K in keyof ComponentTypes]?: Map<number, ComponentTypes[K]> } = {};
+	private components: {
+		[K in keyof ComponentTypes]?: Map<number, ComponentTypes[K]>;
+	} = {};
 	private idCount = 1;
 	transitionInProgress: boolean = false;
 
@@ -82,22 +91,6 @@ export class Game {
 	hasMapLoaded(name: MapNames) {
 		return this.loadedMaps.has(name);
 	}
-	updateMapPositions() {
-		const positions = {
-			UP: {
-				x: getMapFromDirection(mapInfo, 'LEFT')?.width ?? 0,
-				y: 0
-			},
-			DOWN: {
-				x: getMapFromDirection(mapInfo, 'LEFT')?.width ?? 0,
-				y: getMapFromDirection(mapInfo, 'UP')?.height ?? 0 + activeMap?.height
-			},
-			ACTIVE: {
-				x: getMapFromDirection(mapInfo, 'LEFT')?.width ?? 0,
-				y: getMapFromDirection(mapInfo, 'UP')?.height ?? 0
-			}
-		};
-	}
 	getMapIdByName(name: MapNames) {
 		for (const [id, mapInfo] of this.components['MapInfo']) {
 			if ((mapInfo as { name: MapNames }).name === name) {
@@ -118,8 +111,9 @@ export class Game {
 		const playerId = this.createEntity();
 		const image = SpriteBank.getSprite('player', 'down1');
 
-		this.addComponent(playerId, 'Position', { x: 10, y: 10 });
+		this.addComponent(playerId, 'Position', { type: 'grid', x: 10, y: 10 });
 		this.addComponent(playerId, 'SubPosition', {
+			type: 'pixel',
 			x: 10 * Game.getAdjustedTileSize(),
 			y: 10 * Game.getAdjustedTileSize()
 		});
@@ -139,7 +133,7 @@ export class Game {
 		this.addComponent(playerId, 'Player', {});
 		this.addComponent(playerId, 'Controllable', {});
 	}
-	createTiles(tiles: TileInfo[][]) {
+	createTiles(tiles: TileInfo[][], warps: WarpInfo[]) {
 		const tileEntities: number[][] = [];
 		for (let y = 0; y < tiles.length; y++) {
 			const row = [];
@@ -149,7 +143,7 @@ export class Game {
 
 				const sprites = SpriteBank.getTile(tile.id);
 
-				this.addComponent(tileId, 'Position', { x, y });
+				this.addComponent(tileId, 'Position', { type: 'grid', x, y });
 				this.addComponent(tileId, 'TileSprite', sprites.frames[0]);
 				if ((tile.properties >> 2) & 0b11111) {
 					this.addComponent(tileId, 'Solid', {});
@@ -161,11 +155,19 @@ export class Game {
 					this.addComponent(tileId, 'Animated', {
 						...sprites,
 						repeating: tile.repeatingAnimation,
-						index: 0
+						index: 0,
+						direction: 'forward',
+						animating: false,
+						activated: tile.activatedAnimation
 					});
 					this.addComponent(tileId, 'Timer', 0);
 				}
 
+				const warp = warps.find((warp) => warp.x === x && warp.y === y);
+				if (warp) {
+					this.addComponent(tileId, 'Warp', warp);
+					this.addComponent(tileId, 'Position', { type: 'grid', x: warp.x, y: warp.y });
+				}
 				/*this.overlay = Boolean((properties >> 7) & 0b1);
 				this.permissions = (properties >> 2) & 0b11111;
 				this.tileSprites = SpriteBank.getTile(this.id);
@@ -176,8 +178,15 @@ export class Game {
 		}
 		return tileEntities;
 	}
+	isTileValid({ x, y }: GridPosition) {
+		const mapInfo = this.getComponent(this.activeMapId, 'MapInfo');
+		if (!mapInfo) {
+			return false;
+		}
+		return x >= 0 && x < mapInfo.width && y >= 0 && y < mapInfo.height;
+	}
 	createMap(mapInfo: MapInfo, direction?: Direction) {
-		const tiles = this.createTiles(mapInfo.tiles);
+		const tiles = this.createTiles(mapInfo.tiles, mapInfo.warps);
 
 		const mapId = this.createEntity();
 
@@ -200,6 +209,131 @@ export class Game {
 		}
 
 		return mapId;
+	}
+	getEntityAt(x: number, y: number, requiredComponents: (keyof ComponentTypes)[] = []) {
+		const candidates = this.entitiesWith(['Position', 'TileSprite', ...requiredComponents]);
+		for (const candidate of candidates) {
+			if (equals(candidate.components.Position, { x, y })) {
+				return candidate;
+			}
+		}
+		return undefined;
+	}
+	unloadAllMaps() {
+		const maps = this.entitiesWith(['MapInfo']);
+		const warps = this.entitiesWith(['Warp']);
+
+		for (const map of maps) {
+			this.getComponent(map.id, 'Tiles')
+				?.flat()
+				.forEach((el) => this.deleteEntity(el));
+			this.deleteEntity(map.id);
+		}
+		for (const warp of warps) {
+			this.deleteEntity(warp.id);
+		}
+
+		this.loadedMaps = new Set();
+	}
+	updatePositions(
+		entity: EntityWith<'Position' | 'SubPosition' | 'TargetPosition'>,
+		newPosition: GridPosition
+	) {
+		entity.components.Position.x = newPosition.x;
+		entity.components.Position.y = newPosition.y;
+		entity.components.SubPosition.x = newPosition.x * Game.getAdjustedTileSize();
+		entity.components.SubPosition.y = newPosition.y * Game.getAdjustedTileSize();
+		entity.components.TargetPosition.x = newPosition.x * Game.getAdjustedTileSize();
+		entity.components.TargetPosition.y = newPosition.y * Game.getAdjustedTileSize();
+	}
+	createWarpScript(warpEntity: EntityWith<'Warp' | 'Position'>) {
+		const warp = warpEntity.components;
+
+		this.freeze();
+		const scriptId = this.createEntity();
+		const [player] = this.entitiesWith(['Player', 'Position', 'Direction']);
+
+		const facingTile = getFacingPosition(player);
+
+		if (warp.Warp.type === 'DOOR' && this.isTileValid(facingTile)) {
+			this.addComponent(scriptId, 'Script', {
+				index: 0,
+				cacheId: undefined,
+				steps: [
+					{
+						type: 'animate',
+						entityId: this.getEntityAt(facingTile.x, facingTile.y, ['Animated'])?.id,
+						direction: 'forward'
+					},
+					{ type: 'move', entityId: player.id, direction: warp.Warp.activateDirection },
+					{ type: 'addComponent', entityId: player.id, component: 'Hidden', properties: {} },
+					{
+						type: 'animate',
+						entityId: this.getEntityAt(facingTile.x, facingTile.y, ['Animated'])?.id,
+						direction: 'backward'
+					},
+					{ type: 'sleep', time: 300 },
+					{ type: 'fadeOut' },
+					{ type: 'loadWarp', warp: warp.Warp },
+					{ type: 'fadeIn' }
+				],
+				waiting: undefined
+			});
+		} else if (warp.Warp.type === 'DOOR') {
+			this.addComponent(scriptId, 'Script', {
+				index: 0,
+				cacheId: undefined,
+				steps: [
+					{ type: 'fadeOut' },
+					{ type: 'loadWarp', warp: warp.Warp },
+					{ type: 'addComponent', entityId: player.id, component: 'Hidden', properties: {} },
+					{
+						type: 'patchComponent',
+						entityId: (cache) => {
+							const warps = this.entitiesWith(['Warp', 'Position']);
+							const warp = warps.find(
+								(warp) => warp.components.Warp.warpId === warpEntity.components.Warp.targetWarpId
+							);
+							if (!warp) {
+								throw new Error('Failed to load warp.');
+							}
+
+							const { x, y } = getNewPosition(warp?.components.Position, 'UP');
+
+							cache = this.getEntityAt(x, y)?.id;
+							return cache;
+						},
+						patches: {
+							Animated: (component) => ({
+								index: component.sequence.length - 1
+							}),
+							TileSprite: (_, { Animated }) =>
+								Animated.frames[Animated.sequence[Animated.sequence.length - 1]]
+						}
+					},
+					{ type: 'removeComponent', entityId: player.id, component: 'Hidden' },
+					{ type: 'setWarpPosition', entityId: player.id, warp: warpEntity },
+					{ type: 'fadeIn' },
+					{ type: 'move', entityId: player.id, direction: 'DOWN' },
+					{
+						type: 'animate',
+						entityId: (cache) => {
+							if (!cache) {
+								throw new Error('Cache is missing!');
+							}
+							const pos = this.getComponent(cache, 'Position');
+							if (!pos) {
+								throw new Error('Failed to get cached entity position.');
+							}
+							const above = getNewPosition(pos, 'UP');
+							return this.getEntityAt(above.x, above.y)?.id;
+						},
+						direction: 'backward'
+					}
+				],
+				waiting: undefined
+			});
+		}
 	}
 	createEntity() {
 		const id = this.idCount;
@@ -252,8 +386,56 @@ export class Game {
 	): ComponentTypes[K] | undefined {
 		return (this.components[componentName] as Map<number, ComponentTypes[K]>)?.get(entityId);
 	}
+	getAllComponents(entityId: number) {
+		const entityComponents = this.entities.get(entityId);
+
+		const allComponents: Partial<ComponentTypes> = {};
+
+		// Make sure `componentName` is correctly narrowed to keyof ComponentTypes
+		entityComponents?.forEach((componentName) => {
+			// Narrow down componentName to ensure it's a valid key in ComponentTypes
+			if (this.components[componentName as keyof ComponentTypes]) {
+				const componentData = this.components[componentName as keyof ComponentTypes]?.get(entityId);
+				if (componentData) {
+					allComponents[componentName as keyof ComponentTypes] = componentData;
+				}
+			}
+		});
+
+		return allComponents;
+	}
+	getComponents<K extends readonly (keyof ComponentTypes)[]>(
+		entityId: number,
+		componentNames: K
+	): { id: number; components: { [P in K[number]]: ComponentTypes[P] } } {
+		const componentData: Record<string, unknown> = {};
+
+		for (const componentName of componentNames) {
+			const component = this.getComponent(entityId, componentName);
+			if (component === undefined) {
+				throw new Error(`Missing component '${componentName}' for entity with ID ${entityId}`);
+			}
+			componentData[componentName as string] = component;
+		}
+
+		return {
+			id: entityId,
+			components: componentData as { [P in K[number]]: ComponentTypes[P] }
+		};
+	}
 	removeComponent<K extends keyof ComponentTypes>(entityId: number, componentName: K) {
 		this.components[componentName]?.delete(entityId);
+	}
+	deleteEntity(entityId: number) {
+		const entityComponents = this.entities.get(entityId);
+		if (entityComponents) {
+			for (const componentName of entityComponents) {
+				const componentMap = this.components[componentName];
+				componentMap?.delete(entityId);
+			}
+		}
+
+		this.entities.delete(entityId);
 	}
 	entitiesWith<const K extends readonly (keyof ComponentTypes)[]>(
 		this: Game,
@@ -288,6 +470,40 @@ export class Game {
 				this.executeScript(script, 'script');
 			}
 		});
+	}
+	async loadMapById(mapId: number): Promise<MapInfo> {
+		const response = await axios.get(`/maps/id?id=${mapId}`);
+		if (response.status === 200) {
+			return readMap(Buffer.from(response.data.map, 'base64'));
+		}
+		throw new Error(`Failed to load map ${mapId}.`);
+
+		/*const targetWarp = map.tiles
+			.flat()
+			.find((tile) => tile.isWarp() && tile.targetWarpId === warpId) as Warp;
+
+		if (!targetWarp) {
+			throw new Error(`Couldn't find target warp.`);
+		}
+
+		const targetPosition =
+			warpType === 'DOOR'
+				? targetWarp.position
+				: adjustPositionForDirection(
+						new GridPosition(targetWarp.position.x, targetWarp.position.y),
+						targetWarp.activateDirection
+					);
+
+		this.mapHandler.handleWarpTo(map);
+		this.player.coords.setCoords(targetPosition.x, targetPosition.y);
+
+		GameEvent.dispatchEvent(new CustomEvent('rerender'));
+
+		for (const script of this.activeMap.scripts) {
+			this.executeScript(script, 'setup');
+		}
+
+		return targetWarp;*/
 	}
 	/*async loadMapById(mapId: number, warpId: number, warpType: WarpType) {
 		const map = await this.mapHandler.fetchMapById(mapId);
@@ -450,6 +666,10 @@ export class Game {
 		mapTransitionSystem(this);
 		movementSystem(this, deltaTime);
 		animationSystem(this, deltaTime);
+
+		this.canvas.context.resetTransform();
+		fadeSystem(this, this.canvas);
+		await scriptSystem(this, deltaTime);
 	}
 	drawMap(currentFrameTime: number, map: GameMap, runScripts?: boolean) {
 		map.drawBaseLayer(this.canvas);
@@ -458,15 +678,11 @@ export class Game {
 	static getAdjustedTileSize() {
 		return Game.tileSize * Game.zoom;
 	}
-	getActiveCoordinates() {
-		return {
-			x: this.mapHandler.left?.width ?? 0,
-			y: this.mapHandler.up?.height ?? 0
-		};
-	}
-	blockMovement() {
-		this.player.moving = false;
+	freeze() {
 		this.frozen = true;
+	}
+	unfreeze() {
+		this.frozen = false;
 	}
 	unblockMovement() {
 		this.frozen = false;

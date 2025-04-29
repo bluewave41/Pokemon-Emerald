@@ -3,6 +3,13 @@ import { Direction } from '@prisma/client';
 export type ActiveKeys = 'z';
 export type MovementKeys = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
 
+export const keyToDirection: Record<MovementKeys, Direction> = {
+	ArrowUp: 'UP',
+	ArrowLeft: 'LEFT',
+	ArrowRight: 'RIGHT',
+	ArrowDown: 'DOWN'
+};
+
 interface KeyState {
 	down: boolean;
 	holdCount: number;
