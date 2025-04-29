@@ -40,6 +40,7 @@ import { fadeSystem } from './systems/fadeSystem';
 import type { Warp } from '$lib/interfaces/components/Warp';
 import type { GridPosition } from '$lib/interfaces/components/GridPosition';
 import { getNewPosition } from '$lib/utils/getNewPosition';
+import { getOppositeDirection } from '$lib/utils/getOppositeDirection';
 
 export interface Viewport {
 	width: number;
@@ -330,6 +331,27 @@ export class Game {
 						},
 						direction: 'backward'
 					}
+				],
+				waiting: undefined
+			});
+		} else if (warp.Warp.type === 'STAIRS') {
+			this.addComponent(scriptId, 'Script', {
+				index: 0,
+				cacheId: undefined,
+				steps: [
+					{ type: 'move', entityId: player.id, direction: 'UP' },
+					{ type: 'fadeOut' },
+					{ type: 'loadWarp', warp: warp.Warp },
+					{ type: 'setWarpPosition', entityId: player.id, warp: warpEntity },
+					{
+						type: 'patchComponent',
+						entityId: player.id,
+						patches: {
+							Direction: () => getOppositeDirection(player.components.Direction)
+						}
+					},
+					{ type: 'fadeIn' },
+					{ type: 'move', entityId: player.id, direction: 'DOWN' }
 				],
 				waiting: undefined
 			});

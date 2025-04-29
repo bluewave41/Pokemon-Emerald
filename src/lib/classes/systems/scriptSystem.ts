@@ -16,7 +16,7 @@ function getEntityId(cacheId: number | undefined, func: ScriptEntityReference | 
 function getTargetWarp(game: Game, warp: Warp) {
 	const warpInstance = game
 		.entitiesWith(['Warp', 'Position'])
-		.find((aWarp) => aWarp.components.Warp.warpId === warp.targetMapId);
+		.find((aWarp) => aWarp.components.Warp.warpId === warp.targetWarpId);
 	if (!warpInstance) {
 		throw new Error('Failed to find linked warp!');
 	}
