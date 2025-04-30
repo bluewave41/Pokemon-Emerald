@@ -45,4 +45,16 @@ export function renderSystem(game: Game, canvas: Canvas) {
 			offset.y
 		);
 	}
+
+	const objects = game.entitiesWith(['Object', 'SubPosition', 'Sprite']);
+	for (const object of objects) {
+		const pos = object.components.SubPosition;
+		const sprite = object.components.Sprite;
+
+		canvas.drawSprite(
+			sprite.sprites,
+			Math.round(pos.x) + map.x * Game.getAdjustedTileSize(),
+			Math.round(pos.y) + map.y * Game.getAdjustedTileSize()
+		);
+	}
 }

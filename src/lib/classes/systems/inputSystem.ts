@@ -1,4 +1,5 @@
 import type { Position } from '$lib/interfaces/components/Position';
+import { checkForWarp } from '$lib/utils/checkForWarp';
 import { Game } from '../Game';
 import KeyHandler, { keyToDirection } from '../KeyHandler';
 
@@ -52,6 +53,10 @@ export function inputSystem(game: Game) {
 	const key = KeyHandler.getPrioritizedKey();
 
 	if (key === null) {
+		return;
+	}
+
+	if (checkForWarp(game, keyToDirection[key])) {
 		return;
 	}
 

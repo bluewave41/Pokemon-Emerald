@@ -23,7 +23,6 @@ export const actions = {
 		const schema = zfd.formData({
 			x: z.string().transform((val) => (val === '' ? null : parseInt(val))),
 			y: z.string().transform((val) => (val === '' ? null : parseInt(val))),
-			condition: z.string().transform((val) => (val === '' ? null : val)),
 			setup: z.string().transform((val) => (val === '' ? null : val)),
 			script: zfd.text()
 		});
@@ -38,7 +37,6 @@ export const actions = {
 			data: {
 				x: result.data.x,
 				y: result.data.y,
-				condition: result.data.condition,
 				setup: result.data.setup,
 				script: result.data.script
 			},

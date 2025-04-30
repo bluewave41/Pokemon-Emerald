@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Canvas } from '$lib/classes/Canvas.js';
-	import { Game } from '$lib/classes/Game.js';
+	import { Game, type EntityWith } from '$lib/classes/Game.js';
 	import GameEvent from '$lib/classes/GameEvent.js';
 	import KeyHandler from '$lib/classes/KeyHandler.js';
 	import SpriteBank from '$lib/classes/SpriteBank.js';
@@ -12,9 +12,11 @@
 	let canvasRef: HTMLCanvasElement;
 	let game: Game | null = $state(null);
 	let status = $state(0);
+	let scripts: EntityWith<'ScriptInfo'>[] = [];
 
 	GameEvent.attach('rerender', () => {
 		status++;
+		scripts = game!.entitiesWith(['ScriptInfo']);
 	});
 
 	async function init() {
@@ -91,20 +93,27 @@
 	}}
 />
 
-<!--{#key status}
+{#key status}
 	{#if game}
-		{#each game.mapHandler.active.scripts as script}
+		{#each scripts as script}
 			<button
 				onclick={() => {
-					game?.executeScript(script, 'setup');
-					game?.executeScript(script, 'script');
+					game?.addComponent(game.createEntity(), 'Script', {
+						index: 0,
+						cache: {},
+						simpleCache: undefined,
+						steps: new Function(`return ${script.components.ScriptInfo.setup}`).call(game),
+						waiting: undefined
+					});
+					//game?.executeScript(script.components.ScriptInfo.setup, 'setup');
+					//game?.executeScript(script.components.ScriptInfo.script, 'script');
 				}}
 			>
-				{script.name}
+				{script.components.ScriptInfo.name}
 			</button>
 		{/each}
 	{/if}
-{/key}-->
+{/key}
 
 <style>
 	.container {

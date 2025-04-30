@@ -132,7 +132,6 @@ model Script {
   id        Int     @id @default(autoincrement())
   name      String
   mapId     Int
-  condition String?
   setup     String?
   script    String?
   x         Int?

@@ -10,11 +10,13 @@ import type { Warp } from './Warp';
 import type { PixelPosition } from './PixelPosition';
 import type { GridPosition } from './GridPosition';
 import type { Fade } from './Fade';
+import type { ScriptInfo } from '../ScriptInfo';
 
 export interface ComponentTypes {
 	Position: GridPosition;
 	SubPosition: PixelPosition;
 	TargetPosition: PixelPosition;
+	LastPosition: PixelPosition;
 	Direction: Direction;
 	Movement: Movement;
 	Sprite: Sprite;
@@ -35,4 +37,6 @@ export interface ComponentTypes {
 	Warp: Warp;
 	Hidden: boolean;
 	Fade: Fade;
+	ScriptInfo: Omit<ScriptInfo, 'x' | 'y'>;
+	Object: object;
 }

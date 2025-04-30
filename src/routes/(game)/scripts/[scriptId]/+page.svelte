@@ -11,15 +11,6 @@
 		<button type="submit">Save</button>
 	</div>
 	<textarea
-		name="condition"
-		bind:value={data.script.condition}
-		placeholder="Condition"
-		onkeydown={(e) =>
-			e.key === 'Tab' &&
-			(e.preventDefault(),
-			e.target.setRangeText('\t', e.target.selectionStart, e.target.selectionEnd, 'end'))}
-	></textarea>
-	<textarea
 		name="setup"
 		bind:value={data.script.setup}
 		placeholder="Setup"

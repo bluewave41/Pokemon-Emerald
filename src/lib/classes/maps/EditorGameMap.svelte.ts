@@ -162,7 +162,6 @@ export class EditorGameMap {
 			scripts.push({
 				mapId: buffer.readByte(),
 				name: buffer.readString(),
-				condition: buffer.readString(),
 				setup: buffer.readString(),
 				script: buffer.readString(),
 				x: hasCoordinates ? buffer.readByte() : null,

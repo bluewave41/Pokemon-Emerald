@@ -3,6 +3,7 @@ import type { ScriptEntityReference } from '$lib/interfaces/components/Script';
 import type { Warp } from '$lib/interfaces/components/Warp';
 import { equals } from '$lib/utils/equals';
 import { updateNewPosition } from '$lib/utils/updateNewPosition';
+import FlagSet from '../FlagSet';
 import { Game } from '../Game';
 
 function getEntityId(cacheId: number | undefined, func: ScriptEntityReference | number) {
@@ -36,7 +37,7 @@ export async function scriptSystem(game: Game, deltaTime: number) {
 					throw new Error('Failed to get entity to animate.');
 				}
 
-				const entityId = getEntityId(script.cacheId, step.entityId);
+				const entityId = getEntityId(script.simpleCache, step.entityId);
 
 				const animationOptions = game.getComponent(entityId, 'Animated');
 				if (!animationOptions) {
@@ -55,7 +56,7 @@ export async function scriptSystem(game: Game, deltaTime: number) {
 					entityId
 				};
 			} else if (step.type === 'move') {
-				const entityId = getEntityId(script.cacheId, step.entityId);
+				const entityId = getEntityId(script.simpleCache, step.entityId);
 
 				const entity = game.getComponents(entityId, [
 					'Movement',
@@ -67,17 +68,38 @@ export async function scriptSystem(game: Game, deltaTime: number) {
 				entity.components.Movement.moving = true;
 				updateNewPosition(entity.components.Position, step.direction);
 				updateNewPosition(entity.components.TargetPosition, step.direction);
+				game.setComponent(entityId, 'Direction', step.direction);
+
+				script.waiting = {
+					type: 'movement',
+					entityId
+				};
+			} else if (step.type === 'jump') {
+				const entityId = getEntityId(script.simpleCache, step.entityId);
+
+				const entity = game.getComponents(entityId, [
+					'Movement',
+					'TargetPosition',
+					'Position',
+					'Direction',
+					'LastPosition'
+				]);
+
+				entity.components.Movement.jumping = true;
+				updateNewPosition(entity.components.Position, step.direction);
+				updateNewPosition(entity.components.TargetPosition, step.direction);
+				game.setComponent(entityId, 'Direction', step.direction);
 
 				script.waiting = {
 					type: 'movement',
 					entityId
 				};
 			} else if (step.type === 'addComponent') {
-				const entityId = getEntityId(script.cacheId, step.entityId);
+				const entityId = getEntityId(script.simpleCache, step.entityId);
 				game.addComponent(entityId, step.component, {});
 				script.index++;
 			} else if (step.type === 'removeComponent') {
-				const entityId = getEntityId(script.cacheId, step.entityId);
+				const entityId = getEntityId(script.simpleCache, step.entityId);
 				game.removeComponent(entityId, step.component);
 				script.index++;
 			} else if (step.type === 'fadeOut') {
@@ -121,7 +143,7 @@ export async function scriptSystem(game: Game, deltaTime: number) {
 				game.transitionInProgress = true;
 				script.index++;
 			} else if (step.type === 'patchComponent') {
-				const entityId = getEntityId(script.cacheId, step.entityId);
+				const entityId = getEntityId(script.simpleCache, step.entityId);
 				for (const key in step.patches) {
 					const componentKey = key as keyof ComponentTypes;
 					const component = game.getComponent(entityId, componentKey);
@@ -149,7 +171,7 @@ export async function scriptSystem(game: Game, deltaTime: number) {
 				}
 				const warpEntity = warp;
 				const { x, y } = warpEntity.components.Position;
-				const entityId = getEntityId(script.cacheId, step.entityId);
+				const entityId = getEntityId(script.simpleCache, step.entityId);
 				game.setComponent(entityId, 'Position', { type: 'grid', x, y: y - 1 });
 				game.setComponent(entityId, 'SubPosition', {
 					type: 'pixel',
@@ -162,8 +184,27 @@ export async function scriptSystem(game: Game, deltaTime: number) {
 					y: (y - 1) * Game.getAdjustedTileSize()
 				});
 
-				script.cacheId = warp.id;
+				script.simpleCache = warp.id;
 
+				script.index++;
+			} else if (step.type === 'checkFlag') {
+				if (!FlagSet.has(step.flag)) {
+					script.index++;
+				} else {
+					return;
+				}
+			} else if (step.type === 'createObject') {
+				game.createObject(step.bank, step.sprite, step.x, step.y);
+				script.index++;
+			} else if (step.type === 'setPosition') {
+				const entityId = getEntityId(script.simpleCache, step.entityId);
+				const entity = game.getComponents(entityId, [
+					'Position',
+					'SubPosition',
+					'TargetPosition',
+					'LastPosition'
+				]);
+				game.updatePositions(entity, { type: 'grid', x: step.x, y: step.y });
 				script.index++;
 			}
 		} else {

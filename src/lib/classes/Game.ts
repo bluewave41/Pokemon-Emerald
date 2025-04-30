@@ -37,10 +37,11 @@ import { equals } from '$lib/utils/equals';
 import { getFacingPosition } from '$lib/utils/getFacingPosition';
 import { scriptSystem } from './systems/scriptSystem';
 import { fadeSystem } from './systems/fadeSystem';
-import type { Warp } from '$lib/interfaces/components/Warp';
 import type { GridPosition } from '$lib/interfaces/components/GridPosition';
 import { getNewPosition } from '$lib/utils/getNewPosition';
 import { getOppositeDirection } from '$lib/utils/getOppositeDirection';
+import type { BankNames } from '$lib/interfaces/BankNames';
+import type { ScriptInfo } from '$lib/interfaces/ScriptInfo';
 
 export interface Viewport {
 	width: number;
@@ -92,6 +93,9 @@ export class Game {
 	hasMapLoaded(name: MapNames) {
 		return this.loadedMaps.has(name);
 	}
+	getPlayerId() {
+		return 1;
+	}
 	getMapIdByName(name: MapNames) {
 		for (const [id, mapInfo] of this.components['MapInfo']) {
 			if ((mapInfo as { name: MapNames }).name === name) {
@@ -108,29 +112,59 @@ export class Game {
 
 		return this.getComponent(mapId, 'MapInfo');
 	}
-	createPlayer() {
-		const playerId = this.createEntity();
-		const image = SpriteBank.getSprite('player', 'down1');
-
-		this.addComponent(playerId, 'Position', { type: 'grid', x: 10, y: 10 });
-		this.addComponent(playerId, 'SubPosition', {
+	createObject(bank: BankNames, sprite: string, x: number, y: number) {
+		const objectId = this.createEntity();
+		this.addComponent(objectId, 'Position', { type: 'grid', x, y });
+		this.addComponent(objectId, 'SubPosition', {
 			type: 'pixel',
-			x: 10 * Game.getAdjustedTileSize(),
-			y: 10 * Game.getAdjustedTileSize()
+			x: x * Game.getAdjustedTileSize(),
+			y: y * Game.getAdjustedTileSize()
 		});
-		this.addComponent(playerId, 'Direction', Direction.DOWN);
-		this.addComponent(playerId, 'Movement', {
+		this.addComponent(objectId, 'Sprite', {
+			bankId: bank,
+			sprites: SpriteBank.getSprite(bank, sprite)
+		});
+		this.addComponent(objectId, 'Object', {});
+	}
+	createCharacter(bank: BankNames, sprite: string, x: number, y: number) {
+		const characterId = this.createEntity();
+		const image = SpriteBank.getSprite(bank, sprite);
+		this.addComponent(characterId, 'Position', { type: 'grid', x, y });
+		this.addComponent(characterId, 'SubPosition', {
+			type: 'pixel',
+			x: x * Game.getAdjustedTileSize(),
+			y: y * Game.getAdjustedTileSize()
+		});
+		this.addComponent(characterId, 'TargetPosition', {
+			type: 'pixel',
+			x: x * Game.getAdjustedTileSize(),
+			y: y * Game.getAdjustedTileSize()
+		});
+		this.addComponent(characterId, 'LastPosition', {
+			type: 'pixel',
+			x: x * Game.getAdjustedTileSize(),
+			y: y * Game.getAdjustedTileSize()
+		});
+
+		this.addComponent(characterId, 'Direction', Direction.DOWN);
+		this.addComponent(characterId, 'Movement', {
 			moving: false,
 			jumping: false,
 			counter: 0,
 			walkFrame: 1
 		});
-		this.addComponent(playerId, 'Sprite', {
-			bankId: 'player',
-			sprites: SpriteBank.getSprites('player')
+		this.addComponent(characterId, 'Sprite', {
+			bankId: bank,
+			sprites: SpriteBank.getSprites(bank)
 		});
-		this.addComponent(playerId, 'Offset', { x: image.width - 15, y: image.height - 21 });
-		this.addComponent(playerId, 'Speed', Game.getAdjustedTileSize() * 3);
+		this.addComponent(characterId, 'Offset', { x: image.width - 15, y: image.height - 21 });
+		this.addComponent(characterId, 'Speed', Game.getAdjustedTileSize() * 3);
+
+		return characterId;
+	}
+	createPlayer() {
+		const playerId = this.createCharacter('player', 'down1', 10, 10);
+
 		this.addComponent(playerId, 'Player', {});
 		this.addComponent(playerId, 'Controllable', {});
 	}
@@ -203,6 +237,10 @@ export class Game {
 		this.addComponent(mapId, 'Background', SpriteBank.getTile(mapInfo.backgroundId).frames[0]);
 		this.addComponent(mapId, 'Connections', connections);
 
+		for (const script of mapInfo.scripts) {
+			this.createScript(script);
+		}
+
 		if (!direction) {
 			this.activeMapId = mapId;
 		} else {
@@ -237,7 +275,7 @@ export class Game {
 		this.loadedMaps = new Set();
 	}
 	updatePositions(
-		entity: EntityWith<'Position' | 'SubPosition' | 'TargetPosition'>,
+		entity: EntityWith<'Position' | 'SubPosition' | 'TargetPosition' | 'LastPosition'>,
 		newPosition: GridPosition
 	) {
 		entity.components.Position.x = newPosition.x;
@@ -246,6 +284,20 @@ export class Game {
 		entity.components.SubPosition.y = newPosition.y * Game.getAdjustedTileSize();
 		entity.components.TargetPosition.x = newPosition.x * Game.getAdjustedTileSize();
 		entity.components.TargetPosition.y = newPosition.y * Game.getAdjustedTileSize();
+		entity.components.LastPosition.x = newPosition.x * Game.getAdjustedTileSize();
+		entity.components.LastPosition.y = newPosition.y * Game.getAdjustedTileSize();
+	}
+	createScript(scriptInfo: ScriptInfo) {
+		const { x, y, ...info } = scriptInfo;
+
+		const scriptId = this.createEntity();
+		this.addComponent(scriptId, 'ScriptInfo', info);
+
+		if (x && y) {
+			this.addComponent(scriptId, 'Position', { type: 'grid', x, y });
+		}
+
+		return scriptId;
 	}
 	createWarpScript(warpEntity: EntityWith<'Warp' | 'Position'>) {
 		const warp = warpEntity.components;
@@ -259,7 +311,8 @@ export class Game {
 		if (warp.Warp.type === 'DOOR' && this.isTileValid(facingTile)) {
 			this.addComponent(scriptId, 'Script', {
 				index: 0,
-				cacheId: undefined,
+				cache: {},
+				simpleCache: undefined,
 				steps: [
 					{
 						type: 'animate',
@@ -283,7 +336,8 @@ export class Game {
 		} else if (warp.Warp.type === 'DOOR') {
 			this.addComponent(scriptId, 'Script', {
 				index: 0,
-				cacheId: undefined,
+				cache: {},
+				simpleCache: undefined,
 				steps: [
 					{ type: 'fadeOut' },
 					{ type: 'loadWarp', warp: warp.Warp },
@@ -337,7 +391,8 @@ export class Game {
 		} else if (warp.Warp.type === 'STAIRS') {
 			this.addComponent(scriptId, 'Script', {
 				index: 0,
-				cacheId: undefined,
+				cache: {},
+				simpleCache: undefined,
 				steps: [
 					{ type: 'move', entityId: player.id, direction: 'UP' },
 					{ type: 'fadeOut' },

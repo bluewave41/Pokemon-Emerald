@@ -23,7 +23,6 @@ export async function mapSystem(game: Game) {
 		for (const direction of directions) {
 			const mapName = connections[direction];
 			if (mapName && !game.hasMapLoaded(mapName)) {
-				console.log('loading', mapName);
 				const loadMapPromise = game.loadMap(mapName, direction);
 				loadPromises.push(loadMapPromise);
 			}

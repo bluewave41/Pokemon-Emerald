@@ -179,8 +179,6 @@ export class Canvas {
 				? textForMath[1].length
 				: textForMath.reduce((sum, str) => sum + str.length, 0) + 5;
 
-		console.log(totalLength);
-
 		if (lengthToShow >= totalLength) {
 			// this runs way too many times
 			GameEvent.dispatchEvent(new CustomEvent('textComplete'));
